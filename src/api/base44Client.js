@@ -34,8 +34,8 @@ const initialData = {
     { id: 'job_4', title: 'محاسب عام', department_id: 'dep_4' }
   ],
   Shift: [
-    { id: 'sh_1', name: 'الدوام الصباحي (8 ص - 4 م)', start_time: '08:00', end_time: '16:00', total_hours: 8 },
-    { id: 'sh_2', name: 'الدوام المسائي (4 م - 12 ص)', start_time: '16:00', end_time: '00:00', total_hours: 8 }
+    { id: 'sh_1', name: 'الدوام الصباحي (8 ص - 4 م)', type: 'morning', start_time: '08:00', end_time: '16:00', total_hours: 8, grace_minutes: 15, description: 'فترة العمل الصباحية الرسمية' },
+    { id: 'sh_2', name: 'الدوام المسائي (4 م - 12 ص)', type: 'evening', start_time: '16:00', end_time: '00:00', total_hours: 8, grace_minutes: 15, description: 'فترة العمل المسائية' }
   ],
   LeavePolicy: [
     { id: 'lp_1', name: 'سياسة الإجازات السنوية', annual_days: 30, carry_over_days: 5 },
