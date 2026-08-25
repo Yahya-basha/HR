@@ -25,6 +25,7 @@ import Settings from '@/pages/Settings';
 import Contracts from '@/pages/Contracts';
 import Branches from '@/pages/Branches';
 import Shifts from '@/pages/Shifts';
+import Devices from '@/pages/Devices';
 import Reports from '@/pages/Reports';
 import LeavePolicies from '@/pages/LeavePolicies';
 
@@ -63,6 +64,7 @@ const AuthenticatedApp = () => {
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/branches" element={<Branches />} />
           <Route path="/shifts" element={<Shifts />} />
+          <Route path="/devices" element={<Devices />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/leave-policies" element={<LeavePolicies />} />
         </Route>
