@@ -1,6 +1,6 @@
 // ============================================================================
 // ZENITH HR SAAS - OFFICIAL ENTERPRISE DATABASE CLIENT
-// Loaded with Dora Cars Official Live Data
+// 100% Exact Live Data from Dora Cars Base44 Export
 // ============================================================================
 
 import { createClient } from '@supabase/supabase-js';
@@ -11,23 +11,24 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-const STORAGE_PREFIX = 'hr_flow_v2_';
+// Versioned key to ensure instant hydration in browser
+const STORAGE_PREFIX = 'hr_flow_v3_dora_';
 
 export const initialData = {
   Company: [
     {
       id: 'comp_1',
       name: 'درة السيارة لقطع غيار السيارات',
-      legal_name: 'شركة درة السيارة للتجارة',
+      legal_name: 'HR DORAT CARS',
       cr_number: '7016475555',
       tax_number: '311861381500003',
-      phone: '+966538834212',
+      phone: '+966541697999',
       address: 'المملكة العربية السعودية'
     }
   ],
   Branch: [
     { id: 'br_admin', name: 'مكتب الإدارة', address: 'طريق الملك فهد، الرياض', phone: '+966541697999', company_id: 'comp_1', is_main: true },
-    { id: 'br_main', name: 'الفرع الرئيسي', address: 'الفرع الرئيسي، الرياض', phone: '+966542070313', company_id: 'comp_1', is_main: false },
+    { id: 'br_main', name: 'الفرع الرئيسي', address: 'الفرع الرئيسي', phone: '+966542070313', company_id: 'comp_1', is_main: false },
     { id: 'br_kia', name: 'فرع كيا ( السليم )', address: 'حي السليم', phone: '+966542821253', company_id: 'comp_1', is_main: false },
     { id: 'br_hyundai', name: 'فرع هونداي ( الرواف )', address: 'حي الرواف', phone: '+966553601195', company_id: 'comp_1', is_main: false }
   ],
@@ -38,22 +39,118 @@ export const initialData = {
     { id: 'dep_hyundai', name: 'فرع هونداي ( الرواف )', code: 'HYUNDAI', manager_name: 'عبد العزيز ناصر محمد الجوعي' }
   ],
   JobTitle: [
-    { id: 'job_gm', title: 'المدير العام' },
-    { id: 'job_hr', title: 'مصمم و مسئول الموارد البشرية' },
-    { id: 'job_acc', title: 'مدير الحسابات' },
-    { id: 'job_store', title: 'مسئول متجر الكتروني' },
-    { id: 'job_sales', title: 'بائع قطع غيار' }
+    { id: 'job_1', name: 'مصمم ومسؤول موارد بشرية', title: 'مصمم ومسؤول موارد بشرية' },
+    { id: 'job_2', name: 'مدير حسابات', title: 'مدير حسابات' },
+    { id: 'job_3', name: 'بائع قطع غيار', title: 'بائع قطع غيار' },
+    { id: 'job_4', name: 'المدير العام', title: 'المدير العام' }
   ],
-  Shift: [
-    { id: 'sh_gm', name: 'شفت المدير العام', type: 'flexible', start_time: '09:00', end_time: '17:00', total_hours: 8, grace_minutes: 30, description: 'دوام الإدارة العامة' },
-    { id: 'sh_saudi_morning', name: 'فترة عمل سعودي صباحي', type: 'morning', start_time: '08:00', end_time: '16:00', total_hours: 8, grace_minutes: 15, description: 'الدوام الصباحي للكادر السعودي' },
-    { id: 'sh_saudi_evening', name: 'فترة عمل سعودي مسائي', type: 'evening', start_time: '16:00', end_time: '00:00', total_hours: 8, grace_minutes: 15, description: 'الدوام المسائي للكادر السعودي' },
-    { id: 'sh_non_saudi', name: 'فترة عمل غير سعودي', type: 'morning', start_time: '08:00', end_time: '20:00', total_hours: 10, grace_minutes: 15, description: 'دوام فترات العمل للكوادر غير السعودية' }
+  LeaveType: [
+    { id: 'lt_1', name: 'إجازة سنوية', code: 'annual', paid: true },
+    { id: 'lt_2', name: 'إجازة بدون راتب', code: 'unpaid', paid: false },
+    { id: 'lt_3', name: 'إجازة للعمرة', code: 'umrah', paid: false },
+    { id: 'lt_4', name: 'إجازة تعويضية', code: 'comp', paid: true }
   ],
   LeavePolicy: [
-    { id: 'lp_annual', name: 'الاجازة السنوية', annual_days: 30, carry_over_days: 5 },
-    { id: 'lp_unpaid', name: 'اجازات بدون مرتب', annual_days: 0, carry_over_days: 0 },
-    { id: 'lp_standard', name: 'Standard Policy', annual_days: 21, carry_over_days: 0 }
+    { 
+      id: 'lp_1', 
+      name: 'اجازات بدون مرتب', 
+      company: 'HR DORAT CARS', 
+      annual_days: 30, 
+      compensatory_days: 0, 
+      umrah_days: 0, 
+      sick_days: 0, 
+      emergency_days: 0 
+    },
+    { 
+      id: 'lp_2', 
+      name: 'الاجازة السنوية', 
+      company: 'HR DORAT CARS', 
+      annual_days: 21, 
+      compensatory_days: 0, 
+      umrah_days: 0, 
+      sick_days: 0, 
+      emergency_days: 0 
+    }
+  ],
+  Shift: [
+    {
+      id: 'sh_1',
+      name: 'فترة عمل غير سعودي',
+      type: 'multi',
+      start_time: '08:00',
+      end_time: '20:00',
+      break_start: '12:00',
+      break_end: '16:00',
+      working_hours: 8,
+      total_hours: 8,
+      grace_minutes: 15,
+      description: 'دوامين: 8 ص - 12 ظهراً، ومن 4 عصراً - 8 مساءً مع استراحة'
+    },
+    {
+      id: 'sh_2',
+      name: 'فترة عمل سعودي صباحي',
+      type: 'morning',
+      start_time: '08:00',
+      end_time: '13:00',
+      break_start: '',
+      break_end: '',
+      working_hours: 5,
+      total_hours: 5,
+      grace_minutes: 15,
+      description: 'دوام سعودي صباحي من 8 ص حتى 1 ظهراً'
+    },
+    {
+      id: 'sh_3',
+      name: 'فترة عمل سعودي مسائي',
+      type: 'evening',
+      start_time: '16:00',
+      end_time: '21:00',
+      break_start: '',
+      break_end: '',
+      working_hours: 5,
+      total_hours: 5,
+      grace_minutes: 15,
+      description: 'دوام سعودي مسائي من 4 عصراً حتى 9 مساءً'
+    },
+    {
+      id: 'sh_4',
+      name: 'شفت رمضان',
+      type: 'ramadan',
+      start_time: '20:30',
+      end_time: '02:00',
+      break_start: '',
+      break_end: '',
+      working_hours: 5.5,
+      total_hours: 5.5,
+      grace_minutes: 20,
+      description: 'دوام رمضان من 8:30 مساءً حتى 2 صباحاً'
+    },
+    {
+      id: 'sh_5',
+      name: 'شفت المدير العام',
+      type: 'flexible',
+      start_time: '09:00',
+      end_time: '17:00',
+      break_start: '',
+      break_end: '',
+      working_hours: 8,
+      total_hours: 8,
+      grace_minutes: 0,
+      description: 'حضور تلقائي — لا يحتاج إلى بصمة، خاص بالمدير'
+    },
+    {
+      id: 'sh_6',
+      name: 'شفت مرن',
+      type: 'flexible',
+      start_time: '08:00',
+      end_time: '16:00',
+      break_start: '',
+      break_end: '',
+      working_hours: 8,
+      total_hours: 8,
+      grace_minutes: 15,
+      description: 'فترة مرنة تقبل أول دخول وآخر خروج'
+    }
   ],
   Employee: [
     {
@@ -61,13 +158,16 @@ export const initialData = {
       employee_number: '1001',
       full_name: 'فهد ناصر محمد الجوعي',
       email: 'dortalsiarh@gmail.com',
-      phone: '+966541697999',
+      phone: '966541697999',
       job_title: 'المدير العام',
       department_name: 'مكتب الإدارة',
       branch_name: 'مكتب الإدارة',
       shift: 'شفت المدير العام',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'سعودي',
       national_id: '1111738496',
+      id_expiry_date: '1455-04-03',
+      birth_date: '1992-02-05',
       join_date: '2022-11-01',
       salary: 4000,
       housing_allowance: 0,
@@ -80,13 +180,16 @@ export const initialData = {
       employee_number: '1022',
       full_name: 'يحيي محمد عبدالغفار باشا',
       email: 'yahya9031@gmail.com',
-      phone: '+966575901487',
+      phone: '966575901487',
       job_title: 'مصمم و مسئول الموارد البشرية',
       department_name: 'مكتب الإدارة',
       branch_name: 'مكتب الإدارة',
       shift: 'فترة عمل غير سعودي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'مصري',
       national_id: '2554901666',
+      id_expiry_date: '1448-04-16',
+      birth_date: '1990-03-27',
       join_date: '2025-01-01',
       salary: 4000,
       housing_allowance: 200,
@@ -99,13 +202,16 @@ export const initialData = {
       employee_number: '1005',
       full_name: 'هشام ابوالفضل زغلول',
       email: 'hes.ham42@yahoo.com',
-      phone: '+966542070313',
+      phone: '966542070313',
       job_title: 'مدير الحسابات',
       department_name: 'مكتب الإدارة',
       branch_name: 'مكتب الإدارة',
       shift: 'فترة عمل غير سعودي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'مصري',
       national_id: '2406494993',
+      id_expiry_date: '1448-05-22',
+      birth_date: '1988-06-01',
       join_date: '2022-11-01',
       salary: 5500,
       housing_allowance: 150,
@@ -118,13 +224,16 @@ export const initialData = {
       employee_number: '1034',
       full_name: 'طه محمود المحيميد',
       email: 'taha141318@gmail.com',
-      phone: '+966507437337',
+      phone: '966507437337',
       job_title: 'مسئول متجر الكتروني',
       department_name: 'مكتب الإدارة',
       branch_name: 'مكتب الإدارة',
       shift: 'فترة عمل غير سعودي',
+      manager_name: 'HR DORAT CARS',
       nationality: 'سوري',
       national_id: '',
+      id_expiry_date: '',
+      birth_date: '',
       join_date: '2026-04-13',
       salary: 1500,
       housing_allowance: 0,
@@ -137,13 +246,16 @@ export const initialData = {
       employee_number: '1002',
       full_name: 'محمود طه المحيميد',
       email: 'ma-h77@hotmail.com',
-      phone: '+966542070313',
+      phone: '966542070313',
       job_title: 'بائع قطع غيار',
       department_name: 'الفرع الرئيسي',
       branch_name: 'الفرع الرئيسي',
       shift: 'فترة عمل غير سعودي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'سوري',
       national_id: '2151595283',
+      id_expiry_date: '1448-03-06',
+      birth_date: '1977-01-01',
       join_date: '2022-11-01',
       salary: 4200,
       housing_allowance: 150,
@@ -156,13 +268,16 @@ export const initialData = {
       employee_number: '1004',
       full_name: 'صالح علي المحيميد',
       email: 'salehali.e@gmail.com',
-      phone: '+966542821253',
+      phone: '966542821253',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع كيا ( السليم )',
       branch_name: 'فرع كيا ( السليم )',
       shift: 'فترة عمل سعودي صباحي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'سعودي',
       national_id: '1106501065',
+      id_expiry_date: '1450-07-17',
+      birth_date: '1999-02-18',
       join_date: '2022-11-01',
       salary: 4000,
       housing_allowance: 0,
@@ -175,13 +290,16 @@ export const initialData = {
       employee_number: '1008',
       full_name: 'خالد ناصر محمد الجوعي',
       email: 'khaled@gmail.com',
-      phone: '+966544439321',
+      phone: '966544439321',
       job_title: 'بائع قطع غيار',
       department_name: 'الفرع الرئيسي',
       branch_name: 'الفرع الرئيسي',
       shift: 'فترة عمل سعودي صباحي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'سعودي',
       national_id: '1111738488',
+      id_expiry_date: '1450-10-25',
+      birth_date: '1997-08-17',
       join_date: '2023-02-01',
       salary: 3300,
       housing_allowance: 0,
@@ -194,13 +312,16 @@ export const initialData = {
       employee_number: '1011',
       full_name: 'عبد العزيز ناصر محمد الجوعي',
       email: 'azooz7998@gmail.com',
-      phone: '+966553601195',
+      phone: '966553601195',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع هونداي ( الرواف )',
       branch_name: 'فرع هونداي ( الرواف )',
       shift: 'فترة عمل سعودي صباحي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'سعودي',
       national_id: '1113348641',
+      id_expiry_date: '1449-04-24',
+      birth_date: '2001-08-30',
       join_date: '2023-05-23',
       salary: 2500,
       housing_allowance: 0,
@@ -213,13 +334,16 @@ export const initialData = {
       employee_number: '1013',
       full_name: 'وضاح صالح سالم أحمد العولقي',
       email: 'abosaleh7830@gmail.com',
-      phone: '+966549107830',
+      phone: '966549107830',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع هونداي ( الرواف )',
       branch_name: 'فرع هونداي ( الرواف )',
       shift: 'فترة عمل غير سعودي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'يمني',
       national_id: '2539519401',
+      id_expiry_date: '1448-03-20',
+      birth_date: '1995-04-05',
       join_date: '2023-11-18',
       salary: 2500,
       housing_allowance: 200,
@@ -232,13 +356,16 @@ export const initialData = {
       employee_number: '1017',
       full_name: 'محمد سالم صالح أحمد المردم',
       email: 'mmha1998man@gmail.com',
-      phone: '+966532343471',
+      phone: '966532343471',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع كيا ( السليم )',
       branch_name: 'فرع كيا ( السليم )',
       shift: 'فترة عمل غير سعودي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'يمني',
       national_id: '2541925349',
+      id_expiry_date: '1447-09-21',
+      birth_date: '1998-01-11',
       join_date: '2024-09-24',
       salary: 2000,
       housing_allowance: 200,
@@ -251,13 +378,16 @@ export const initialData = {
       employee_number: '1018',
       full_name: 'عاصم ابراهيم الرياعي',
       email: 'abosa4er33@hotmail.com',
-      phone: '+966505873004',
+      phone: '966505873004',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع هونداي ( الرواف )',
       branch_name: 'فرع هونداي ( الرواف )',
       shift: 'فترة عمل سعودي مسائي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'سعودي',
       national_id: '1129098602',
+      id_expiry_date: '1448-10-11',
+      birth_date: '2005-04-11',
       join_date: '2026-02-12',
       salary: 1800,
       housing_allowance: 0,
@@ -270,13 +400,16 @@ export const initialData = {
       employee_number: '1020',
       full_name: 'عبد الله يحيى إبراهيم التويجري',
       email: 'abodytw26@icloud.com',
-      phone: '+966534063653',
+      phone: '966534063653',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع هونداي ( الرواف )',
       branch_name: 'فرع هونداي ( الرواف )',
       shift: 'فترة عمل سعودي صباحي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'سعودي',
       national_id: '1118862547',
+      id_expiry_date: '1447-02-21',
+      birth_date: '2003-01-02',
       join_date: '2024-10-12',
       salary: 3000,
       housing_allowance: 0,
@@ -289,13 +422,16 @@ export const initialData = {
       employee_number: '1021',
       full_name: 'إبراهيم عبد العزيز التويجري',
       email: 'ab0790468@gmail.com',
-      phone: '+966554460559',
+      phone: '966554460559',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع كيا ( السليم )',
       branch_name: 'فرع كيا ( السليم )',
       shift: 'فترة عمل سعودي مسائي',
+      manager_name: 'HR DORAT CARS',
       nationality: 'سعودي',
       national_id: '1116885797',
+      id_expiry_date: '',
+      birth_date: '2026-02-15',
       join_date: '2026-02-15',
       salary: 1800,
       housing_allowance: 0,
@@ -308,13 +444,16 @@ export const initialData = {
       employee_number: '1024',
       full_name: 'سفيان عبد الرحمن الضالع',
       email: 'sfyan5401@gmail.com',
-      phone: '+966501801811',
+      phone: '966501801811',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع هونداي ( الرواف )',
       branch_name: 'فرع كيا ( السليم )',
       shift: 'فترة عمل سعودي مسائي',
+      manager_name: 'فهد ناصر الجوعي',
       nationality: 'سعودي',
       national_id: '1130465527',
+      id_expiry_date: '',
+      birth_date: '2005-08-01',
       join_date: '2025-03-01',
       salary: 1500,
       housing_allowance: 0,
@@ -327,13 +466,16 @@ export const initialData = {
       employee_number: '1027',
       full_name: 'محمد صالح محمد السعوي',
       email: 'mohammedsa.2005a@gmail.com',
-      phone: '+966506189288',
+      phone: '966506189288',
       job_title: 'بائع قطع غيار',
       department_name: 'الفرع الرئيسي',
       branch_name: 'الفرع الرئيسي',
       shift: 'فترة عمل سعودي مسائي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'سعودي',
       national_id: '1145258602',
+      id_expiry_date: '1451-02-06',
+      birth_date: '2005-05-09',
       join_date: '2025-09-01',
       salary: 1500,
       housing_allowance: 0,
@@ -346,13 +488,16 @@ export const initialData = {
       employee_number: '1032',
       full_name: 'محمد عادل احمد نعمان',
       email: 'mo7781199@gmail.com',
-      phone: '+966534063653',
+      phone: '966534063653',
       job_title: 'بائع قطع غيار',
       department_name: 'الفرع الرئيسي',
       branch_name: 'الفرع الرئيسي',
       shift: 'فترة عمل غير سعودي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'يمني',
       national_id: '2564699011',
+      id_expiry_date: '1448-09-11',
+      birth_date: '2001-01-01',
       join_date: '2025-12-24',
       salary: 1500,
       housing_allowance: 200,
@@ -365,13 +510,16 @@ export const initialData = {
       employee_number: '1033',
       full_name: 'عبد الله ناصر عبد الله محمد عمر',
       email: 'lkhg964@gmail.com',
-      phone: '+966559249379',
+      phone: '966559249379',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع هونداي ( الرواف )',
       branch_name: 'فرع هونداي ( الرواف )',
       shift: 'فترة عمل غير سعودي',
+      manager_name: 'فهد ناصر محمد الجوعي',
       nationality: 'يمني',
       national_id: '2611459286',
+      id_expiry_date: '2025-10-15',
+      birth_date: '2002-09-30',
       join_date: '2026-01-18',
       salary: 1500,
       housing_allowance: 200,
@@ -384,13 +532,16 @@ export const initialData = {
       employee_number: '1035',
       full_name: 'محمدعبد محمد البليهي',
       email: '1035@durracars.sa',
-      phone: '+966535014657',
+      phone: '966535014657',
       job_title: 'بائع قطع غيار',
       department_name: 'فرع هونداي ( الرواف )',
       branch_name: 'فرع هونداي ( الرواف )',
       shift: 'فترة عمل سعودي مسائي',
+      manager_name: 'HR DORAT CARS',
       nationality: 'سعودي',
       national_id: '1130729724',
+      id_expiry_date: '',
+      birth_date: '2005-08-16',
       join_date: '2026-04-15',
       salary: 1500,
       housing_allowance: 0,
@@ -405,7 +556,7 @@ export const initialData = {
 };
 
 // Generate matching employment contracts
-initialData.EmploymentContract = initialData.Employee.map((e, idx) => ({
+initialData.EmploymentContract = initialData.Employee.map((e) => ({
   id: 'cont_' + e.employee_number,
   employee_id: e.id,
   employee_name: e.full_name,
@@ -474,7 +625,7 @@ function createEntityHandler(entityName) {
         if (!error && data) return data;
       }
       const items = getLocalItems(entityName);
-      return items.find(item => item.id === id) || null;
+      return items.find(item => item.id === id || item.employee_number === id) || null;
     },
     async create(data) {
       if (isSupabaseConfigured) {
@@ -499,7 +650,7 @@ function createEntityHandler(entityName) {
         if (!error && updated) return updated;
       }
       const items = getLocalItems(entityName);
-      const index = items.findIndex(item => item.id === id);
+      const index = items.findIndex(item => item.id === id || item.employee_number === id);
       if (index !== -1) {
         items[index] = { ...items[index], ...data, updated_at: new Date().toISOString() };
         saveLocalItems(entityName, items);
@@ -513,7 +664,7 @@ function createEntityHandler(entityName) {
         await supabase.from(table).delete().eq('id', id);
       }
       let items = getLocalItems(entityName);
-      items = items.filter(item => item.id !== id);
+      items = items.filter(item => item.id !== id && item.employee_number !== id);
       saveLocalItems(entityName, items);
       return { success: true };
     }
@@ -532,7 +683,7 @@ const entities = new Proxy({}, {
 const DEFAULT_ADMIN_USER = {
   id: 'usr_1022',
   email: 'yahya9031@gmail.com',
-  full_name: 'يحيي محمد عبدالغفار باشا (مسئول الموارد البشرية)',
+  full_name: 'يحيي محمد عبدالغفار باشا (مسؤول الموارد البشرية)',
   role: 'admin',
   department: 'مكتب الإدارة',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
