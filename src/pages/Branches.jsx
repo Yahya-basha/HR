@@ -42,7 +42,7 @@ export default function Branches() {
   const openEdit = (b) => { setEditing(b); setFormOpen(true); };
 
   const remove = async (b) => {
-    const count = employees.filter((e) => e.branch === b.name).length;
+    const count = employees.filter((e) => normalize(e.branch_name || e.branch) === normalize(b.name)).length;
     if (count > 0) {
       toast({ title: t('branches.hasEmployees'), description: `${count} ${t('branches.employees')}`, variant: 'destructive' });
       return;
@@ -61,7 +61,8 @@ export default function Branches() {
     return <div className="text-center py-20"><p className="text-muted-foreground">{t('common.noAccess')}</p></div>;
   }
 
-  const unassigned = employees.filter((e) => !e.branch);
+  const normalize = (str) => (str || "").replace(/\s+/g, " ").trim();
+  const unassigned = employees.filter((e) => !normalize(e.branch_name || e.branch));
 
   return (
     <div className="space-y-6">
@@ -87,7 +88,7 @@ export default function Branches() {
         ) : branches.length === 0 ? (
           <p className="text-muted-foreground col-span-full text-center py-10">{t('branches.noBranches')}</p>
         ) : branches.map((b) => {
-          const branchEmps = employees.filter((e) => e.branch === b.name);
+          const branchEmps = employees.filter((e) => normalize(e.branch_name || e.branch) === normalize(b.name));
           return (
             <Card key={b.id} className="p-6 border-border/60 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">

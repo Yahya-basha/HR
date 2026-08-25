@@ -1,3 +1,18 @@
+
+// Auto normalize branch names on load
+function normalizeEmployeeBranches(list) {
+  return (list || []).map(e => {
+    const bName = e.branch_name || e.branch || 'مكتب الإدارة';
+    return {
+      ...e,
+      branch: bName,
+      branch_name: bName,
+      department: e.department_name || e.department || bName,
+      department_name: e.department_name || e.department || bName
+    };
+  });
+}
+
 // ============================================================================
 // ZENITH HR SAAS - OFFICIAL ENTERPRISE DATABASE CLIENT
 // 100% Exact Live Data from Dora Cars Base44 Export
