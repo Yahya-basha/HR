@@ -33,6 +33,7 @@ import UsersManagement from '@/pages/UsersManagement';
 import EndOfService from '@/pages/EndOfService';
 import RewardsPenalties from '@/pages/RewardsPenalties';
 import DocumentsPrint from '@/pages/DocumentsPrint';
+import Evaluations from '@/pages/Evaluations';
 import PrintTemplates from '@/pages/PrintTemplates';
 import ImportData from '@/pages/ImportData';
 
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
           <Route path="/end-of-service" element={<EndOfService />} />
           <Route path="/rewards-penalties" element={<RewardsPenalties />} />
           <Route path="/documents-print" element={<DocumentsPrint />} />
+          <Route path="/evaluations" element={<Evaluations />} />
           <Route path="/print-templates" element={<PrintTemplates />} />
           <Route path="/import-data" element={<ImportData />} />
         </Route>
