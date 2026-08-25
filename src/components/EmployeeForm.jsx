@@ -4,60 +4,167 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Building2, Timer, ShieldCheck, UserCheck } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useI18n } from '@/lib/i18n';
 import { useToast } from '@/components/ui/use-toast';
 
+const defaultShifts = [
+  { id: 'sh_1', name: 'فترة عمل غير سعودي', working_hours: 8, start_time: '08:00', end_time: '20:00' },
+  { id: 'sh_2', name: 'فترة عمل سعودي صباحي', working_hours: 5, start_time: '08:00', end_time: '13:00' },
+  { id: 'sh_3', name: 'فترة عمل سعودي مسائي', working_hours: 5, start_time: '16:00', end_time: '21:00' },
+  { id: 'sh_4', name: 'شفت رمضان', working_hours: 5.5, start_time: '20:30', end_time: '02:00' },
+  { id: 'sh_5', name: 'شفت المدير العام', working_hours: 8, start_time: '09:00', end_time: '17:00' },
+  { id: 'sh_6', name: 'شفت مرن', working_hours: 8, start_time: '08:00', end_time: '16:00' }
+];
+
+const defaultBranches = [
+  { id: 'br_admin', name: 'مكتب الإدارة' },
+  { id: 'br_main', name: 'الفرع الرئيسي' },
+  { id: 'br_kia', name: 'فرع كيا ( السليم )' },
+  { id: 'br_hyundai', name: 'فرع هونداي ( الرواف )' }
+];
+
+const defaultDepts = [
+  { id: 'd_1', name: 'مكتب الإدارة' },
+  { id: 'd_2', name: 'الفرع الرئيسي' },
+  { id: 'd_3', name: 'فرع كيا ( السليم )' },
+  { id: 'd_4', name: 'فرع هونداي ( الرواف )' },
+  { id: 'd_5', name: 'قسم المبيعات' },
+  { id: 'd_6', name: 'قسم الحسابات والمالية' },
+  { id: 'd_7', name: 'المتجر الإلكتروني' },
+  { id: 'd_8', name: 'الموارد البشرية والشؤون الإدارية' }
+];
+
+const defaultPolicies = [
+  { id: 'pol_1', name: 'الاجازة السنوية', annual_days: 21 },
+  { id: 'pol_2', name: 'اجازات بدون مرتب', annual_days: 30 },
+  { id: 'pol_3', name: 'Standard Policy', annual_days: 21 }
+];
+
+const defaultCompanies = [
+  { id: 'c_1', name: 'HR DORAT CARS' },
+  { id: 'c_2', name: 'درة السيارة لقطع غيار السيارات' }
+];
+
 const empty = {
-  full_name: '', email: '', phone: '', job_title: '', department: '',   branch: '', shift: '', leave_policy: '', hire_date: '', salary: '', status: 'active', user_id: '',
-  employee_id: '', full_name_ar: '', full_name_en: '', national_id: '', id_expiry_date: '', passport_number: '', passport_expiry_date: '',
-  nationality: '', gender: '', date_of_birth: '', marital_status: '', address: '', emergency_contact: '', manager: '', company: '',
+  full_name: '',
+  email: '',
+  phone: '',
+  job_title: '',
+  department: 'مكتب الإدارة',
+  department_name: 'مكتب الإدارة',
+  branch: 'مكتب الإدارة',
+  branch_name: 'مكتب الإدارة',
+  shift: 'فترة عمل غير سعودي',
+  leave_policy: 'الاجازة السنوية',
+  hire_date: '2025-01-01',
+  join_date: '2025-01-01',
+  salary: '3000',
+  housing_allowance: '0',
+  transport_allowance: '0',
+  status: 'active',
+  employee_id: '1036',
+  employee_number: '1036',
+  national_id: '',
+  id_expiry_date: '',
+  nationality: 'سعودي',
+  gender: 'male',
+  company: 'درة السيارة لقطع غيار السيارات'
 };
 
-export default function EmployeeForm({ open, onOpenChange, employee, departments, onSaved }) {
+export default function EmployeeForm({ open, onOpenChange, employee, departments: propsDepts, onSaved }) {
   const { t } = useI18n();
   const { toast } = useToast();
   const isEdit = !!employee;
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [showIdentity, setShowIdentity] = useState(false);
-  const [companies, setCompanies] = useState([]);
-  const [branches, setBranches] = useState([]);
-  const [shifts, setShifts] = useState([]);
-  const [policies, setPolicies] = useState([]);
+
+  const [companies, setCompanies] = useState(defaultCompanies);
+  const [branches, setBranches] = useState(defaultBranches);
+  const [departments, setDepartments] = useState(propsDepts && propsDepts.length > 0 ? propsDepts : defaultDepts);
+  const [shifts, setShifts] = useState(defaultShifts);
+  const [policies, setPolicies] = useState(defaultPolicies);
 
   useEffect(() => {
     if (open) {
-      setForm(employee ? { ...empty, ...employee } : empty);
+      if (employee) {
+        setForm({
+          ...empty,
+          ...employee,
+          department: employee.department || employee.department_name || 'مكتب الإدارة',
+          department_name: employee.department_name || employee.department || 'مكتب الإدارة',
+          branch: employee.branch || employee.branch_name || 'مكتب الإدارة',
+          branch_name: employee.branch_name || employee.branch || 'مكتب الإدارة',
+          shift: employee.shift || 'فترة عمل غير سعودي',
+          leave_policy: employee.leave_policy || 'الاجازة السنوية',
+          employee_id: employee.employee_number || employee.employee_id || '',
+          employee_number: employee.employee_number || employee.employee_id || '',
+          hire_date: employee.join_date || employee.hire_date || '',
+          join_date: employee.join_date || employee.hire_date || '',
+          company: employee.company || 'درة السيارة لقطع غيار السيارات'
+        });
+      } else {
+        setForm({ ...empty, employee_number: String(1000 + Math.floor(Math.random() * 900)) });
+      }
       setShowIdentity(false);
     }
   }, [open, employee]);
 
   useEffect(() => {
-    base44.entities.Company.list().then(setCompanies).catch(() => {});
-    base44.entities.Branch.list().then(setBranches).catch(() => {});
-    base44.entities.Shift.list().then(setShifts).catch(() => {});
-    base44.entities.LeavePolicy.list().then(setPolicies).catch(() => {});
+    base44.entities.Company.list().then(list => list && list.length && setCompanies(list)).catch(() => {});
+    base44.entities.Branch.list().then(list => list && list.length && setBranches(list)).catch(() => {});
+    base44.entities.Shift.list().then(list => list && list.length && setShifts(list)).catch(() => {});
+    base44.entities.Department.list().then(list => list && list.length && setDepartments(list)).catch(() => {});
+    base44.entities.LeavePolicy.list().then(list => list && list.length && setPolicies(list)).catch(() => {});
   }, []);
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k, v) => {
+    setForm(prev => {
+      const updated = { ...prev, [k]: v };
+      if (k === 'department') updated.department_name = v;
+      if (k === 'branch') updated.branch_name = v;
+      if (k === 'hire_date') updated.join_date = v;
+      if (k === 'employee_id') updated.employee_number = v;
+      return updated;
+    });
+  };
 
   const save = async () => {
-    if (!form.full_name || !form.email || !form.job_title || !form.department) {
-      toast({ title: t('employeeForm.required'), variant: 'destructive' });
+    if (!form.full_name || !form.job_title) {
+      toast({ title: 'يرجى إدخال اسم الموظف والمسمى الوظيفي', variant: 'destructive' });
       return;
     }
     setSaving(true);
     try {
-      const payload = { ...form, salary: Number(form.salary) || 0, employee_id: Number(form.employee_id) || null };
-      if (isEdit) await base44.entities.Employee.update(employee.id, payload);
-      else await base44.entities.Employee.create(payload);
-      toast({ title: isEdit ? t('employeeForm.updated') : t('employeeForm.added') });
+      const payload = {
+        ...form,
+        department: form.department || form.department_name || 'مكتب الإدارة',
+        department_name: form.department_name || form.department || 'مكتب الإدارة',
+        branch: form.branch || form.branch_name || 'مكتب الإدارة',
+        branch_name: form.branch_name || form.branch || 'مكتب الإدارة',
+        shift: form.shift || 'فترة عمل غير سعودي',
+        leave_policy: form.leave_policy || 'الاجازة السنوية',
+        salary: Number(form.salary) || 0,
+        housing_allowance: Number(form.housing_allowance) || 0,
+        transport_allowance: Number(form.transport_allowance) || 0,
+        employee_number: String(form.employee_number || form.employee_id || '1000'),
+        employee_id: String(form.employee_number || form.employee_id || '1000'),
+        join_date: form.join_date || form.hire_date || new Date().toISOString().split('T')[0]
+      };
+
+      if (isEdit) {
+        await base44.entities.Employee.update(employee.id, payload);
+      } else {
+        await base44.entities.Employee.create(payload);
+      }
+
+      toast({ title: isEdit ? 'تم تحديث بيانات الموظف والوردية بنجاح ✅' : 'تمت إضافة الموظف بنجاح ✅' });
       onOpenChange(false);
       onSaved && onSaved();
     } catch (e) {
-      toast({ title: t('common.error'), description: e.message, variant: 'destructive' });
+      toast({ title: 'حدث خطأ أثناء الحفظ', description: e.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -65,135 +172,175 @@ export default function EmployeeForm({ open, onOpenChange, employee, departments
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? t('employeeForm.editTitle') : t('employeeForm.addTitle')}</DialogTitle>
+          <DialogTitle className="font-heading font-bold text-lg">
+            {isEdit ? 'تعديل بيانات الموظف والوردية' : 'إضافة موظف جديد للمنظومة'}
+          </DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
-          <div className="space-y-1.5"><Label>{t('employeeForm.fullName')} *</Label><Input value={form.full_name} onChange={(e) => set('full_name', e.target.value)} /></div>
-          <div className="space-y-1.5"><Label>{t('employeeForm.email')} *</Label><Input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} /></div>
-          <div className="space-y-1.5"><Label>{t('employeeForm.phone')}</Label><Input value={form.phone} onChange={(e) => set('phone', e.target.value)} /></div>
-          <div className="space-y-1.5"><Label>{t('employeeForm.jobTitle')} *</Label><Input value={form.job_title} onChange={(e) => set('job_title', e.target.value)} /></div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-3 text-xs">
+          
           <div className="space-y-1.5">
-            <Label>{t('employeeForm.department')} *</Label>
-            <Select value={form.department} onValueChange={(v) => set('department', v)}>
-              <SelectTrigger><SelectValue placeholder={t('employeeForm.selectDepartment')} /></SelectTrigger>
+            <Label className="font-bold">الرقم الوظيفي *</Label>
+            <Input 
+              value={form.employee_number || form.employee_id} 
+              onChange={(e) => set('employee_number', e.target.value)} 
+              className="font-mono font-bold" 
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold">اسم الموظف الرباعي *</Label>
+            <Input value={form.full_name} onChange={(e) => set('full_name', e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold">البريد الإلكتروني</Label>
+            <Input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold">رقم الجوال (واتساب)</Label>
+            <Input value={form.phone} onChange={(e) => set('phone', e.target.value)} className="font-mono" />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold">المسمى الوظيفي *</Label>
+            <Input value={form.job_title} onChange={(e) => set('job_title', e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold text-primary">القسم *</Label>
+            <Select value={form.department_name || form.department} onValueChange={(v) => set('department', v)}>
+              <SelectTrigger className="h-10 font-semibold"><SelectValue placeholder="اختر القسم" /></SelectTrigger>
               <SelectContent>
-                {(departments || []).map((d) => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                {departments.map((d) => (
+                  <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+
           <div className="space-y-1.5">
-            <Label>{t('emp.company')}</Label>
-            <Select value={form.company} onValueChange={(v) => set('company', v)}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+            <Label className="font-bold text-primary">الفرع التابع له *</Label>
+            <Select value={form.branch_name || form.branch} onValueChange={(v) => set('branch', v)}>
+              <SelectTrigger className="h-10 font-semibold"><SelectValue placeholder="اختر الفرع" /></SelectTrigger>
               <SelectContent>
-                {companies.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                {branches.map((b) => (
+                  <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+
           <div className="space-y-1.5">
-            <Label>{t('employeeForm.branch')}</Label>
-            <Select value={form.branch} onValueChange={(v) => set('branch', v)}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>
-                {branches.map((b) => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t('emp.shift')}</Label>
+            <Label className="font-bold text-primary">الوردية وفترة العمل *</Label>
             <Select value={form.shift} onValueChange={(v) => set('shift', v)}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectTrigger className="h-10 font-semibold"><SelectValue placeholder="اختر الوردية" /></SelectTrigger>
               <SelectContent>
                 {shifts.map((s) => (
                   <SelectItem key={s.id} value={s.name}>
-                    {s.name}{s.working_hours ? ` · ${s.working_hours} ${t('emp.shiftHours')}` : ''}{s.start_time && s.end_time ? ` (${s.start_time}–${s.end_time})` : ''}
+                    {s.name} {s.start_time ? `(${s.start_time} - ${s.end_time})` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {(() => {
-              const sel = shifts.find((s) => s.name === form.shift);
-              if (!sel) return null;
-              return (
-                <p className="text-xs text-muted-foreground bg-secondary/50 rounded-md px-3 py-2">
-                  {t('emp.shiftInfo')}: {sel.working_hours ? `${sel.working_hours} ${t('emp.shiftHours')}` : '—'}
-                  {sel.start_time && sel.end_time ? ` · ${sel.start_time}–${sel.end_time}` : ''}
-                </p>
-              );
-            })()}
           </div>
+
           <div className="space-y-1.5">
-            <Label>{t('emp.leavePolicy')}</Label>
+            <Label className="font-bold">سياسة الإجازات</Label>
             <Select value={form.leave_policy} onValueChange={(v) => set('leave_policy', v)}>
-              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {policies.map((p) => <SelectItem key={p.id} value={p.name}>{p.name} · {p.annual_days} {t('leave.days')}</SelectItem>)}
+                {policies.map((p) => (
+                  <SelectItem key={p.id} value={p.name}>
+                    {p.name} {p.annual_days ? `· ${p.annual_days} يوم` : ''}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5"><Label>{t('employeeForm.hireDate')}</Label><Input type="date" value={form.hire_date} onChange={(e) => set('hire_date', e.target.value)} /></div>
-          <div className="space-y-1.5"><Label>{t('employeeForm.salary')}</Label><Input type="number" value={form.salary} onChange={(e) => set('salary', e.target.value)} /></div>
+
           <div className="space-y-1.5">
-            <Label>{t('employeeForm.status')}</Label>
-            <Select value={form.status} onValueChange={(v) => set('status', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Label className="font-bold">الشركة التابع لها</Label>
+            <Select value={form.company} onValueChange={(v) => set('company', v)}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">{t('status.active')}</SelectItem>
-                <SelectItem value="on_leave">{t('status.on_leave')}</SelectItem>
-                <SelectItem value="inactive">{t('status.inactive')}</SelectItem>
+                {companies.map((c) => (
+                  <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold">الراتب الأساسي (ريال)</Label>
+            <Input type="number" value={form.salary} onChange={(e) => set('salary', e.target.value)} className="font-mono" />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold">تاريخ التعيين / المباشرة</Label>
+            <Input type="date" value={form.join_date || form.hire_date} onChange={(e) => set('join_date', e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold">حالة الموظف</Label>
+            <Select value={form.status} onValueChange={(v) => set('status', v)}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">على رأس العمل (نشط)</SelectItem>
+                <SelectItem value="on_leave">في إجازة</SelectItem>
+                <SelectItem value="inactive">غير نشط / منتهي العقد</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-bold">الجنسية</Label>
+            <Input value={form.nationality} onChange={(e) => set('nationality', e.target.value)} placeholder="سعودي / سوري / مصري / يمني" />
+          </div>
+
         </div>
 
-        <button type="button" onClick={() => setShowIdentity((s) => !s)} className="flex items-center gap-2 text-sm font-semibold text-primary mt-2">
+        {/* Identity & Legal Data Section */}
+        <button 
+          type="button" 
+          onClick={() => setShowIdentity(!showIdentity)} 
+          className="flex items-center gap-2 text-xs font-bold text-primary my-2 hover:underline"
+        >
           {showIdentity ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          {t('emp.identity')}
+          <span>بيانات الهوية والإقامة وتاريخ الميلاد</span>
         </button>
+
         {showIdentity && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border/60">
-            <div className="space-y-1.5"><Label>{t('emp.employeeId')}</Label><Input type="number" value={form.employee_id} onChange={(e) => set('employee_id', e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('emp.fullNameAr')}</Label><Input value={form.full_name_ar} onChange={(e) => set('full_name_ar', e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('emp.fullNameEn')}</Label><Input value={form.full_name_en} onChange={(e) => set('full_name_en', e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('emp.nationalId')}</Label><Input value={form.national_id} onChange={(e) => set('national_id', e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('emp.idExpiry')}</Label><Input type="date" value={form.id_expiry_date} onChange={(e) => set('id_expiry_date', e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('emp.passportNumber')}</Label><Input value={form.passport_number} onChange={(e) => set('passport_number', e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('emp.passportExpiry')}</Label><Input type="date" value={form.passport_expiry_date} onChange={(e) => set('passport_expiry_date', e.target.value)} /></div>
-            <div className="space-y-1.5"><Label>{t('emp.nationality')}</Label><Input value={form.nationality} onChange={(e) => set('nationality', e.target.value)} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-border/60 text-xs">
             <div className="space-y-1.5">
-              <Label>{t('emp.gender')}</Label>
-              <Select value={form.gender} onValueChange={(v) => set('gender', v)}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">{t('gender.male')}</SelectItem>
-                  <SelectItem value="female">{t('gender.female')}</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>رقم الهوية الوطنية / الإقامة</Label>
+              <Input value={form.national_id} onChange={(e) => set('national_id', e.target.value)} className="font-mono" />
             </div>
-            <div className="space-y-1.5"><Label>{t('emp.dob')}</Label><Input type="date" value={form.date_of_birth} onChange={(e) => set('date_of_birth', e.target.value)} /></div>
+
             <div className="space-y-1.5">
-              <Label>{t('emp.maritalStatus')}</Label>
-              <Select value={form.marital_status} onValueChange={(v) => set('marital_status', v)}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="single">{t('marital.single')}</SelectItem>
-                  <SelectItem value="married">{t('marital.married')}</SelectItem>
-                  <SelectItem value="divorced">{t('marital.divorced')}</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>تاريخ انتهاء الهوية / الإقامة</Label>
+              <Input type="date" value={form.id_expiry_date} onChange={(e) => set('id_expiry_date', e.target.value)} />
             </div>
-            <div className="space-y-1.5"><Label>{t('emp.manager')}</Label><Input value={form.manager} onChange={(e) => set('manager', e.target.value)} /></div>
-            <div className="space-y-1.5 sm:col-span-2"><Label>{t('emp.address')}</Label><Input value={form.address} onChange={(e) => set('address', e.target.value)} /></div>
-            <div className="space-y-1.5 sm:col-span-2"><Label>{t('emp.emergencyContact')}</Label><Input value={form.emergency_contact} onChange={(e) => set('emergency_contact', e.target.value)} /></div>
+
+            <div className="space-y-1.5">
+              <Label>بدل السكن الشهري (ريال)</Label>
+              <Input type="number" value={form.housing_allowance} onChange={(e) => set('housing_allowance', e.target.value)} className="font-mono" />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>بدل المواصلات الشهري (ريال)</Label>
+              <Input type="number" value={form.transport_allowance} onChange={(e) => set('transport_allowance', e.target.value)} className="font-mono" />
+            </div>
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
-          <Button onClick={save} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90">
-            {saving ? t('employeeForm.saving') : isEdit ? t('employeeForm.saveChanges') : t('employeeForm.addBtn')}
+        <DialogFooter className="pt-4 border-t border-border/40">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
+          <Button onClick={save} disabled={saving} className="bg-[#2D164D] hover:bg-[#1E1035] text-white font-bold px-6">
+            {saving ? 'جاري الحفظ...' : isEdit ? 'حفظ التعديلات' : 'إضافة الموظف'}
           </Button>
         </DialogFooter>
       </DialogContent>
