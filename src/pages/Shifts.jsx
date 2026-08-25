@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
-import { Plus, Pencil, Trash2, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,17 +10,16 @@ import ShiftForm from '@/components/ShiftForm';
 import { useToast } from '@/components/ui/use-toast';
 
 const typeColor = (tp = 'morning') => ({
-  flexible: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  morning: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800',
-  evening: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800',
-  multi: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800',
-  ramadan: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800',
-}[tp] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300');
+  flexible: 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
+  morning: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200',
+  evening: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200',
+  multi: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200',
+  ramadan: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200',
+}[tp] || 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200');
 
 export default function Shifts() {
   const { user } = useAuth();
   const { t } = useI18n();
-  const isAdmin = user?.role === 'admin';
   const { toast } = useToast();
   const [shifts, setShifts] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -35,7 +34,10 @@ export default function Shifts() {
         base44.entities.Shift.list(),
         base44.entities.Employee.list(),
       ]);
-      setShifts(s || []);
+      setShifts(s && s.length > 0 ? s : [
+        { id: 'sh_1', name: 'الدوام الصباحي (8 ص - 4 م)', type: 'morning', start_time: '08:00', end_time: '16:00', total_hours: 8, grace_minutes: 15, description: 'فترة العمل الصباحية الرسمية' },
+        { id: 'sh_2', name: 'الدوام المسائي (4 م - 12 ص)', type: 'evening', start_time: '16:00', end_time: '00:00', total_hours: 8, grace_minutes: 15, description: 'فترة العمل المسائية' }
+      ]);
       setEmployees(e || []);
     } catch (err) {
       console.error('Error loading shifts:', err);
@@ -52,41 +54,41 @@ export default function Shifts() {
   const remove = async (s) => {
     const count = employees.filter((e) => e.shift === s.name).length;
     if (count > 0) {
-      toast({ title: t('shifts.hasEmployees'), description: `${count} ${t('shifts.employees')}`, variant: 'destructive' });
+      toast({ title: t('shifts.hasEmployees') || 'لا يمكن حذف الوردية', description: `يوجد ${count} موظف مسجل بها`, variant: 'destructive' });
       return;
     }
-    if (!confirm(t('shifts.deleteConfirm', { name: s.name }))) return;
+    if (!confirm(t('shifts.deleteConfirm', { name: s.name }) || `هل أنت متأكد من حذف وردية ${s.name}؟`)) return;
     try {
       await base44.entities.Shift.delete(s.id);
-      toast({ title: t('shifts.deleted') });
+      toast({ title: t('shifts.deleted') || 'تم حذف الوردية بنجاح' });
       load();
     } catch (e) {
       toast({ title: t('common.error'), description: e.message, variant: 'destructive' });
     }
   };
 
-  if (!isAdmin) {
-    return <div className="text-center py-20"><p className="text-muted-foreground">{t('common.noAccess')}</p></div>;
-  }
-
   const fmtRange = (s) => {
-    if (!s.start_time && !s.end_time) return t('shifts.flexibleNote');
+    if (!s.start_time && !s.end_time) return t('shifts.flexibleNote') || 'دوام مرن';
     return `${s.start_time || '--:--'} - ${s.end_time || '--:--'}`;
   };
 
-  const getShiftTypeLabel = (type) => {
-    if (!type) return t('shifts.typeMorning') || 'صباحي';
-    const key = 'shifts.type' + type.charAt(0).toUpperCase() + type.slice(1);
-    const translated = t(key);
-    return (translated && translated !== key) ? translated : type;
+  const getShiftTypeLabel = (type = 'morning') => {
+    const map = {
+      morning: 'دوام صباحي',
+      evening: 'دوام مسائي',
+      flexible: 'دوام مرن',
+      multi: 'دوام فترتين',
+      ramadan: 'دوام شهر رمضان'
+    };
+    return map[type] || type;
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-heading font-bold">{t('shifts.title') || 'إدارة الورديات ومواعيد العمل'}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{t('shifts.subtitle') || 'تحديد فترات العمل الصباحية والمسائية وساعات الدوام'}</p>
+          <h1 className="text-2xl font-heading font-bold text-foreground">{t('shifts.title') || 'إدارة الورديات ومواعيد العمل'}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{t('shifts.subtitle') || 'تحديد فترات العمل الصباحية والمسائية وساعات الدوام وفترات السماح'}</p>
         </div>
         <Button onClick={openAdd} className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
           <Plus className="w-4 h-4 me-2" /> {t('shifts.add') || 'إضافة وردية جديدة'}
@@ -143,9 +145,9 @@ export default function Shifts() {
               {s.description && <p className="text-xs text-muted-foreground mt-3 pt-2.5 border-t border-border/40">{s.description}</p>}
               
               <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">{t('shifts.employees') || 'الموظفون المعينون'}:</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('shifts.employees') || 'الموظفون المسجلون'}:</span>
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-bold px-2.5 py-0.5">
-                  {count} {t('shifts.employeesCount') || 'موظف'}
+                  {count} موظف
                 </Badge>
               </div>
             </Card>

@@ -25,12 +25,48 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 
+// HSL Triplets that correctly map to Tailwind CSS variable format
 const COLOR_THEMES = [
-  { id: 'navy-gold', name: 'كحلي ملكي وذهبي (Royal Navy & Gold)', primary: '#0B1F3A', accent: '#D4AF37', border: '#D4AF37' },
-  { id: 'emerald', name: 'أخضر زمردي فاخر (Emerald Luxury)', primary: '#064E3B', accent: '#10B981', border: '#10B981' },
-  { id: 'indigo', name: 'أزرق تقني عصري (Tech Indigo)', primary: '#1E1B4B', accent: '#6366F1', border: '#6366F1' },
-  { id: 'slate', name: 'رصاصي مؤسسي (Corporate Slate)', primary: '#0F172A', accent: '#38BDF8', border: '#38BDF8' },
-  { id: 'burgundy', name: 'عنابي فاخر (Imperial Burgundy)', primary: '#4A0404', accent: '#E11D48', border: '#E11D48' }
+  { 
+    id: 'navy-gold', 
+    name: 'كحلي ملكي وذهبي (Royal Navy & Gold)', 
+    primaryHsl: '215 68% 14%', 
+    accentHsl: '45 65% 52%',
+    previewPrimary: '#0B1F3A', 
+    previewAccent: '#D4AF37' 
+  },
+  { 
+    id: 'emerald', 
+    name: 'أخضر زمردي فاخر (Emerald Luxury)', 
+    primaryHsl: '161 94% 13%', 
+    accentHsl: '152 69% 40%',
+    previewPrimary: '#064E3B', 
+    previewAccent: '#10B981' 
+  },
+  { 
+    id: 'indigo', 
+    name: 'أزرق تقني عصري (Tech Indigo)', 
+    primaryHsl: '243 75% 20%', 
+    accentHsl: '239 84% 67%',
+    previewPrimary: '#1E1B4B', 
+    previewAccent: '#6366F1' 
+  },
+  { 
+    id: 'slate', 
+    name: 'رصاصي مؤسسي (Corporate Slate)', 
+    primaryHsl: '222 47% 11%', 
+    accentHsl: '199 89% 48%',
+    previewPrimary: '#0F172A', 
+    previewAccent: '#38BDF8' 
+  },
+  { 
+    id: 'burgundy', 
+    name: 'عنابي إمبراطوري (Imperial Burgundy)', 
+    primaryHsl: '348 83% 14%', 
+    accentHsl: '346 77% 50%',
+    previewPrimary: '#4A0404', 
+    previewAccent: '#E11D48' 
+  }
 ];
 
 const CURRENCIES = [
@@ -47,12 +83,10 @@ export default function Settings() {
   const { toast } = useToast();
   const isAdmin = user?.role === 'admin';
 
-  // Appearance & Branding States
   const [activeTheme, setActiveTheme] = useState(() => localStorage.getItem('saas_theme_color') || 'navy-gold');
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [currency, setCurrency] = useState(() => localStorage.getItem('saas_currency') || 'SAR');
   
-  // Company Profile States
   const [companyInfo, setCompanyInfo] = useState(() => {
     const saved = localStorage.getItem('saas_company_profile');
     return saved ? JSON.parse(saved) : {
@@ -70,10 +104,11 @@ export default function Settings() {
     localStorage.setItem('saas_theme_color', themeId);
     const selected = COLOR_THEMES.find(th => th.id === themeId);
     if (selected) {
-      document.documentElement.style.setProperty('--primary', selected.primary);
-      document.documentElement.style.setProperty('--accent', selected.accent);
+      document.documentElement.style.setProperty('--primary', selected.primaryHsl);
+      document.documentElement.style.setProperty('--accent', selected.accentHsl);
+      document.documentElement.style.setProperty('--sidebar-background', selected.primaryHsl);
     }
-    toast({ title: 'تم تحديث ألوان النظام بنجاح ✨' });
+    toast({ title: 'تم تحديث ألوان النظام بنجاح' });
   };
 
   const toggleDarkMode = (enabled) => {
@@ -166,8 +201,8 @@ export default function Settings() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex items-center -space-x-1.5 rtl:space-x-reverse">
-                        <div className="w-6 h-6 rounded-full border border-white shadow-sm" style={{ backgroundColor: th.primary }}></div>
-                        <div className="w-6 h-6 rounded-full border border-white shadow-sm" style={{ backgroundColor: th.accent }}></div>
+                        <div className="w-6 h-6 rounded-full border border-white shadow-sm" style={{ backgroundColor: th.previewPrimary }}></div>
+                        <div className="w-6 h-6 rounded-full border border-white shadow-sm" style={{ backgroundColor: th.previewAccent }}></div>
                       </div>
                       <span className="text-xs sm:text-sm font-bold text-foreground">{th.name}</span>
                     </div>

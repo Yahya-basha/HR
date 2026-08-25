@@ -1,8 +1,7 @@
-// Inspired by react-hot-toast library
 import { useState, useEffect } from "react";
 
-const TOAST_LIMIT = 20;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_LIMIT = 2;
+const TOAST_REMOVE_DELAY = 2500;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -36,14 +35,6 @@ const addToRemoveQueue = (toastId) => {
   toastTimeouts.set(toastId, timeout);
 };
 
-const _clearFromRemoveQueue = (toastId) => {
-  const timeout = toastTimeouts.get(toastId);
-  if (timeout) {
-    clearTimeout(timeout);
-    toastTimeouts.delete(toastId);
-  }
-};
-
 export const reducer = (state, action) => {
   switch (action.type) {
     case actionTypes.ADD_TOAST:
@@ -62,14 +53,11 @@ export const reducer = (state, action) => {
 
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action;
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId);
       } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id);
+        state.toasts.forEach((t) => {
+          addToRemoveQueue(t.id);
         });
       }
 
@@ -96,11 +84,12 @@ export const reducer = (state, action) => {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
       };
+    default:
+      return state;
   }
 };
 
 const listeners = [];
-
 let memoryState = { toasts: [] };
 
 function dispatch(action) {
@@ -118,9 +107,7 @@ function toast({ ...props }) {
       type: actionTypes.UPDATE_TOAST,
       toast: { ...props, id },
     });
-
-  const dismiss = () =>
-    dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
+  const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
 
   dispatch({
     type: actionTypes.ADD_TOAST,
@@ -134,8 +121,13 @@ function toast({ ...props }) {
     },
   });
 
+  // Automatically dismiss after 2.5 seconds
+  setTimeout(() => {
+    dismiss();
+  }, 2500);
+
   return {
-    id,
+    id: id,
     dismiss,
     update,
   };
@@ -161,4 +153,4 @@ function useToast() {
   };
 }
 
-export { useToast, toast }; 
+export { useToast, toast };
