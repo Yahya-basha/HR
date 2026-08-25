@@ -1,15 +1,25 @@
-// Universal Self-Contained Base44 Mock & LocalStorage Client
-// Supports full standalone execution without external Base44 cloud dependency
+// ============================================================================
+// ZENITH HR SAAS - UNIFIED DATABASE & AUTH CLIENT
+// Supports Supabase Cloud Database + High-Performance Local-First Fallback
+// ============================================================================
 
-const STORAGE_PREFIX = 'hr_flow_';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const STORAGE_PREFIX = 'zenith_saas_';
 
 const initialData = {
   Company: [
     { id: 'comp_1', name: 'شركة درة السيارة', legal_name: 'شركة درة السيارة للتجارة', cr_number: '7016475555', tax_number: '311861381500003' }
   ],
   Branch: [
-    { id: 'br_1', name: 'الفرع الرئيسي - الرياض', address: 'طريق الملك فهد، الرياض', phone: '+966538834212', company_id: 'comp_1' },
-    { id: 'br_2', name: 'فرع جدة', address: 'طريق المدينة، جدة', phone: '+966539454377', company_id: 'comp_1' }
+    { id: 'br_1', name: 'الفرع الرئيسي - الرياض', address: 'طريق الملك فهد، الرياض', phone: '+966538834212', company_id: 'comp_1', is_main: true },
+    { id: 'br_2', name: 'فرع جدة', address: 'طريق المدينة، جدة', phone: '+966539454377', company_id: 'comp_1', is_main: false }
   ],
   Department: [
     { id: 'dep_1', name: 'الموارد البشرية والشؤون الإدارية', code: 'HR', manager_name: 'يحيى باشا' },
@@ -142,23 +152,23 @@ const initialData = {
   ]
 };
 
-function getCollection(name) {
+function getLocalItems(entityName) {
   try {
-    const raw = localStorage.getItem(STORAGE_PREFIX + name);
+    const raw = localStorage.getItem(STORAGE_PREFIX + entityName);
     if (!raw) {
-      const init = initialData[name] || [];
-      localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(init));
+      const init = initialData[entityName] || [];
+      localStorage.setItem(STORAGE_PREFIX + entityName, JSON.stringify(init));
       return init;
     }
     return JSON.parse(raw);
   } catch (e) {
-    return initialData[name] || [];
+    return initialData[entityName] || [];
   }
 }
 
-function saveCollection(name, items) {
+function saveLocalItems(entityName, items) {
   try {
-    localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(items));
+    localStorage.setItem(STORAGE_PREFIX + entityName, JSON.stringify(items));
   } catch (e) {
     console.error('Storage save error:', e);
   }
@@ -167,37 +177,67 @@ function saveCollection(name, items) {
 function createEntityHandler(entityName) {
   return {
     async list(params = {}) {
-      return getCollection(entityName);
+      if (isSupabaseConfigured) {
+        const table = entityName.toLowerCase() + 's';
+        const { data, error } = await supabase.from(table).select('*');
+        if (!error && data) return data;
+      }
+      return getLocalItems(entityName);
+    },
+    async filter(criteria = {}) {
+      const items = await this.list();
+      return items.filter(item => {
+        return Object.entries(criteria).every(([k, v]) => item[k] === v);
+      });
     },
     async get(id) {
-      const items = getCollection(entityName);
+      if (isSupabaseConfigured) {
+        const table = entityName.toLowerCase() + 's';
+        const { data, error } = await supabase.from(table).select('*').eq('id', id).single();
+        if (!error && data) return data;
+      }
+      const items = getLocalItems(entityName);
       return items.find(item => item.id === id) || null;
     },
     async create(data) {
-      const items = getCollection(entityName);
+      if (isSupabaseConfigured) {
+        const table = entityName.toLowerCase() + 's';
+        const { data: created, error } = await supabase.from(table).insert([data]).select().single();
+        if (!error && created) return created;
+      }
+      const items = getLocalItems(entityName);
       const newItem = {
         id: entityName.toLowerCase() + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
         created_at: new Date().toISOString(),
         ...data
       };
       items.unshift(newItem);
-      saveCollection(entityName, items);
+      saveLocalItems(entityName, items);
       return newItem;
     },
     async update(id, data) {
-      const items = getCollection(entityName);
+      if (isSupabaseConfigured) {
+        const table = entityName.toLowerCase() + 's';
+        const { data: updated, error } = await supabase.from(table).update(data).eq('id', id).select().single();
+        if (!error && updated) return updated;
+      }
+      const items = getLocalItems(entityName);
       const index = items.findIndex(item => item.id === id);
       if (index !== -1) {
         items[index] = { ...items[index], ...data, updated_at: new Date().toISOString() };
-        saveCollection(entityName, items);
+        saveLocalItems(entityName, items);
         return items[index];
       }
       return data;
     },
     async delete(id) {
-      let items = getCollection(entityName);
+      if (isSupabaseConfigured) {
+        const table = entityName.toLowerCase() + 's';
+        await supabase.from(table).delete().eq('id', id);
+      }
+      let items = getLocalItems(entityName);
       items = items.filter(item => item.id !== id);
-      saveCollection(entityName, items);
+      saveLocalItems(entityName, items);
       return { success: true };
     }
   };
@@ -212,42 +252,43 @@ const entities = new Proxy({}, {
   }
 });
 
-const DEFAULT_USER = {
+const DEFAULT_ADMIN_USER = {
   id: 'usr_admin',
   email: 'admin@doracars.com',
   full_name: 'يحيى باشا (مدير النظام)',
   role: 'admin',
-  department: 'الموارد البشرية',
+  department: 'الموارد البشرية والشؤون الإدارية',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
 };
 
 export const base44 = {
   entities,
+  supabase,
   auth: {
     async me() {
-      const stored = localStorage.getItem('hr_flow_user');
+      const stored = localStorage.getItem('zenith_auth_user');
       if (stored) {
         try {
           return JSON.parse(stored);
         } catch (e) {}
       }
-      localStorage.setItem('hr_flow_user', JSON.stringify(DEFAULT_USER));
-      return DEFAULT_USER;
+      localStorage.setItem('zenith_auth_user', JSON.stringify(DEFAULT_ADMIN_USER));
+      return DEFAULT_ADMIN_USER;
     },
     async loginViaEmailPassword(email, password) {
       const user = {
         id: 'usr_' + Date.now(),
         email: email || 'admin@doracars.com',
-        full_name: email ? email.split('@')[0] : 'يحيى باشا (مدير النظام)',
+        full_name: email ? (email.includes('@') ? email.split('@')[0] : email) : 'يحيى باشا (مدير النظام)',
         role: 'admin',
         department: 'الإدارة العامة'
       };
-      localStorage.setItem('hr_flow_user', JSON.stringify(user));
+      localStorage.setItem('zenith_auth_user', JSON.stringify(user));
       return user;
     },
     async loginWithProvider(provider, returnTo) {
-      const user = { ...DEFAULT_USER };
-      localStorage.setItem('hr_flow_user', JSON.stringify(user));
+      const user = { ...DEFAULT_ADMIN_USER };
+      localStorage.setItem('zenith_auth_user', JSON.stringify(user));
       window.location.href = returnTo || '/';
       return user;
     },
@@ -256,13 +297,14 @@ export const base44 = {
         id: 'usr_' + Date.now(),
         email: data.email,
         full_name: data.full_name || data.email,
-        role: 'admin'
+        role: 'admin',
+        company_name: data.company_name || 'شركة جديدة'
       };
-      localStorage.setItem('hr_flow_user', JSON.stringify(user));
+      localStorage.setItem('zenith_auth_user', JSON.stringify(user));
       return user;
     },
     logout(redirectUrl) {
-      localStorage.removeItem('hr_flow_user');
+      localStorage.removeItem('zenith_auth_user');
       if (redirectUrl) {
         window.location.href = redirectUrl;
       }
