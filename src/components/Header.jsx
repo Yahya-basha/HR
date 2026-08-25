@@ -1,47 +1,70 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
-import { Bell, MessageSquare, Settings as SettingsIcon } from 'lucide-react';
+import { Globe, Settings as SettingsIcon, MessageSquare, Bell, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function Header() {
   const { user } = useAuth();
-  const { t, lang, toggleLang } = useI18n();
-  const isAdmin = user?.role === 'admin';
+  const { lang, setLang } = useI18n();
+  const navigate = useNavigate();
+
+  const toggleLanguage = () => {
+    setLang(lang === 'ar' ? 'en' : 'ar');
+  };
 
   return (
-    <header className="sticky top-0 z-20 bg-background/85 backdrop-blur-md border-b border-border/60 shadow-sm">
-      <div className="flex items-center justify-between h-16 px-5 lg:px-8 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Avatar className="w-9 h-9">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-              {user?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="hidden sm:block">
-            <p className="text-sm font-medium leading-none">{user?.full_name || user?.email}</p>
-            <p className="text-xs text-muted-foreground mt-1">{isAdmin ? t('nav.administrator') : t('nav.employee')}</p>
-          </div>
+    <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border/50 px-5 lg:px-8 py-3 flex items-center justify-between">
+      {/* Right User Info */}
+      <div className="flex items-center gap-3">
+        <Avatar className="w-9 h-9 border border-border shrink-0 bg-[#2D164D] text-white">
+          <AvatarFallback className="bg-[#2D164D] text-white font-bold text-xs">
+            ف
+          </AvatarFallback>
+        </Avatar>
+        <div className="text-right">
+          <p className="font-bold text-xs text-foreground leading-tight">فهد ناصر محمد الجوعي</p>
+          <span className="text-[10px] text-muted-foreground font-medium">مدير</span>
         </div>
-        <div className="flex items-center gap-1">
-          <button className="relative w-9 h-9 rounded-xl hover:bg-secondary flex items-center justify-center text-muted-foreground transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2 end-2 w-2 h-2 rounded-full bg-accent" />
-          </button>
-          <button className="relative w-9 h-9 rounded-xl hover:bg-secondary flex items-center justify-center text-muted-foreground transition-colors">
-            <MessageSquare className="w-5 h-5" />
-            <span className="absolute top-2 end-2 w-2 h-2 rounded-full bg-accent" />
-          </button>
-          <Link to="/settings" className="w-9 h-9 rounded-xl hover:bg-secondary flex items-center justify-center text-muted-foreground transition-colors">
-            <SettingsIcon className="w-5 h-5" />
-          </Link>
-          <button
-            onClick={toggleLang}
-            className="ms-1 h-9 px-3 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors"
-          >
-            {lang === 'en' ? 'العربية' : 'English'}
-          </button>
-        </div>
+      </div>
+
+      {/* Left Action Controls */}
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={toggleLanguage}
+          className="h-8 text-xs font-semibold rounded-lg px-2.5 gap-1.5 border-border/80"
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
+        </Button>
+
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => navigate('/settings')}
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
+          <SettingsIcon className="w-4 h-4" />
+        </Button>
+
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
+          <MessageSquare className="w-4 h-4" />
+        </Button>
+
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
+          <Bell className="w-4 h-4" />
+        </Button>
       </div>
     </header>
   );

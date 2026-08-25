@@ -1,19 +1,69 @@
-import { LayoutDashboard, Users, Clock, CalendarDays, Wallet, Settings as SettingsIcon, FileSignature, Building2, Timer, BarChart3, CalendarClock, Fingerprint } from 'lucide-react';
+import { 
+  Clock, 
+  CalendarDays, 
+  CalendarClock, 
+  BarChart3, 
+  Wallet, 
+  Calculator, 
+  Gift, 
+  FileSignature, 
+  Fingerprint, 
+  Printer, 
+  FileText, 
+  UploadCloud, 
+  Megaphone, 
+  Users, 
+  Settings as SettingsIcon,
+  LayoutDashboard
+} from 'lucide-react';
+
+export function getNavGroups(isAdmin, t) {
+  return [
+    {
+      group: 'الحضور والإجازات',
+      items: [
+        { to: '/attendance', icon: Clock, label: 'الحضور' },
+        { to: '/leave', icon: CalendarDays, label: 'طلبات الإجازات' },
+        { to: '/leave-policies', icon: CalendarClock, label: 'سياسات الإجازات', admin: true },
+        { to: '/reports', icon: BarChart3, label: 'التقارير', admin: true },
+      ]
+    },
+    {
+      group: 'التعويضات',
+      items: [
+        { to: '/payroll', icon: Wallet, label: 'الرواتب', admin: true },
+        { to: '/end-of-service', icon: Calculator, label: 'حاسبة نهاية الخدمة', admin: true },
+        { to: '/rewards-penalties', icon: Gift, label: 'إعدادات المكافآت والجزاءات', admin: true },
+        { to: '/contracts', icon: FileSignature, label: 'العقود', admin: true },
+      ]
+    },
+    {
+      group: 'العمليات',
+      items: [
+        { to: '/devices', icon: Fingerprint, label: 'أجهزة الحضور', admin: true },
+        { to: '/documents-print', icon: Printer, label: 'طباعة المستندات', admin: true },
+        { to: '/print-templates', icon: FileText, label: 'نماذج الطباعة', admin: true },
+        { to: '/import-data', icon: UploadCloud, label: 'استيراد البيانات', admin: true },
+      ]
+    },
+    {
+      group: 'النظام',
+      items: [
+        { to: '/announcements', icon: Megaphone, label: 'الإعلانات والأحداث', admin: true },
+        { to: '/users', icon: Users, label: 'المستخدمون', admin: true },
+        { to: '/settings', icon: SettingsIcon, label: 'الإعدادات' },
+      ]
+    }
+  ];
+}
 
 export function getNavItems(isAdmin, t) {
-  const all = [
-    { to: '/', icon: LayoutDashboard, label: t('nav.dashboard') || 'لوحة التحكم' },
-    { to: '/employees', icon: Users, label: t('nav.employees') || 'الموظفين', admin: true },
-    { to: '/branches', icon: Building2, label: t('nav.branches') || 'الفروع', admin: true },
-    { to: '/devices', icon: Fingerprint, label: 'أجهزة البصمة', admin: true },
-    { to: '/shifts', icon: Timer, label: t('nav.shifts') || 'الورديات', admin: true },
-    { to: '/attendance', icon: Clock, label: t('nav.attendance') || 'الحضور والانصراف' },
-    { to: '/leave', icon: CalendarDays, label: t('nav.leaveRequests') || 'الإجازات' },
-    { to: '/leave-policies', icon: CalendarClock, label: t('nav.leavePolicies') || 'سياسات الإجازات', admin: true },
-    { to: '/payroll', icon: Wallet, label: t('nav.payroll') || 'مسيرات الرواتب', admin: true },
-    { to: '/contracts', icon: FileSignature, label: t('nav.contracts') || 'عقود العمل', admin: true },
-    { to: '/reports', icon: BarChart3, label: t('nav.reports') || 'التقارير', admin: true },
-    { to: '/settings', icon: SettingsIcon, label: t('nav.settings') || 'الإعدادات' },
-  ];
-  return all.filter((i) => !i.admin || isAdmin);
+  const groups = getNavGroups(isAdmin, t);
+  const items = [];
+  groups.forEach(g => {
+    g.items.forEach(i => {
+      if (!i.admin || isAdmin) items.push(i);
+    });
+  });
+  return items;
 }

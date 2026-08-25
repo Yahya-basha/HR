@@ -25,9 +25,16 @@ import Settings from '@/pages/Settings';
 import Contracts from '@/pages/Contracts';
 import Branches from '@/pages/Branches';
 import Shifts from '@/pages/Shifts';
-import Devices from '@/pages/Devices';
 import Reports from '@/pages/Reports';
 import LeavePolicies from '@/pages/LeavePolicies';
+import Devices from '@/pages/Devices';
+import Announcements from '@/pages/Announcements';
+import UsersManagement from '@/pages/UsersManagement';
+import EndOfService from '@/pages/EndOfService';
+import RewardsPenalties from '@/pages/RewardsPenalties';
+import DocumentsPrint from '@/pages/DocumentsPrint';
+import PrintTemplates from '@/pages/PrintTemplates';
+import ImportData from '@/pages/ImportData';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -35,7 +42,7 @@ const AuthenticatedApp = () => {
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-[#1E1035] rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -64,9 +71,16 @@ const AuthenticatedApp = () => {
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/branches" element={<Branches />} />
           <Route path="/shifts" element={<Shifts />} />
-          <Route path="/devices" element={<Devices />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/leave-policies" element={<LeavePolicies />} />
+          <Route path="/devices" element={<Devices />} />
+          <Route path="/announcements" element={<Announcements />} />
+          <Route path="/users" element={<UsersManagement />} />
+          <Route path="/end-of-service" element={<EndOfService />} />
+          <Route path="/rewards-penalties" element={<RewardsPenalties />} />
+          <Route path="/documents-print" element={<DocumentsPrint />} />
+          <Route path="/print-templates" element={<PrintTemplates />} />
+          <Route path="/import-data" element={<ImportData />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
@@ -90,4 +104,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

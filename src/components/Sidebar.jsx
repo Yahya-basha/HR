@@ -1,38 +1,65 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
-import { getNavItems } from '@/lib/nav';
-import { ShieldCheck } from 'lucide-react';
+import { getNavGroups } from '@/lib/nav';
+import { ChevronLeft } from 'lucide-react';
 
 export default function Sidebar({ isAdmin }) {
   const { t } = useI18n();
   const location = useLocation();
-  const items = getNavItems(isAdmin, t);
+  const groups = getNavGroups(isAdmin, t);
 
   const isActive = (path) => (path === '/' ? location.pathname === '/' : location.pathname.startsWith(path));
 
   return (
-    <aside className="hidden lg:flex fixed inset-y-0 start-0 w-20 bg-primary flex-col items-center z-30 py-6">
-      <div className="w-11 h-11 rounded-2xl bg-accent flex items-center justify-center mb-8 shrink-0">
-        <ShieldCheck className="w-5 h-5 text-accent-foreground" />
+    <aside className="hidden lg:flex fixed inset-y-0 start-0 w-64 bg-[#1E1035] text-white flex-col z-30 shadow-2xl border-e border-white/5 overflow-y-auto">
+      {/* Brand Header */}
+      <div className="p-5 flex items-center justify-between border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 border-2 border-white/20 flex items-center justify-center font-bold text-sm shadow-md text-white">
+            DC
+          </div>
+          <div>
+            <h2 className="font-heading font-bold text-sm tracking-wide text-white">HR DORAT CARS</h2>
+            <p className="text-[11px] text-purple-300/70 font-medium">مدير النظام</p>
+          </div>
+        </div>
       </div>
-      <nav className="flex-1 flex flex-col items-center gap-2 w-full">
-        {items.map((item) => {
-          const active = isActive(item.to);
+
+      {/* Navigation Groups */}
+      <nav className="flex-1 p-3 space-y-6">
+        {groups.map((grp, gIdx) => {
+          const visibleItems = grp.items.filter(it => !it.admin || isAdmin);
+          if (visibleItems.length === 0) return null;
+
           return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
-                active
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-primary-foreground/60 hover:bg-white/10 hover:text-primary-foreground'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="absolute start-full ms-3 top-1/2 -translate-y-1/2 whitespace-nowrap bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-50">
-                {item.label}
-              </span>
-            </Link>
+            <div key={gIdx} className="space-y-1">
+              <p className="px-3 text-[11px] font-bold text-purple-300/50 uppercase tracking-wider mb-2">
+                {grp.group}
+              </p>
+              <div className="space-y-1">
+                {visibleItems.map((item) => {
+                  const active = isActive(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                        active
+                          ? 'bg-[#C5A869] text-[#1E1035] font-bold shadow-md'
+                          : 'text-purple-100/75 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon className={`w-4 h-4 ${active ? 'text-[#1E1035]' : 'text-purple-300/80 group-hover:text-white'}`} />
+                        <span>{item.label}</span>
+                      </div>
+                      {active && <ChevronLeft className="w-3.5 h-3.5" />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>
