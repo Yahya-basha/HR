@@ -1,161 +1,222 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useAuth } from '@/lib/AuthContext';
-import { useI18n } from '@/lib/i18n';
-import { Plus, Pencil, Trash2, Clock } from 'lucide-react';
+import { Timer, Plus, Clock, Users, Coffee, Edit, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ShiftForm from '@/components/ShiftForm';
 import { useToast } from '@/components/ui/use-toast';
 
-const typeColor = (tp = 'morning') => ({
-  flexible: 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
-  morning: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200',
-  evening: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200',
-  multi: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200',
-  ramadan: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200',
-}[tp] || 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200');
+const initialShifts = [
+  {
+    "id": "sh_non_saudi",
+    "name": "فترة عمل غير سعودي",
+    "type": "multi",
+    "start_time": "08:00",
+    "end_time": "20:00",
+    "break_start": "12:00",
+    "break_end": "16:00",
+    "working_hours": 8,
+    "total_hours": 12,
+    "grace_minutes": 15,
+    "description": "دوام فترتين صباحية ومسائية مع استراحة من 12:00 إلى 16:00"
+  },
+  {
+    "id": "sh_saudi_morning",
+    "name": "فترة عمل سعودي صباحي",
+    "type": "morning",
+    "start_time": "08:00",
+    "end_time": "13:00",
+    "working_hours": 5,
+    "total_hours": 5,
+    "grace_minutes": 15,
+    "description": "دوام صباحي 5 ساعات للكوادر الوطنية"
+  },
+  {
+    "id": "sh_saudi_evening",
+    "name": "فترة عمل سعودي مسائي",
+    "type": "evening",
+    "start_time": "16:00",
+    "end_time": "21:00",
+    "working_hours": 5,
+    "total_hours": 5,
+    "grace_minutes": 15,
+    "description": "دوام مسائي 5 ساعات للكوادر الوطنية"
+  },
+  {
+    "id": "sh_ramadan",
+    "name": "شفت رمضان",
+    "type": "ramadan",
+    "start_time": "20:30",
+    "end_time": "02:00",
+    "working_hours": 5.5,
+    "total_hours": 5.5,
+    "grace_minutes": 20,
+    "description": "دوام شهر رمضان المبارك المسائي"
+  },
+  {
+    "id": "sh_gm",
+    "name": "شفت المدير العام",
+    "type": "flexible",
+    "start_time": "09:00",
+    "end_time": "17:00",
+    "working_hours": 8,
+    "total_hours": 8,
+    "grace_minutes": 0,
+    "description": "دوام الإدارة العامة حضور وانصراف مرن"
+  },
+  {
+    "id": "sh_flexible",
+    "name": "شفت مرن",
+    "type": "flexible",
+    "start_time": "08:00",
+    "end_time": "16:00",
+    "working_hours": 8,
+    "total_hours": 8,
+    "grace_minutes": 15,
+    "description": "دوام 8 ساعات بفترة مرنة"
+  }
+];
 
 export default function Shifts() {
-  const { user } = useAuth();
-  const { t } = useI18n();
   const { toast } = useToast();
-  const [shifts, setShifts] = useState([]);
+  const [shifts, setShifts] = useState(initialShifts);
   const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [selectedShift, setSelectedShift] = useState(null);
 
-  const load = async () => {
-    setLoading(true);
+  const loadData = async () => {
     try {
-      const [s, e] = await Promise.all([
+      const [sList, eList] = await Promise.all([
         base44.entities.Shift.list(),
-        base44.entities.Employee.list(),
+        base44.entities.Employee.list()
       ]);
-      setShifts(s && s.length > 0 ? s : [
-        { id: 'sh_1', name: 'الدوام الصباحي (8 ص - 4 م)', type: 'morning', start_time: '08:00', end_time: '16:00', total_hours: 8, grace_minutes: 15, description: 'فترة العمل الصباحية الرسمية' },
-        { id: 'sh_2', name: 'الدوام المسائي (4 م - 12 ص)', type: 'evening', start_time: '16:00', end_time: '00:00', total_hours: 8, grace_minutes: 15, description: 'فترة العمل المسائية' }
-      ]);
-      setEmployees(e || []);
-    } catch (err) {
-      console.error('Error loading shifts:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const openAdd = () => { setEditing(null); setFormOpen(true); };
-  const openEdit = (s) => { setEditing(s); setFormOpen(true); };
-
-  const remove = async (s) => {
-    const count = employees.filter((e) => e.shift === s.name).length;
-    if (count > 0) {
-      toast({ title: t('shifts.hasEmployees') || 'لا يمكن حذف الوردية', description: `يوجد ${count} موظف مسجل بها`, variant: 'destructive' });
-      return;
-    }
-    if (!confirm(t('shifts.deleteConfirm', { name: s.name }) || `هل أنت متأكد من حذف وردية ${s.name}؟`)) return;
-    try {
-      await base44.entities.Shift.delete(s.id);
-      toast({ title: t('shifts.deleted') || 'تم حذف الوردية بنجاح' });
-      load();
+      if (sList && sList.length > 0) {
+        // Merge with initialShifts to ensure none are missing
+        const merged = [...initialShifts];
+        sList.forEach(s => {
+          if (!merged.find(m => m.name === s.name)) merged.push(s);
+        });
+        setShifts(merged);
+      } else {
+        setShifts(initialShifts);
+      }
+      setEmployees(eList || []);
     } catch (e) {
-      toast({ title: t('common.error'), description: e.message, variant: 'destructive' });
+      console.error(e);
     }
   };
 
-  const fmtRange = (s) => {
-    if (!s.start_time && !s.end_time) return t('shifts.flexibleNote') || 'دوام مرن';
-    return `${s.start_time || '--:--'} - ${s.end_time || '--:--'}`;
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const getEmployeeCount = (shiftName) => {
+    return employees.filter(e => e.shift === shiftName).length;
   };
 
-  const getShiftTypeLabel = (type = 'morning') => {
-    const map = {
-      morning: 'دوام صباحي',
-      evening: 'دوام مسائي',
-      flexible: 'دوام مرن',
-      multi: 'دوام فترتين',
-      ramadan: 'دوام شهر رمضان'
-    };
-    return map[type] || type;
+  const handleEdit = (shift) => {
+    setSelectedShift(shift);
+    setFormOpen(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedShift(null);
+    setFormOpen(true);
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`هل أنت متأكد من حذف وردية "${name}"؟`)) return;
+    try {
+      await base44.entities.Shift.delete(id);
+      setShifts(prev => prev.filter(s => s.id !== id));
+      toast({ title: 'تم حذف الوردية بنجاح' });
+    } catch (e) {
+      toast({ title: 'حدث خطأ أثناء الحذف', variant: 'destructive' });
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">{t('shifts.title') || 'إدارة الورديات ومواعيد العمل'}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{t('shifts.subtitle') || 'تحديد فترات العمل الصباحية والمسائية وساعات الدوام وفترات السماح'}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
+            <Timer className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-foreground">ورديات العمل وفترات الدوام</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">تحديد أنواع الورديات وتوزيع الموظفين وساعات العمل الرسمية</p>
+          </div>
         </div>
-        <Button onClick={openAdd} className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
-          <Plus className="w-4 h-4 me-2" /> {t('shifts.add') || 'إضافة وردية جديدة'}
+
+        <Button onClick={handleAdd} className="bg-[#2D164D] hover:bg-[#1E1035] text-white font-bold rounded-xl shadow-sm">
+          <Plus className="w-4 h-4 me-2" /> إضافة وردية جديدة
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {loading ? (
-          [...Array(3)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-secondary animate-pulse" />)
-        ) : shifts.length === 0 ? (
-          <Card className="p-12 text-center col-span-full border-dashed border-2">
-            <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-            <p className="text-muted-foreground font-medium mb-4">{t('shifts.noShifts') || 'لا توجد ورديات عمل مضافة حتى الآن'}</p>
-            <Button onClick={openAdd} variant="outline"><Plus className="w-4 h-4 me-2" /> {t('shifts.add') || 'إضافة وردية'}</Button>
-          </Card>
-        ) : shifts.map((s) => {
-          const count = employees.filter((e) => e.shift === s.name).length;
-          const shiftType = s.type || 'morning';
+      {/* Grid of 6 Official Shifts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {shifts.map((s) => {
+          const empCount = getEmployeeCount(s.name);
           return (
-            <Card key={s.id} className="p-6 border-border/60 shadow-sm hover:shadow-md transition-all rounded-2xl relative overflow-hidden group">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-                    <Clock className="w-6 h-6" />
-                  </div>
+            <Card key={s.id} className="p-6 border-border/60 shadow-sm rounded-2xl bg-white flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+              <div>
+                <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-heading font-bold text-lg text-foreground">{s.name}</h3>
-                    <Badge className={`mt-1 text-xs font-semibold ${typeColor(shiftType)}`}>
-                      {getShiftTypeLabel(shiftType)}
+                    <h3 className="font-heading font-bold text-base text-foreground">{s.name}</h3>
+                    <Badge variant="outline" className="mt-1 text-[11px] bg-amber-50 text-amber-800 border-amber-200">
+                      {s.type === 'multi' ? 'دوام فترتين' : s.type === 'morning' ? 'دوام صباحي' : s.type === 'evening' ? 'دوام مسائي' : s.type === 'ramadan' ? 'شفت رمضان' : 'دوام مرن'}
                     </Badge>
                   </div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <button onClick={() => handleEdit(s)} className="p-1 hover:text-primary"><Edit className="w-4 h-4" /></button>
+                    <button onClick={() => handleDelete(s.id, s.name)} className="p-1 hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
+                  </div>
                 </div>
-                <div className="flex gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(s)} className="hover:bg-secondary"><Pencil className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(s)} className="text-destructive hover:bg-destructive/10"><Trash2 className="w-4 h-4" /></Button>
+
+                <div className="mt-4 p-3.5 rounded-xl bg-secondary/30 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">الفترة الزمنية:</span>
+                    <span className="font-mono font-bold text-foreground">{s.start_time} - {s.end_time}</span>
+                  </div>
+                  {s.break_start && s.break_end && (
+                    <div className="flex items-center justify-between text-amber-800">
+                      <span>فترة الاستراحة:</span>
+                      <span className="font-mono font-semibold">{s.break_start} - {s.break_end}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">ساعات العمل الصافية:</span>
+                    <span className="font-bold text-primary">{s.working_hours} ساعات</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">فترة السماح:</span>
+                    <span className="font-bold text-emerald-600">{s.grace_minutes || 15} دقيقة</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="mt-5 space-y-2.5 text-sm bg-secondary/30 p-3.5 rounded-xl border border-border/40">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t('shifts.range') || 'فترة الدوام'}:</span>
-                  <span className="font-bold text-foreground dir-ltr font-mono">{fmtRange(s)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t('shifts.workingHours') || 'ساعات العمل'}:</span>
-                  <span className="font-semibold text-foreground">{s.total_hours || s.working_hours || 8} {t('shifts.hoursUnit') || 'ساعات'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t('shifts.grace') || 'فترة السماح'}:</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">{s.grace_minutes || 15} {t('shifts.minUnit') || 'دقيقة'}</span>
-                </div>
+
+                {s.description && (
+                  <p className="text-xs text-muted-foreground mt-2">{s.description}</p>
+                )}
               </div>
 
-              {s.description && <p className="text-xs text-muted-foreground mt-3 pt-2.5 border-t border-border/40">{s.description}</p>}
-              
-              <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">{t('shifts.employees') || 'الموظفون المسجلون'}:</span>
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-bold px-2.5 py-0.5">
-                  {count} موظف
-                </Badge>
+              <div className="pt-3 border-t border-border/40 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">الموظفون المخصصون:</span>
+                <span className="font-bold font-mono text-sm px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary">
+                  {empCount} موظف
+                </span>
               </div>
             </Card>
           );
         })}
       </div>
 
-      <ShiftForm open={formOpen} onOpenChange={setFormOpen} shift={editing} onSaved={load} />
+      <ShiftForm 
+        open={formOpen} 
+        onOpenChange={setFormOpen} 
+        shift={selectedShift} 
+        onSaved={loadData} 
+      />
     </div>
   );
 }
