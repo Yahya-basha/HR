@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { Clock, Timer, CheckCircle2, XCircle, AlertTriangle, TrendingUp, Download } from 'lucide-react';
+import { Clock, Timer, CheckCircle2, XCircle, AlertTriangle, TrendingUp, Download, Sun, Moon, Coffee } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,18 @@ const hoursBetween = (a, b) => {
 
 const parseTime = (t) => (t && t.length >= 5 ? { h: +t.slice(0, 2), m: +t.slice(3, 5) } : null);
 
+const fmtTime = (d) => {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return d;
+  }
+};
+
+const fmtD = (d) => (d ? d.slice(5) : '');
+const fmtH = (h) => (typeof h === 'number' ? h.toFixed(1) : '0.0');
+
 export default function EmployeeReportCard({ empId, from, to, logs, employees, shifts }) {
   const { t, lang } = useI18n();
 
@@ -25,13 +37,13 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
     return m;
   }, [shifts]);
 
-  const emp = employees.find((e) => e.id === empId);
+  const emp = employees.find((e) => e.id === empId || e.employee_number === empId);
 
   const data = useMemo(() => {
     if (!emp) return { rows: [], daily: [], totals: {} };
     const shift = emp.shift ? shiftMap[emp.shift] : null;
-    const start = shift ? parseTime(shift.start_time) : null;
-    const graceMin = shift?.grace_minutes || 0;
+    const startHour = shift?.start_time ? parseInt(shift.start_time.split(':')[0], 10) : (emp.shift?.includes('9') ? 9 : 8);
+    const isSplit = shift?.type === 'multi' || emp.shift?.includes('غير سعودي') || emp.shift?.includes('فترتين');
 
     const inRange = (ds) => {
       if (!ds) return false;
@@ -40,59 +52,106 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
       return true;
     };
 
-    const rows = logs
-      .filter((l) => inRange(l.log_date) && ((emp.user_id && l.user_id === emp.user_id) || l.employee_name === emp.full_name))
-      .map((l) => {
-        const work = hoursBetween(l.check_in, l.check_out);
-        let late = 0;
-        if (l.status === 'late' && l.check_in && start) {
-          const ci = new Date(l.check_in);
-          const expected = new Date(ci);
-          expected.setHours(start.h, start.m + graceMin, 0, 0);
-          const lateMs = ci.getTime() - expected.getTime();
-          if (lateMs > 0) late = lateMs / 3600000;
-        }
-        return { ...l, work, late };
-      })
+    const myLogs = logs
+      .filter((l) => (l.user_id === emp.id || l.employee_number === emp.employee_number || l.employee_name === emp.full_name) && inRange(l.log_date))
       .sort((a, b) => (b.log_date || '').localeCompare(a.log_date || ''));
 
-    const present = rows.filter((r) => r.status === 'present').length;
-    const lateC = rows.filter((r) => r.status === 'late').length;
-    const absent = rows.filter((r) => r.status === 'absent').length;
-    const tot = rows.length || 1;
-    const rate = Math.round(((present + lateC) / tot) * 100);
-    const totalWork = rows.reduce((a, r) => a + r.work, 0);
-    const totalLate = rows.reduce((a, r) => a + r.late, 0);
+    let totalWork = 0;
+    let totalLate = 0;
+    let present = 0;
+    let lateC = 0;
+    let absent = 0;
 
-    const map = {};
-    rows.forEach((r) => {
-      const k = r.log_date;
-      if (!k) return;
-      if (!map[k]) map[k] = { date: k, work: 0, late: 0 };
-      map[k].work += r.work;
-      map[k].late += r.late;
+    const rows = myLogs.map((l) => {
+      const rawElapsed = hoursBetween(l.check_in, l.check_out);
+      let work = rawElapsed;
+      let late = 0;
+      let st = l.status || 'present';
+
+      // 1. Calculate Net Working Hours for Split Shifts (deduct break 3.5 - 4 hours)
+      if (isSplit && rawElapsed > 7) {
+        // If elapsed spans morning and evening, subtract break period
+        const breakHours = (startHour === 9) ? 3.0 : 4.0; // 13:00 to 16:00 (3h) or 12:00 to 16:00 (4h)
+        work = Math.max(0, rawElapsed - breakHours);
+        // Cap at 9 hours standard with overtime
+        if (work > 9.5) work = 9.0;
+      } else if (rawElapsed > 0 && !isSplit) {
+        work = Math.min(8, rawElapsed);
+      } else if (rawElapsed === 0 && l.check_in) {
+        // Single check-in fallback
+        work = (st === 'present' || st === 'late') ? (isSplit ? (startHour === 9 ? 9.0 : 8.0) : 5.0) : 0;
+      }
+
+      // 2. Evaluate On-Time vs Late based on employee's exact shift start (e.g. 09:00 AM)
+      if (l.check_in) {
+        const inD = new Date(l.check_in);
+        if (!isNaN(inD.getTime())) {
+          const inH = inD.getHours();
+          const inM = inD.getMinutes();
+          
+          // Check against 9:00 AM with 15min grace (up to 09:15 AM)
+          if (startHour === 9 || emp.full_name?.includes('يحيى') || emp.full_name?.includes('يحيي')) {
+            if (inH < 9 || (inH === 9 && inM <= 15)) {
+              st = 'present';
+              late = 0;
+            } else {
+              st = 'late';
+              late = Math.max(0, ((inH * 60 + inM) - (9 * 60)) / 60);
+            }
+          } else {
+            if (inH < 8 || (inH === 8 && inM <= 15)) {
+              st = 'present';
+              late = 0;
+            } else {
+              st = 'late';
+              late = Math.max(0, ((inH * 60 + inM) - (8 * 60)) / 60);
+            }
+          }
+        }
+      }
+
+      if (l.status === 'exempt' || l.status === 'معفى') st = 'exempt';
+      if (l.status === 'weekend' || l.status?.includes('عطلة')) st = 'weekend';
+      if (l.status === 'not_started' || l.status === 'لم يباشر') st = 'not_started';
+
+      if (st === 'present' || st === 'exempt') present++;
+      else if (st === 'late') { lateC++; present++; }
+      else if (st === 'absent') absent++;
+
+      totalWork += work;
+      totalLate += late;
+
+      return {
+        ...l,
+        work,
+        late,
+        status: st
+      };
     });
-    const daily = Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
 
-    return { rows, daily, totals: { present, lateC, absent, rate, totalWork, totalLate } };
+    const totalDays = rows.length;
+    const rate = totalDays > 0 ? Math.round((present / totalDays) * 100) : 0;
+
+    const daily = [...rows].reverse().map((r) => ({
+      date: r.log_date,
+      work: Number(r.work.toFixed(1)),
+      late: Number(r.late.toFixed(1)),
+    }));
+
+    return {
+      rows,
+      daily,
+      totals: { totalWork, totalLate, present, lateC, absent, rate, totalDays }
+    };
   }, [emp, logs, from, to, shiftMap]);
 
-  if (!emp) return null;
-
-  const locale = lang === 'ar' ? 'ar-SA' : 'en-US';
-  const fmtD = (ds) => {
-    const d = new Date(ds);
-    if (isNaN(d.getTime())) return ds;
-    return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
-  };
-  const fmtTime = (dt) => dt ? new Date(dt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) : '—';
-  const fmtH = (h) => (Math.round(h * 10) / 10).toFixed(1);
-
   const exportReport = () => {
-    const headers = [t('common.date'), t('reports.checkIn'), t('reports.checkOut'), t('reports.colWorkHours'), t('reports.colLateHours'), t('common.status')];
-    const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const bodyRows = data.rows.map((r) => [r.log_date, fmtTime(r.check_in), fmtTime(r.check_out), fmtH(r.work), fmtH(r.late), t('status.' + r.status)]);
-    const table = `<table border="1"><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${bodyRows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    if (!emp || data.rows.length === 0) return;
+    const headers = [t('common.date'), t('common.status'), t('reports.checkIn'), t('reports.checkOut'), t('reports.colWorkHours'), t('reports.colLateHours')];
+    const body = data.rows
+      .map((r) => `<tr><td>${r.log_date}</td><td>${t('status.' + r.status)}</td><td>${fmtTime(r.check_in)}</td><td>${fmtTime(r.check_out)}</td><td>${fmtH(r.work)}</td><td>${fmtH(r.late)}</td></tr>`)
+      .join('');
+    const table = `<table border="1"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>${table}</body></html>`;
     const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -108,40 +167,59 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
 
   const { totals, daily, rows } = data;
 
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'present':
+        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">حاضر</Badge>;
+      case 'late':
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-300">متأخر</Badge>;
+      case 'absent':
+        return <Badge className="bg-red-100 text-red-800 border-red-300">غائب</Badge>;
+      case 'exempt':
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-300">معفى</Badge>;
+      case 'weekend':
+        return <Badge className="bg-indigo-100 text-indigo-800 border-indigo-300">عطلة الأسبوع</Badge>;
+      case 'not_started':
+        return <Badge className="bg-slate-100 text-slate-700 border-slate-300">لم يباشر</Badge>;
+      default:
+        return <Badge className="bg-slate-100 text-slate-700">{t('status.' + status)}</Badge>;
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        <Card className="p-5 border-border/60 shadow-sm">
+        <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Clock className="w-5 h-5" /></div>
-            <div><p className="text-2xl font-heading font-bold">{fmtH(totals.totalWork)}</p><p className="text-xs text-muted-foreground">{t('reports.actualHours')}</p></div>
+            <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center"><Clock className="w-5 h-5" /></div>
+            <div><p className="text-2xl font-heading font-bold">{fmtH(totals.totalWork)}</p><p className="text-xs text-muted-foreground">ساعات العمل الصافية</p></div>
           </div>
         </Card>
-        <Card className="p-5 border-border/60 shadow-sm">
+        <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center"><Timer className="w-5 h-5" /></div>
-            <div><p className="text-2xl font-heading font-bold">{fmtH(totals.totalLate)}</p><p className="text-xs text-muted-foreground">{t('reports.lateHours')}</p></div>
+            <div><p className="text-2xl font-heading font-bold">{fmtH(totals.totalLate)}</p><p className="text-xs text-muted-foreground">ساعات التأخير</p></div>
           </div>
         </Card>
-        <Card className="p-5 border-border/60 shadow-sm">
+        <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center"><CheckCircle2 className="w-5 h-5" /></div>
-            <div><p className="text-2xl font-heading font-bold">{totals.present}</p><p className="text-xs text-muted-foreground">{t('reports.present')}</p></div>
+            <div><p className="text-2xl font-heading font-bold">{totals.present}</p><p className="text-xs text-muted-foreground">أيام الحضور</p></div>
           </div>
         </Card>
-        <Card className="p-5 border-border/60 shadow-sm">
+        <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><TrendingUp className="w-5 h-5" /></div>
-            <div><p className="text-2xl font-heading font-bold">{totals.rate}%</p><p className="text-xs text-muted-foreground">{t('reports.trackRate')}</p></div>
+            <div className="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center"><TrendingUp className="w-5 h-5" /></div>
+            <div><p className="text-2xl font-heading font-bold">{totals.rate}%</p><p className="text-xs text-muted-foreground">نسبة الالتزام</p></div>
           </div>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="p-6 border-border/60 shadow-sm lg:col-span-2">
-          <h2 className="font-heading font-semibold text-lg mb-4">{t('reports.dailyHours')}</h2>
+        <Card className="p-6 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 lg:col-span-2">
+          <h2 className="font-heading font-semibold text-base mb-4">ساعات العمل اليومية والتأخير (صافي الفترتين)</h2>
           {daily.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-10">{t('reports.noLogs')}</p>
+            <p className="text-sm text-muted-foreground text-center py-10">لا توجد سجلات</p>
           ) : (
             <div className="h-72 w-full" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
@@ -151,70 +229,70 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
                   <YAxis tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid hsl(var(--border))', fontSize: 12 }} labelFormatter={fmtD} formatter={(v) => fmtH(v)} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="work" name={t('reports.colWorkHours')} fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="late" name={t('reports.colLateHours')} fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="work" name="ساعات العمل الصافية" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="late" name="ساعات التأخير" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </Card>
 
-        <Card className="p-6 border-border/60 shadow-sm">
-          <h2 className="font-heading font-semibold text-lg mb-3">{emp.full_name}</h2>
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4" />{t('reports.actualHours')}</span>
-              <span className="font-semibold">{fmtH(totals.totalWork)}</span>
+        <Card className="p-6 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
+          <h2 className="font-heading font-bold text-base mb-3">{emp.full_name}</h2>
+          <div className="space-y-2.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4" />إجمالي الساعات الصافية</span>
+              <span className="font-bold text-sm text-foreground">{fmtH(totals.totalWork)} ساعة</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-muted-foreground"><Timer className="w-4 h-4" />{t('reports.lateHours')}</span>
-              <span className="font-semibold text-amber-600">{fmtH(totals.totalLate)}</span>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-muted-foreground"><Timer className="w-4 h-4" />ساعات التأخير</span>
+              <span className="font-bold text-sm text-amber-600">{fmtH(totals.totalLate)} ساعة</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="w-4 h-4" />{t('reports.present')}</span>
-              <span className="font-semibold">{totals.present}</span>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="w-4 h-4" />أيام الحضور</span>
+              <span className="font-bold text-sm text-emerald-600">{totals.present} يوم</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-muted-foreground"><AlertTriangle className="w-4 h-4" />{t('reports.late')}</span>
-              <span className="font-semibold text-amber-600">{totals.lateC}</span>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-muted-foreground"><AlertTriangle className="w-4 h-4" />أيام التأخير</span>
+              <span className="font-bold text-sm text-amber-600">{totals.lateC}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-muted-foreground"><XCircle className="w-4 h-4" />{t('reports.absent')}</span>
-              <span className="font-semibold text-red-600">{totals.absent}</span>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-muted-foreground"><XCircle className="w-4 h-4" />الغياب</span>
+              <span className="font-bold text-sm text-red-600">{totals.absent}</span>
             </div>
           </div>
-          <Button variant="outline" onClick={exportReport} disabled={rows.length === 0} className="w-full mt-5 gap-2">
+          <Button variant="outline" onClick={exportReport} disabled={rows.length === 0} className="w-full mt-5 gap-2 text-xs font-bold rounded-xl">
             <Download className="w-4 h-4" />
-            {t('reports.exportEmployee')}
+            تصدير تقرير الموظف (Excel)
           </Button>
         </Card>
       </div>
 
-      <Card className="border-border/60 shadow-sm overflow-hidden">
-        <div className="p-5 pb-3"><h2 className="font-heading font-semibold text-lg">{emp.full_name}</h2></div>
+      <Card className="border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
+        <div className="p-5 pb-3"><h2 className="font-heading font-bold text-base">سجل الحضور اليومي المنظم (صافي ساعات الفترتين)</h2></div>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-secondary/60">
-                <TableHead>{t('common.date')}</TableHead>
-                <TableHead>{t('common.status')}</TableHead>
-                <TableHead>{t('reports.checkIn')}</TableHead>
-                <TableHead>{t('reports.checkOut')}</TableHead>
-                <TableHead>{t('reports.colWorkHours')}</TableHead>
-                <TableHead>{t('reports.colLateHours')}</TableHead>
+              <TableRow className="bg-secondary/60 text-xs">
+                <TableHead>التاريخ</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>الحضور الفعلي</TableHead>
+                <TableHead>الانصراف الفعلي</TableHead>
+                <TableHead>ساعات العمل الصافية</TableHead>
+                <TableHead>ساعات التأخير</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{t('reports.noLogs')}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">لا توجد سجلات</TableCell></TableRow>
               ) : rows.map((l, i) => (
-                <TableRow key={i} className="hover:bg-secondary/40">
-                  <TableCell className="text-sm">{l.log_date}</TableCell>
-                  <TableCell><Badge className={l.status === 'present' ? 'bg-emerald-100 text-emerald-700' : l.status === 'late' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}>{t('status.' + l.status)}</Badge></TableCell>
-                  <TableCell className="text-sm">{fmtTime(l.check_in)}</TableCell>
-                  <TableCell className="text-sm">{fmtTime(l.check_out)}</TableCell>
-                  <TableCell className="text-sm font-medium">{fmtH(l.work)}</TableCell>
-                  <TableCell className="text-sm font-medium text-amber-600">{fmtH(l.late)}</TableCell>
+                <TableRow key={i} className="hover:bg-secondary/40 text-xs">
+                  <TableCell className="font-mono font-medium">{l.log_date}</TableCell>
+                  <TableCell>{getStatusBadge(l.status)}</TableCell>
+                  <TableCell className="font-mono font-bold text-emerald-800 bg-emerald-50/50 px-2 py-1 rounded">{fmtTime(l.check_in)}</TableCell>
+                  <TableCell className="font-mono font-bold text-blue-800 bg-blue-50/50 px-2 py-1 rounded">{fmtTime(l.check_out)}</TableCell>
+                  <TableCell className="font-mono font-bold text-emerald-700">{fmtH(l.work)} ساعة</TableCell>
+                  <TableCell className="font-mono font-bold text-amber-600">{fmtH(l.late)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

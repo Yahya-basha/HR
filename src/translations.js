@@ -44,6 +44,9 @@ export const translations = {
     'status.pending': 'Pending',
     'status.approved': 'Approved',
     'status.rejected': 'Rejected',
+    'status.exempt': 'Exempt',
+    'status.weekend': 'Weekend',
+    'status.not_started': 'Not Started',
 
     'leave.annual': 'Annual',
     'leave.sick': 'Sick',
@@ -457,6 +460,9 @@ export const translations = {
     'status.pending': 'معلق',
     'status.approved': 'معتمد',
     'status.rejected': 'مرفوض',
+    'status.exempt': 'معفى',
+    'status.weekend': 'عطلة الأسبوع',
+    'status.not_started': 'لم يباشر',
 
     'leave.annual': 'سنوية',
     'leave.sick': 'مرضية',
