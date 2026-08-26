@@ -12,7 +12,8 @@ import {
   LogOut, 
   ShieldCheck, 
   Sparkles,
-  Check
+  Check,
+  Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -25,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export default function Header() {
+export default function Header({ onOpenMobileMenu }) {
   const { user, logout } = useAuth();
   const { lang, setLang } = useI18n();
   const { currentTheme, themes, setTheme, isDark, toggleDarkMode } = useTheme();
@@ -33,7 +34,7 @@ export default function Header() {
 
   const [companyProfile, setCompanyProfile] = useState(() => {
     const saved = localStorage.getItem('hr_flow_company_profile');
-    return saved ? JSON.parse(saved) : { name: 'HR DORAT CARS', logo_url: '' };
+    return saved ? JSON.parse(saved) : { name: 'Green Arrow HR', logo_url: '/green-arrow-logo.png' };
   });
 
   useEffect(() => {
@@ -55,53 +56,71 @@ export default function Header() {
 
   const initials = user?.full_name 
     ? user.full_name.split(' ').slice(0, 2).map(n => n[0]).join('') 
-    : 'HR';
+    : 'GA';
 
   return (
-    <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-border/50 px-5 lg:px-8 py-3 flex items-center justify-between transition-colors shadow-sm">
+    <header className="sticky top-0 z-20 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-border/50 px-4 lg:px-8 py-2.5 lg:py-3 flex items-center justify-between transition-colors shadow-sm">
       
-      {/* Right User Info */}
-      <div className="flex items-center gap-3">
-        <Avatar className="w-9 h-9 border border-border shrink-0 bg-primary text-primary-foreground shadow-sm">
+      {/* Right User & Mobile Brand Toggle */}
+      <div className="flex items-center gap-2.5">
+        
+        {/* Mobile Hamburger Button */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onOpenMobileMenu}
+          className="lg:hidden h-9 w-9 rounded-xl border-border/60 bg-white/90 dark:bg-slate-800/90 shadow-sm hover:bg-secondary shrink-0 text-foreground"
+          aria-label="فتح القائمة الكاملة"
+        >
+          <Menu className="w-5 h-5 text-primary" />
+        </Button>
+
+        {/* Mobile Logo for instant brand recognition */}
+        <div className="lg:hidden w-8 h-8 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-1 shrink-0">
+          <img src="/green-arrow-logo.png" alt="Logo" className="w-full h-full object-contain" />
+        </div>
+
+        <Avatar className="hidden sm:flex w-9 h-9 border border-border shrink-0 bg-primary text-primary-foreground shadow-sm">
           <AvatarFallback className="bg-primary text-primary-foreground font-bold text-xs">
             {initials}
           </AvatarFallback>
         </Avatar>
-        <div className="text-right">
-          <p className="font-bold text-xs text-foreground leading-tight">
+
+        <div className="text-right min-w-0">
+          <p className="font-bold text-xs text-foreground leading-tight truncate max-w-[140px] sm:max-w-[200px]">
             {user?.full_name || 'يحيى باشا'}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <p className="text-[10px] text-muted-foreground font-medium">
-              {user?.job_title || (user?.role === 'admin' ? 'مدير الموارد البشرية والأنظمة' : 'موظف')}
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+            <p className="text-[10px] text-muted-foreground font-medium truncate max-w-[120px] sm:max-w-[180px]">
+              {user?.job_title || (user?.role === 'admin' ? 'مدير الموارد البشرية' : 'موظف')}
             </p>
           </div>
         </div>
       </div>
 
       {/* Left Action Buttons: Theme Customizer, Dark Mode, Language, Settings, Logout */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         
-        {/* 1. Quick Theme Palette Switcher Dropdown */}
+        {/* Quick Theme Palette Switcher Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
               variant="outline" 
               size="sm" 
-              className="h-9 px-3 gap-2 rounded-xl text-xs font-bold border-border/60 bg-white/90 dark:bg-slate-800/90 shadow-sm hover:bg-secondary transition-all"
+              className="h-8 sm:h-9 px-2 sm:px-3 gap-1.5 rounded-xl text-xs font-bold border-border/60 bg-white/90 dark:bg-slate-800/90 shadow-sm hover:bg-secondary transition-all"
             >
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <span 
-                  className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-inner" 
+                  className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border border-black/10 shadow-inner" 
                   style={{ backgroundColor: currentTheme.previewPrimary }}
                 />
                 <span 
-                  className="w-2.5 h-2.5 rounded-full -ms-2 border border-black/10 shadow-inner" 
+                  className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full -ms-1.5 border border-black/10 shadow-inner" 
                   style={{ backgroundColor: currentTheme.previewAccent }}
                 />
               </div>
-              <span className="hidden sm:inline">الثيم والمظهر</span>
+              <span className="hidden md:inline">الثيم</span>
               <Palette className="w-3.5 h-3.5 text-primary" />
             </Button>
           </DropdownMenuTrigger>
@@ -131,7 +150,7 @@ export default function Header() {
                           style={{ backgroundColor: th.previewAccent }} 
                         />
                       </div>
-                      <span className={isSelected ? 'text-primary' : 'text-foreground'}>{th.name.split('(')[0]}</span>
+                      <span className={isSelected ? 'text-primary font-black' : 'text-foreground'}>{th.name.split('(')[0]}</span>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-emerald-600 font-bold" />}
                   </DropdownMenuItem>
@@ -141,14 +160,13 @@ export default function Header() {
 
             <DropdownMenuSeparator />
             
-            {/* Dark / Light Mode Toggle */}
             <DropdownMenuItem 
               onClick={toggleDarkMode}
               className="flex items-center justify-between p-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-secondary"
             >
               <div className="flex items-center gap-2">
                 {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-700" />}
-                <span>{isDark ? 'الوضع الفاتح (Light Mode)' : 'الوضع الداكن (Dark Mode)'}</span>
+                <span>{isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}</span>
               </div>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground font-mono">
                 {isDark ? 'ON' : 'OFF'}
@@ -157,41 +175,41 @@ export default function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 2. Language Switcher */}
+        {/* Language Switcher */}
         <Button
           variant="outline"
           size="sm"
           onClick={toggleLanguage}
-          className="h-9 px-2.5 rounded-xl text-xs font-bold border-border/60 bg-white/90 dark:bg-slate-800/90 shadow-sm hover:bg-secondary gap-1.5"
+          className="h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl text-xs font-bold border-border/60 bg-white/90 dark:bg-slate-800/90 shadow-sm hover:bg-secondary gap-1"
           title="تغيير اللغة"
         >
           <Globe className="w-3.5 h-3.5 text-primary" />
-          <span className="font-mono">{lang.toUpperCase()}</span>
+          <span className="font-mono text-[11px]">{lang.toUpperCase()}</span>
         </Button>
 
-        {/* 3. Settings Link */}
+        {/* Settings Link */}
         {user?.role === 'admin' && (
           <Link to="/settings">
             <Button
               variant="outline"
               size="icon"
-              className="h-9 w-9 rounded-xl border-border/60 bg-white/90 dark:bg-slate-800/90 shadow-sm hover:bg-secondary"
-              title="إعدادات المنظومة وهوية الشركة"
+              className="h-8 sm:h-9 w-8 sm:w-9 rounded-xl border-border/60 bg-white/90 dark:bg-slate-800/90 shadow-sm hover:bg-secondary"
+              title="إعدادات المنظومة"
             >
-              <SettingsIcon className="w-4 h-4 text-foreground" />
+              <SettingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground" />
             </Button>
           </Link>
         )}
 
-        {/* 4. Logout Button */}
+        {/* Logout Button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={handleLogout}
-          className="h-9 w-9 rounded-xl text-destructive hover:bg-destructive/10"
+          className="h-8 sm:h-9 w-8 sm:w-9 rounded-xl text-destructive hover:bg-destructive/10"
           title="تسجيل الخروج"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </Button>
       </div>
 
