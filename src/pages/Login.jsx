@@ -1,28 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Building2, User, Lock, Eye, EyeOff, CheckCircle2, LogIn, ShieldCheck, Sparkles, Smartphone, ArrowRight, HelpCircle } from "lucide-react";
+import { Building2, User, Lock, Eye, EyeOff, CheckCircle2, LogIn, ShieldCheck } from "lucide-react";
 import { safeReturnTo } from "@/lib/authReturnTo";
 
 export default function Login() {
   const [domain, setDomain] = useState("doratcars");
-  const [username, setUsername] = useState("2554901666");
-  const [password, setPassword] = useState("2554901666");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [captchaVerified, setCaptchaVerified] = useState(true);
 
   // Read company branding
-  const [companyProfile, setCompanyProfile] = useState(() => {
-    const saved = localStorage.getItem('hr_flow_company_profile');
-    return saved ? JSON.parse(saved) : {
-      name: 'HR DORAT CARS',
-      legal_name: 'شركة درة السيارة لقطع غيار السيارات',
-      logo_url: ''
-    };
+  const [companyProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('hr_flow_company_profile');
+      return saved ? JSON.parse(saved) : {
+        name: 'HR DORAT CARS',
+        legal_name: 'شركة درة السيارة لقطع غيار السيارات',
+        logo_url: ''
+      };
+    } catch (e) {
+      return {
+        name: 'HR DORAT CARS',
+        legal_name: 'شركة درة السيارة لقطع غيار السيارات',
+        logo_url: ''
+      };
+    }
   });
 
   const returnTo = safeReturnTo();
@@ -30,6 +36,17 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!username.trim()) {
+      setError("يرجى إدخال رقم الهوية الوطنية أو الإقامة أو الرقم الوظيفي.");
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("يرجى إدخال كلمة المرور.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -42,21 +59,16 @@ export default function Login() {
         window.location.href = returnTo || '/';
       }
     } catch (err) {
-      setError(err.message || "فشل تسجيل الدخول. يرجى التحقق من رقم الهوية وكلمة المرور.");
+      setError(err.message || "فشل تسجيل الدخول. يرجى التحقق من صحة البيانات المدخلة.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickDemo = (empId, pass) => {
-    setUsername(empId);
-    setPassword(pass);
-  };
-
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F8FAFC] text-[#0B1F3A] font-sans selection:bg-[#2D164D] selection:text-white" dir="rtl">
       
-      {/* 1. LEFT HERO BRANDING BANNER (Ektefaa Luxury Visuals) */}
+      {/* 1. LEFT HERO BRANDING BANNER */}
       <div className="relative hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#FFFBEB] via-[#FEF3C7] to-[#FDE68A] overflow-hidden flex-col justify-between p-12 border-e border-amber-200/60">
         
         {/* Abstract Yellow/Amber Shapes */}
@@ -127,42 +139,15 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Bottom Quick Test Fast Logins */}
-        <div className="relative z-10 bg-white/75 backdrop-blur-sm p-3.5 rounded-xl border border-amber-300/60 text-xs">
-          <p className="font-bold text-slate-800 mb-1.5 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>حسابات تجريبية سريعة بنقرة واحدة:</span>
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button 
-              type="button"
-              onClick={() => handleQuickDemo('2554901666', '2554901666')}
-              className="px-2.5 py-1 bg-amber-100/80 hover:bg-amber-200 text-amber-900 rounded-lg text-[11px] font-semibold transition-colors"
-            >
-              👑 يحيى باشا (مدير نظام / HR)
-            </button>
-            <button 
-              type="button"
-              onClick={() => handleQuickDemo('1111738496', '1111738496')}
-              className="px-2.5 py-1 bg-slate-200/80 hover:bg-slate-300 text-slate-900 rounded-lg text-[11px] font-semibold transition-colors"
-            >
-              👔 فهد الجوعي (المدير العام)
-            </button>
-            <button 
-              type="button"
-              onClick={() => handleQuickDemo('2406494993', '2406494993')}
-              className="px-2.5 py-1 bg-blue-100/80 hover:bg-blue-200 text-blue-900 rounded-lg text-[11px] font-semibold transition-colors"
-            >
-              💼 هشام زغلول (الحسابات)
-            </button>
-            <button 
-              type="button"
-              onClick={() => handleQuickDemo('2151595283', '2151595283')}
-              className="px-2.5 py-1 bg-purple-100/80 hover:bg-purple-200 text-purple-900 rounded-lg text-[11px] font-semibold transition-colors"
-            >
-              👤 محمود المحيميد (موظف مبيعات)
-            </button>
+        {/* Bottom Secure Portal Info Banner */}
+        <div className="relative z-10 bg-white/85 backdrop-blur-md p-4 rounded-2xl border border-amber-300/60 text-xs shadow-sm">
+          <div className="flex items-center gap-2 font-bold text-slate-800 mb-1">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>بوابة الخدمة الذاتية المعتمدة للموظفين</span>
           </div>
+          <p className="text-slate-600 leading-relaxed text-[11px]">
+            يرجى إدخال رقم الهوية الوطنية / الإقامة وكلمة المرور الخاصة بك للوصول الآمن إلى بياناتك وطلبات الخدمة الذاتية.
+          </p>
         </div>
       </div>
 
@@ -180,7 +165,7 @@ export default function Login() {
               )}
             </div>
             <div>
-              <h2 className="font-heading font-black text-xl text-[#0B1F3A]">درة السيارة</h2>
+              <h2 className="font-heading font-black text-xl text-[#0B1F3A]">{companyProfile.name || 'درة السيارة'}</h2>
               <p className="text-xs text-slate-500 font-medium">HR DORAT CARS SYSTEM</p>
             </div>
           </div>
@@ -196,9 +181,9 @@ export default function Login() {
           
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-heading font-extrabold text-[#0B1F3A]">يرجى إدخال تفاصيل الدخول</h1>
+              <h1 className="text-2xl font-heading font-extrabold text-[#0B1F3A]">تسجيل الدخول</h1>
             </div>
-            <p className="text-xs text-slate-500 font-medium dir-ltr text-right">Login to continue.</p>
+            <p className="text-xs text-slate-500 font-medium dir-ltr text-right">Sign in to continue.</p>
           </div>
 
           {error && (
@@ -229,11 +214,11 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Field 2: Username (National ID / Employee Number) */}
+            {/* Field 2: Username (National ID / Employee Number) - BLANK BY DEFAULT */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span>رقم الهوية الوطنية / الإقامة / الرقم الوظيفي</span>
-                <span className="text-[11px] font-normal text-slate-400">Username</span>
+                <span className="text-[11px] font-normal text-slate-400">Username / National ID</span>
               </div>
               <div className="relative">
                 <User className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -241,15 +226,15 @@ export default function Login() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="ps-10 h-12 rounded-xl bg-slate-50/80 border-slate-200 text-sm font-mono font-medium focus:bg-white ltr-nums"
-                  placeholder="مثال: 2554901666 أو 1022"
-                  style={{direction: 'ltr', textAlign: 'right'}}
+                  className="ps-10 h-12 rounded-xl bg-slate-50/80 border-slate-200 text-sm font-mono font-medium focus:bg-white"
+                  placeholder="أدخل رقم الهوية أو الإقامة أو الرقم الوظيفي"
+                  autoComplete="username"
                   required
                 />
               </div>
             </div>
 
-            {/* Field 3: Password */}
+            {/* Field 3: Password - BLANK BY DEFAULT */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span>كلمة المرور</span>
@@ -262,19 +247,21 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="ps-10 pe-10 h-12 rounded-xl bg-slate-50/80 border-slate-200 text-sm font-mono focus:bg-white"
-                  placeholder="••••••••••••"
+                  placeholder="أدخل كلمة المرور"
+                  autoComplete="current-password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  aria-label="إظهار/إخفاء كلمة المرور"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                💡 كلمة المرور الافتراضية للدخول هي <strong>رقم الهوية الوطنية / الإقامة</strong> الخاصة بك.
+                💡 للدخول للمرة الأولى استخدم <strong>رقم الهوية الوطنية / الإقامة</strong> أو كلمة المرور الخاصة بك.
               </p>
             </div>
 

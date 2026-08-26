@@ -804,9 +804,7 @@ export const base44 = {
     async loginViaEmailPassword(email, password) {
       return this.loginViaNationalIdOrUsername('doratcars', email, password);
     },
-    async loginWithProvider(provider, returnTo) {
-      return this.loginViaNationalIdOrUsername('doratcars', '2554901666', '2554901666');
-    },
+    async loginWithProvider(provider, returnTo) { this.redirectToLogin(returnTo); },
     async register(data) {
       const user = {
         id: 'usr_' + Date.now(),
