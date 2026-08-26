@@ -2,6 +2,17 @@ import { useState, useEffect } from 'react';
 
 export const THEMES = [
   {
+    id: 'green-arrow',
+    name: 'أخضر جرين أرو الفاخر (Green Arrow Signature)',
+    primaryHsl: '161 94% 13%',
+    accentHsl: '152 69% 40%',
+    sidebarBg: '#081C15',
+    sidebarActive: '#10B981',
+    sidebarActiveText: '#FFFFFF',
+    previewPrimary: '#081C15',
+    previewAccent: '#10B981'
+  },
+  {
     id: 'navy-gold',
     name: 'كحلي ملكي وذهبي (Royal Navy & Gold)',
     primaryHsl: '215 68% 14%',
@@ -22,17 +33,6 @@ export const THEMES = [
     sidebarActiveText: '#1E1035',
     previewPrimary: '#1E1035',
     previewAccent: '#C5A869'
-  },
-  {
-    id: 'emerald',
-    name: 'زمردي فاخر (Emerald Luxury & Gold)',
-    primaryHsl: '161 94% 13%',
-    accentHsl: '152 69% 40%',
-    sidebarBg: '#064E3B',
-    sidebarActive: '#10B981',
-    sidebarActiveText: '#FFFFFF',
-    previewPrimary: '#064E3B',
-    previewAccent: '#10B981'
   },
   {
     id: 'tech-indigo',
@@ -93,7 +93,7 @@ export function applyTheme(themeId, isDark = false) {
 
 export function getCurrentTheme() {
   try {
-    const savedId = localStorage.getItem('hr_flow_theme_id') || 'navy-gold';
+    const savedId = localStorage.getItem('hr_flow_theme_id') || 'green-arrow';
     const isDark = localStorage.getItem('hr_flow_is_dark') === 'true';
     const theme = THEMES.find(t => t.id === savedId) || THEMES[0];
     return { theme, isDark };

@@ -32,13 +32,13 @@ export default function Settings() {
   const [companyProfile, setCompanyProfile] = useState(() => {
     const saved = localStorage.getItem('hr_flow_company_profile');
     return saved ? JSON.parse(saved) : {
-      name: 'HR DORAT CARS',
-      legal_name: 'شركة درة السيارة للتجارة',
+      name: 'Green Arrow HR',
+      legal_name: 'شركة السهم الأخضر لتقنية المعلومات والتسويق',
       cr_number: '7016475555',
       tax_number: '311861381500003',
       phone: '+966 54 169 7999',
-      address: 'المملكة العربية السعودية - القصيم - بريدة',
-      logo_url: ''
+      address: 'المملكة العربية السعودية',
+      logo_url: '/green-arrow-logo.png'
     };
   });
 

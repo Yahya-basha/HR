@@ -15,7 +15,10 @@ export default function Sidebar({ isAdmin }) {
 
   const [companyProfile, setCompanyProfile] = useState(() => {
     const saved = localStorage.getItem('hr_flow_company_profile');
-    return saved ? JSON.parse(saved) : { name: 'HR DORAT CARS', logo_url: '' };
+    return saved ? JSON.parse(saved) : { 
+      name: 'Green Arrow HR', 
+      logo_url: '/green-arrow-logo.png' 
+    };
   });
 
   useEffect(() => {
@@ -32,33 +35,27 @@ export default function Sidebar({ isAdmin }) {
   return (
     <aside 
       className="hidden lg:flex fixed inset-y-0 start-0 w-64 text-white flex-col z-30 shadow-2xl border-e border-white/10 overflow-y-auto transition-colors duration-300"
-      style={{ backgroundColor: currentTheme?.sidebarBg || '#0B1F3A' }}
+      style={{ backgroundColor: currentTheme?.sidebarBg || '#081C15' }}
     >
-      {/* Brand Header with Luxury White Glass Logo Container */}
+      {/* Brand Header with Luxury White Glass Green Arrow Logo */}
       <div className="p-5 flex items-center justify-between border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3.5">
-          {/* Luxury Ultra-White Glass Logo Container */}
-          <div className="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur-md border border-white/90 shadow-[0_8px_20px_rgba(0,0,0,0.25)] ring-2 ring-white/40 flex items-center justify-center overflow-hidden shrink-0 transition-transform duration-300 hover:scale-105 p-1.5">
-            {companyProfile.logo_url ? (
-              <img 
-                src={companyProfile.logo_url} 
-                alt="Company Logo" 
-                className="w-full h-full object-contain filter drop-shadow-sm" 
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-tr from-[#0B1F3A] to-[#1E3A8A] rounded-xl flex items-center justify-center font-extrabold text-sm text-[#D4AF37] shadow-inner font-serif">
-                DC
-              </div>
-            )}
+          {/* Ultra-White Glass Logo Container */}
+          <div className="w-12 h-12 rounded-2xl bg-white/95 backdrop-blur-md border-2 border-white shadow-[0_8px_25px_rgba(0,0,0,0.3)] ring-2 ring-emerald-400/40 flex items-center justify-center overflow-hidden shrink-0 transition-transform duration-300 hover:scale-105 p-1">
+            <img 
+              src={companyProfile.logo_url || '/green-arrow-logo.png'} 
+              alt="Green Arrow Logo" 
+              className="w-full h-full object-contain filter drop-shadow-sm" 
+            />
           </div>
 
           <div className="min-w-0">
-            <h2 className="font-heading font-extrabold text-sm tracking-wide text-white truncate max-w-[145px] drop-shadow-sm">
-              {companyProfile.name || 'HR DORAT CARS'}
+            <h2 className="font-heading font-black text-sm tracking-wide text-white truncate max-w-[145px] drop-shadow-sm">
+              {companyProfile.name || 'Green Arrow HR'}
             </h2>
-            <div className="flex items-center gap-1 mt-0.5">
+            <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <p className="text-[11px] text-white/70 font-medium truncate">
+              <p className="text-[11px] text-emerald-200/80 font-medium truncate">
                 {user?.role === 'employee' ? 'بوابة الخدمة الذاتية' : 'إدارة الموارد البشرية'}
               </p>
             </div>
@@ -77,8 +74,8 @@ export default function Sidebar({ isAdmin }) {
               to="/portal"
               className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md"
               style={{
-                backgroundColor: isActive('/portal') ? (currentTheme?.sidebarActive || '#D4AF37') : 'transparent',
-                color: isActive('/portal') ? (currentTheme?.sidebarActiveText || '#0B1F3A') : 'rgba(255, 255, 255, 0.8)'
+                backgroundColor: isActive('/portal') ? (currentTheme?.sidebarActive || '#10B981') : 'transparent',
+                color: isActive('/portal') ? (currentTheme?.sidebarActiveText || '#FFFFFF') : 'rgba(255, 255, 255, 0.8)'
               }}
             >
               <div className="flex items-center gap-3">
@@ -107,15 +104,15 @@ export default function Sidebar({ isAdmin }) {
                         to={item.to}
                         className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group"
                         style={{
-                          backgroundColor: active ? (currentTheme?.sidebarActive || '#D4AF37') : 'transparent',
-                          color: active ? (currentTheme?.sidebarActiveText || '#0B1F3A') : 'rgba(255, 255, 255, 0.75)',
+                          backgroundColor: active ? (currentTheme?.sidebarActive || '#10B981') : 'transparent',
+                          color: active ? (currentTheme?.sidebarActiveText || '#FFFFFF') : 'rgba(255, 255, 255, 0.75)',
                           fontWeight: active ? '700' : '500'
                         }}
                       >
                         <div className="flex items-center gap-3">
                           <item.icon 
                             className="w-4 h-4 transition-colors" 
-                            style={{ color: active ? (currentTheme?.sidebarActiveText || '#0B1F3A') : 'rgba(255, 255, 255, 0.7)' }}
+                            style={{ color: active ? (currentTheme?.sidebarActiveText || '#FFFFFF') : 'rgba(255, 255, 255, 0.7)' }}
                           />
                           <span>{item.label}</span>
                         </div>

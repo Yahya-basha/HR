@@ -1,5 +1,5 @@
 {
-  "name": "zenith-hr-saas",
+  "name": "green-arrow-hr",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -96,5 +96,5 @@
     "typescript": "^5.8.2",
     "vite": "^6.1.0"
   },
-  "description": "Enterprise Multi-Tenant HR & Payroll Management SaaS Platform"
+  "description": "Green Arrow HR - Enterprise Cloud Human Resources Management System"
 }
