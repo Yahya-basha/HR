@@ -8,10 +8,25 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { toast } from '@/components/ui/use-toast';
 
-// Accurate parser for two periods (e.g. "08:19:00 -- 12:45:00 & 16:48:00 -- 21:14:00")
-const parseSplitPeriods = (rawTimestamp, rawPunches, checkInIso, checkOutIso) => {
-  const str = rawTimestamp || '';
-  const periods = str.includes('&') ? str.split('&').map(p => p.trim()) : [str];
+// Helper to extract clean time values (supports colons & dots, e.g. "16.07.00 - 20.15.00" -> ["16:07:00", "20:15:00"])
+const extractTimesClean = (str) => {
+  if (!str) return [];
+  const raw = str.toString().trim();
+  const matches = raw.match(/\b\d{1,2}[:.]\d{2}(?:[:.]\d{2})?\b/g) || [];
+  return matches.map(t => {
+    const clean = t.replace(/\./g, ':');
+    const parts = clean.split(':');
+    const hh = parts[0].padStart(2, '0');
+    const mm = (parts[1] || '00').padStart(2, '0');
+    const ss = (parts[2] || '00').padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
+  });
+};
+
+// Accurate parser for Morning, Evening, and Friday shifts
+const parseSplitPeriods = (rawTimestamp, rawPunches) => {
+  const str = (rawTimestamp || '').trim();
+  const raw = (rawPunches || '').trim();
   
   const result = {
     morningIn: null,
@@ -22,61 +37,61 @@ const parseSplitPeriods = (rawTimestamp, rawPunches, checkInIso, checkOutIso) =>
     isSplit: false
   };
 
-  if (periods.length >= 2) {
+  if (str.includes('&')) {
     result.isSplit = true;
+    const parts = str.split('&').map(p => p.trim());
     
-    // Period 1 (Morning)
-    const mTimes = periods[0].match(/\d{1,2}:\d{2}(?::\d{2})?/g) || [];
+    // Part 1: Morning
+    const mTimes = extractTimesClean(parts[0]);
     if (mTimes.length > 0) result.morningIn = mTimes[0];
     if (mTimes.length > 1) result.morningOut = mTimes[1];
 
-    // Period 2 (Evening)
-    const eTimes = periods[1].match(/\d{1,2}:\d{2}(?::\d{2})?/g) || [];
+    // Part 2: Evening
+    const eTimes = extractTimesClean(parts[1]);
     if (eTimes.length > 0) result.eveningIn = eTimes[0];
     if (eTimes.length > 1) result.eveningOut = eTimes[1];
 
-    // Calculate Morning Duration
     if (result.morningIn && result.morningOut) {
       const [inH, inM] = result.morningIn.split(':').map(Number);
       const [outH, outM] = result.morningOut.split(':').map(Number);
       result.totalMinutes += Math.max(0, (outH * 60 + outM) - (inH * 60 + inM));
-    } else if (result.morningIn) {
-      result.totalMinutes += 240; // 4 hours default
     }
-
-    // Calculate Evening Duration
     if (result.eveningIn && result.eveningOut) {
       const [inH, inM] = result.eveningIn.split(':').map(Number);
       const [outH, outM] = result.eveningOut.split(':').map(Number);
       result.totalMinutes += Math.max(0, (outH * 60 + outM) - (inH * 60 + inM));
-    } else if (result.eveningIn) {
-      result.totalMinutes += 270; // 4.5 hours default
     }
-
   } else {
-    // Single period or fallback
-    const times = (str || rawPunches || '').match(/\d{1,2}:\d{2}(?::\d{2})?/g) || [];
-    if (times.length >= 2) {
-      const inTime = times[0];
-      const outTime = times[times.length - 1];
-      const [inH, inM] = inTime.split(':').map(Number);
-      const [outH, outM] = outTime.split(':').map(Number);
-      const rawSpan = Math.max(0, (outH * 60 + outM) - (inH * 60 + inM));
-      
-      if (rawSpan > 420) {
-        // If > 7 hours, it's a split shift: deduct 3.5h break (210 mins)
-        result.totalMinutes = Math.max(0, rawSpan - 210);
-        result.morningIn = inTime;
-        result.eveningOut = outTime;
-        result.isSplit = true;
+    // Single period (e.g. Friday 16:07 - 20:15 or single shift)
+    const times = extractTimesClean(str || raw);
+    if (times.length >= 1) {
+      const firstT = times[0];
+      const lastT = times.length > 1 ? times[times.length - 1] : null;
+      const firstHour = parseInt(firstT.split(':')[0], 10);
+
+      if (firstHour >= 14) {
+        // Evening-Only Period (e.g. Friday 16:07 to 20:15)
+        result.eveningIn = firstT;
+        result.eveningOut = lastT;
+        if (firstT && lastT) {
+          const [inH, inM] = firstT.split(':').map(Number);
+          const [outH, outM] = lastT.split(':').map(Number);
+          result.totalMinutes = Math.max(0, (outH * 60 + outM) - (inH * 60 + inM));
+        } else {
+          result.totalMinutes = 240; // 4 hours
+        }
       } else {
-        result.totalMinutes = rawSpan;
-        result.morningIn = inTime;
-        result.morningOut = outTime;
+        // Morning-Only or Single Morning Shift
+        result.morningIn = firstT;
+        result.morningOut = lastT;
+        if (firstT && lastT) {
+          const [inH, inM] = firstT.split(':').map(Number);
+          const [outH, outM] = lastT.split(':').map(Number);
+          result.totalMinutes = Math.max(0, (outH * 60 + outM) - (inH * 60 + inM));
+        } else {
+          result.totalMinutes = 240;
+        }
       }
-    } else if (times.length === 1) {
-      result.morningIn = times[0];
-      result.totalMinutes = 300; // 5 hours default
     }
   }
 
@@ -124,9 +139,10 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
       return true;
     };
 
+    // 1. SORT ASCENDING: Beginning of the month (e.g. 2026-08-01) at the TOP!
     const myLogs = logs
       .filter((l) => (l.user_id === emp.id || l.employee_number === emp.employee_number || l.employee_name === emp.full_name) && inRange(l.log_date))
-      .sort((a, b) => (b.log_date || '').localeCompare(a.log_date || ''));
+      .sort((a, b) => (a.log_date || '').localeCompare(b.log_date || ''));
 
     let totalWork = 0;
     let totalLate = 0;
@@ -135,26 +151,27 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
     let absent = 0;
 
     const rows = myLogs.map((l) => {
-      const splitInfo = parseSplitPeriods(l.timestamp_raw || l.timestampStr, l.punches_raw || l.punches_summary, l.check_in, l.check_out);
+      const splitInfo = parseSplitPeriods(l.timestamp_raw || l.timestampStr, l.punches_raw || l.punches_summary);
       
       let workHours = splitInfo.totalMinutes > 0 ? (splitInfo.totalMinutes / 60) : 0;
       let lateHours = 0;
       let st = l.status || 'present';
 
-      // Clean status values
+      // Clean status
+      const isFriday = l.log_date ? new Date(l.log_date).getDay() === 5 : false;
+
       if (l.status === 'exempt' || l.status === 'معفى') st = 'exempt';
-      else if (l.status === 'weekend' || l.status?.includes('عطلة')) st = 'weekend';
+      else if (l.status === 'weekend' || l.status?.includes('عطلة') || isFriday) st = 'weekend';
       else if (l.status === 'not_started' || l.status === 'لم يباشر') st = 'not_started';
       else if (l.status === 'absent' || l.status === 'غائب') st = 'absent';
       else if (l.status === 'on_leave' || l.status?.includes('إجازة')) st = 'on_leave';
 
-      // Calculate Late Hours: ONLY for regular working days (NEVER for exempt or weekend)
+      // Late Hours Calculation: ZERO for Friday / Weekend / Exempt
       if (st !== 'exempt' && st !== 'weekend' && st !== 'not_started' && st !== 'on_leave' && st !== 'absent') {
-        const firstIn = splitInfo.morningIn || (l.check_in ? new Date(l.check_in).toTimeString().substring(0, 5) : null);
+        const firstIn = splitInfo.morningIn;
         if (firstIn) {
           const [inH, inM] = firstIn.split(':').map(Number);
           
-          // Yahya Basha / 9 AM shift: grace until 09:15
           if (startHour === 9 || emp.full_name?.includes('يحيى') || emp.full_name?.includes('يحيي')) {
             if (inH < 9 || (inH === 9 && inM <= 15)) {
               st = 'present';
@@ -164,7 +181,6 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
               lateHours = Math.max(0, ((inH * 60 + inM) - (9 * 60)) / 60);
             }
           } else {
-            // 8 AM shift: grace until 08:15
             if (inH < 8 || (inH === 8 && inM <= 15)) {
               st = 'present';
               lateHours = 0;
@@ -175,11 +191,11 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
           }
         }
       } else {
-        // Zero delay for exempt / weekend / leave
+        // Zero delay for Friday / Weekend
         lateHours = 0;
       }
 
-      if (st === 'present' || st === 'exempt') present++;
+      if (st === 'present' || st === 'exempt' || st === 'weekend') present++;
       else if (st === 'late') { lateC++; present++; }
       else if (st === 'absent') absent++;
 
@@ -191,14 +207,15 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
         splitInfo,
         work: workHours,
         late: lateHours,
-        status: st
+        status: st,
+        isFriday
       };
     });
 
     const totalDays = rows.length;
     const rate = totalDays > 0 ? Math.round((present / totalDays) * 100) : 0;
 
-    const daily = [...rows].reverse().map((r) => ({
+    const daily = rows.map((r) => ({
       date: r.log_date,
       work: Number(r.work.toFixed(1)),
       late: Number(r.late.toFixed(1)),
@@ -213,7 +230,14 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
 
   const { totals, daily, rows } = data;
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, isFriday) => {
+    if (isFriday || status === 'weekend') {
+      return (
+        <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 gap-1">
+          <span>عطلة الأسبوع (+50 ر.س جمعة)</span>
+        </Badge>
+      );
+    }
     switch (status) {
       case 'present':
         return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">حاضر</Badge>;
@@ -223,8 +247,6 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
         return <Badge className="bg-red-100 text-red-800 border-red-300">غائب</Badge>;
       case 'exempt':
         return <Badge className="bg-purple-100 text-purple-800 border-purple-300">معفى</Badge>;
-      case 'weekend':
-        return <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200">عطلة الأسبوع</Badge>;
       case 'not_started':
         return <Badge className="bg-slate-100 text-slate-700 border-slate-300">لم يباشر</Badge>;
       default:
@@ -232,11 +254,31 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
     }
   };
 
+  const exportReport = () => {
+    if (!emp || data.rows.length === 0) return;
+    const headers = ['التاريخ', 'الحالة', 'الفترة الصباحية', 'الفترة المسائية', 'ساعات العمل الصافية', 'ساعات التأخير'];
+    const body = data.rows
+      .map((r) => `<tr><td>${r.log_date}</td><td>${r.status}</td><td>${fmtTimeStr(r.splitInfo.morningIn)} - ${fmtTimeStr(r.splitInfo.morningOut)}</td><td>${fmtTimeStr(r.splitInfo.eveningIn)} - ${fmtTimeStr(r.splitInfo.eveningOut)}</td><td>${fmtH(r.work)}</td><td>${fmtH(r.late)}</td></tr>`)
+      .join('');
+    const table = `<table border="1"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>${table}</body></html>`;
+    const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `تقرير-حضور-${emp.full_name}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'تم تصدير التقرير المعتمد بنجاح 📥' });
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       
       {/* 4 Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center"><Clock className="w-5 h-5" /></div>
@@ -263,20 +305,26 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
         </Card>
       </div>
 
-      {/* Main Table with Detailed Two-Period Breakdown */}
+      {/* Main Table with Chronological (Ascending) Order */}
       <Card className="border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
         <div className="p-5 pb-3 border-b border-border/40 flex items-center justify-between bg-secondary/20">
           <div>
             <h2 className="font-heading font-bold text-base text-foreground">
-              سجل حضور وانصراف دوام الفترتين (الصباحية + المسائية)
+              سجل حضور وانصراف دوام الفترتين (مرتب من بداية الشهر)
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              عرض تفصيلي لدخول وخروج كل فترة وحساب مجموع الساعات الصافية تلقائياً
+              عرض تفصيلي دقيق لكل فترة صباحية ومسائية وتوضيح أيام الجمعة
             </p>
           </div>
-          <Badge className="bg-emerald-600 text-white font-mono text-xs">
-            {rows.length} سجل دوام
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportReport} className="text-xs font-bold gap-1 rounded-xl">
+              <Download className="w-3.5 h-3.5" />
+              <span>تصدير Excel</span>
+            </Button>
+            <Badge className="bg-emerald-600 text-white font-mono text-xs">
+              {rows.length} يوم مسجل
+            </Badge>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -306,10 +354,10 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
 
                     {/* Status */}
                     <TableCell>
-                      {getStatusBadge(l.status)}
+                      {getStatusBadge(l.status, l.isFriday)}
                     </TableCell>
 
-                    {/* Period 1: Morning (08:19 - 12:45) */}
+                    {/* Period 1: Morning */}
                     <TableCell>
                       {s.morningIn ? (
                         <div className="flex items-center gap-1 font-mono text-[11px] bg-amber-50 dark:bg-amber-950/30 px-2 py-1 rounded-lg border border-amber-200/60 w-fit" dir="ltr">
@@ -319,11 +367,13 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
                           <span className="font-bold text-blue-700">{fmtTimeStr(s.morningOut)}</span>
                         </div>
                       ) : (
-                        <span className="text-muted-foreground text-xs font-mono">—</span>
+                        <span className="text-muted-foreground text-[11px] font-semibold">
+                          {l.isFriday ? '— (عطلة الجمعة الصباحية)' : '—'}
+                        </span>
                       )}
                     </TableCell>
 
-                    {/* Period 2: Evening (16:48 - 21:14) */}
+                    {/* Period 2: Evening */}
                     <TableCell>
                       {s.eveningIn ? (
                         <div className="flex items-center gap-1 font-mono text-[11px] bg-indigo-50 dark:bg-indigo-950/30 px-2 py-1 rounded-lg border border-indigo-200/60 w-fit" dir="ltr">
