@@ -20,7 +20,10 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   ChevronDown,
-  Layers
+  Layers,
+  Timer,
+  Info,
+  CalendarCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +44,7 @@ export default function ImportData() {
 
   const [file, setFile] = useState(null);
   const [rawSheetRows, setRawSheetRows] = useState([]);
-  const [headerIndex, setHeaderIndex] = useState(0);
+  const [headerIndex, setHeaderIndex] = useState(3);
   const [headers, setHeaders] = useState([]);
 
   // Column mappings
@@ -49,9 +52,12 @@ export default function ImportData() {
     empNum: -1,
     name: -1,
     date: -1,
-    time: -1,
-    type: -1,
-    device: -1
+    dayName: -1,
+    shiftName: -1,
+    shiftTime: -1,
+    timestamp: -1,
+    status: -1,
+    rawPunches: -1
   });
 
   const [showMapping, setShowMapping] = useState(false);
@@ -76,7 +82,7 @@ export default function ImportData() {
     })();
   }, []);
 
-  // Normalize Arabic strings (unify Alef, Taa Marbuta, Yaa, remove spaces/tashkeel)
+  // Normalize Arabic strings
   const normalizeArabic = (text) => {
     if (!text) return '';
     return text
@@ -86,61 +92,34 @@ export default function ImportData() {
       .replace(/[أإآ]/g, 'ا')
       .replace(/[ة]/g, 'ه')
       .replace(/[ىي]/g, 'ي')
-      .replace(/[\u064B-\u0652]/g, '') // Remove tashkeel
+      .replace(/[\u064B-\u0652]/g, '')
       .replace(/[\s-_\.#]/g, '');
   };
 
-  // Parse Excel Dates / Timestamps / Serial numbers
-  const parseDateTimeValue = (val) => {
-    if (val === undefined || val === null || val === '') return { date: null, time: null };
-
-    // If already a JS Date
-    if (val instanceof Date) {
-      const dateStr = val.toISOString().split('T')[0];
-      const timeStr = val.toTimeString().split(' ')[0];
-      return { date: dateStr, time: timeStr };
-    }
-
-    // If Excel serial number (e.g. 45627.999)
+  // Helper to parse dates
+  const parseExcelDate = (val) => {
+    if (val === undefined || val === null || val === '') return null;
+    if (val instanceof Date) return val.toISOString().split('T')[0];
     if (typeof val === 'number') {
       const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-      if (!isNaN(d.getTime())) {
-        const dateStr = d.toISOString().split('T')[0];
-        const timeStr = d.toISOString().split('T')[1].substring(0, 8);
-        return { date: dateStr, time: timeStr };
-      }
+      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
     }
-
     const str = val.toString().trim();
-
-    // Check if contains both date and time (e.g. "2024-12-01 23:59:08" or "01/12/2024 08:30:00")
-    const parts = str.split(/[\sT]+/);
-    let datePart = null;
-    let timePart = null;
-
-    for (const part of parts) {
-      // Check date patterns
-      if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(part)) {
-        const d = part.split(/[-/]/);
-        datePart = `${d[0]}-${d[1].padStart(2, '0')}-${d[2].padStart(2, '0')}`;
-      } else if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(part)) {
-        const d = part.split(/[-/]/);
-        datePart = `${d[2]}-${d[1].padStart(2, '0')}-${d[0].padStart(2, '0')}`;
-      } else if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(part)) {
-        timePart = part.length === 5 ? part + ':00' : part;
-      }
+    // Match M/D/YYYY or D/M/YYYY
+    const slashParts = str.split('/');
+    if (slashParts.length === 3) {
+      const p1 = slashParts[0].padStart(2, '0');
+      const p2 = slashParts[1].padStart(2, '0');
+      const p3 = slashParts[2].length === 2 ? '20' + slashParts[2] : slashParts[2];
+      // Format as YYYY-MM-DD
+      return `${p3}-${p1}-${p2}`;
     }
-
-    // Fallback if Date.parse works
-    if (!datePart && str.length > 5) {
-      const parsed = new Date(str);
-      if (!isNaN(parsed.getTime())) {
-        datePart = parsed.toISOString().split('T')[0];
-        timePart = timePart || parsed.toTimeString().split(' ')[0];
-      }
+    if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(str)) {
+      const parts = str.split(/[-/]/);
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
     }
-
-    return { date: datePart, time: timePart };
+    const parsed = new Date(str);
+    return isNaN(parsed.getTime()) ? str : parsed.toISOString().split('T')[0];
   };
 
   const handleFileChange = (e) => {
@@ -179,30 +158,30 @@ export default function ImportData() {
         detectAndProcess(rows);
       } catch (err) {
         console.error('Parsing error:', err);
-        toast({ title: 'فشل في قراءة ملف الـ Excel. يرجى التأكد من سلامة الملف.', variant: 'destructive' });
+        toast({ title: 'فشل في قراءة ملف الـ Excel.', variant: 'destructive' });
       }
     };
     reader.readAsArrayBuffer(f);
   };
 
-  // 1. Detect Real Header Row & Map Columns
+  // 1. Detect Real Header Row & Map Specific Ektefa Columns
   const detectAndProcess = (rows) => {
-    let bestHeaderRowIndex = 0;
-    let maxKeywordScore = -1;
+    let bestHeaderRowIndex = 3; // Typically row 4 in Ektefa (index 3)
+    let maxScore = -1;
 
-    // Look at first 6 rows for header keywords
-    for (let r = 0; r < Math.min(6, rows.length); r++) {
+    for (let r = 0; r < Math.min(8, rows.length); r++) {
       const row = rows[r];
       let score = 0;
       row.forEach(cell => {
         const text = (cell || '').toString().toLowerCase();
-        if (text.includes('رقم') || text.includes('وظيفي') || text.includes('id') || text.includes('pin') || text.includes('user')) score += 3;
-        if (text.includes('اسم') || text.includes('name') || text.includes('موظف')) score += 3;
-        if (text.includes('تاريخ') || text.includes('date') || text.includes('وقت') || text.includes('time')) score += 3;
-        if (text.includes('حالة') || text.includes('نوع') || text.includes('status') || text.includes('جهاز')) score += 1;
+        if (text.includes('الرقم الوظيفي') || text.includes('رقم الموظف')) score += 5;
+        if (text.includes('اسم الموظف') || text.includes('الاسم')) score += 5;
+        if (text.includes('الطابع الزمني') || text.includes('البصمات')) score += 5;
+        if (text.includes('التاريخ') || text.includes('الفترة') || text.includes('وقت الفترة')) score += 4;
+        if (text.includes('الحالة') || text.includes('يوم')) score += 2;
       });
-      if (score > maxKeywordScore) {
-        maxKeywordScore = score;
+      if (score > maxScore) {
+        maxScore = score;
         bestHeaderRowIndex = r;
       }
     }
@@ -211,81 +190,65 @@ export default function ImportData() {
     const headerRow = rows[bestHeaderRowIndex].map((h, i) => (h ? h.toString().trim() : `العمود ${i + 1}`));
     setHeaders(headerRow);
 
-    // Identify Columns by keywords
     const detected = {
       empNum: -1,
       name: -1,
       date: -1,
-      time: -1,
-      type: -1,
-      device: -1
+      dayName: -1,
+      shiftName: -1,
+      shiftTime: -1,
+      timestamp: -1,
+      status: -1,
+      rawPunches: -1
     };
 
     headerRow.forEach((col, idx) => {
       const c = col.toLowerCase();
       
-      // Employee Number / ID
-      if (detected.empNum === -1 && (c.includes('وظيفي') || c.includes('رقم الموظف') || c.includes('رقم المستخدم') || c.includes('user id') || c.includes('pin') || c.includes('emp no') || c.includes('كود'))) {
+      if (detected.empNum === -1 && (c.includes('وظيفي') || c.includes('رقم الموظف') || c.includes('user id') || c.includes('pin'))) {
         detected.empNum = idx;
       }
-      
-      // Employee Name
-      if (detected.name === -1 && (c.includes('اسم') || c.includes('name') || (c.includes('موظف') && !c.includes('رقم')))) {
+      if (detected.name === -1 && (c.includes('اسم الموظف') || (c.includes('اسم') && !c.includes('فترة') && !c.includes('يوم')))) {
         detected.name = idx;
       }
-
-      // Date / DateTime
-      if (detected.date === -1 && (c.includes('تاريخ') || c.includes('date') || c.includes('وقت البصمة') || c.includes('بصمة'))) {
+      if (detected.date === -1 && (c === 'التاريخ' || c.includes('تاريخ') || c.includes('date'))) {
         detected.date = idx;
       }
-
-      // Time
-      if (detected.time === -1 && (c.includes('وقت') || c.includes('time') || c.includes('ساعة')) && !c.includes('تاريخ')) {
-        detected.time = idx;
+      if (detected.dayName === -1 && (c === 'يوم' || c.includes('اليوم') || c.includes('day'))) {
+        detected.dayName = idx;
       }
-
-      // Punch Type / State
-      if (detected.type === -1 && (c.includes('نوع') || c.includes('حالة') || c.includes('state') || c.includes('status') || c.includes('type') || c.includes('حركة'))) {
-        detected.type = idx;
+      if (detected.shiftName === -1 && (c === 'الفترة' || (c.includes('فترة') && !c.includes('وقت')))) {
+        detected.shiftName = idx;
       }
-
-      // Device / Branch
-      if (detected.device === -1 && (c.includes('جهاز') || c.includes('فرع') || c.includes('device') || c.includes('machine') || c.includes('location'))) {
-        detected.device = idx;
+      if (detected.shiftTime === -1 && (c === 'وقت الفترة' || (c.includes('وقت') && c.includes('فترة')))) {
+        detected.shiftTime = idx;
+      }
+      if (detected.timestamp === -1 && (c.includes('الطابع الزمني') || c.includes('طابع زمني') || c.includes('timestamp'))) {
+        detected.timestamp = idx;
+      }
+      if (detected.status === -1 && (c === 'الحالة' || c.includes('حالة') || c.includes('status'))) {
+        detected.status = idx;
+      }
+      if (detected.rawPunches === -1 && (c.includes('البصمات') || c.includes('بصمات') || c.includes('raw') || c.includes('حركات'))) {
+        detected.rawPunches = idx;
       }
     });
 
-    // Content-based heuristic fallback if column header wasn't exact
-    const sampleRows = rows.slice(bestHeaderRowIndex + 1, bestHeaderRowIndex + 10);
-    
-    // Check if empNum still not found
-    if (detected.empNum === -1) {
-      headerRow.forEach((_, colIdx) => {
-        const isNumericCol = sampleRows.every(r => r[colIdx] && !isNaN(Number(r[colIdx])) && Number(r[colIdx]) >= 100);
-        if (isNumericCol && detected.empNum === -1) detected.empNum = colIdx;
-      });
-    }
-
-    // Check if name still not found
-    if (detected.name === -1) {
-      headerRow.forEach((_, colIdx) => {
-        const isStringCol = sampleRows.some(r => r[colIdx] && typeof r[colIdx] === 'string' && r[colIdx].trim().length > 4 && isNaN(Number(r[colIdx])));
-        if (isStringCol && detected.name === -1 && colIdx !== detected.date) detected.name = colIdx;
-      });
-    }
-
-    // Default fallbacks matching Ektefa standard exports
-    if (detected.empNum === -1) detected.empNum = headerRow.length > 1 ? 1 : 0;
-    if (detected.name === -1) detected.name = headerRow.length > 2 ? 2 : 1;
-    if (detected.date === -1) detected.date = headerRow.length > 3 ? 3 : 2;
+    // Fallbacks if exact keywords not matched
+    if (detected.empNum === -1) detected.empNum = 1;
+    if (detected.name === -1) detected.name = 2;
+    if (detected.date === -1) detected.date = 3;
+    if (detected.timestamp === -1) detected.timestamp = 7;
+    if (detected.shiftTime === -1) detected.shiftTime = 6;
+    if (detected.rawPunches === -1) detected.rawPunches = 9;
 
     setColMap(detected);
     executeParseWithMapping(rows, bestHeaderRowIndex, detected);
   };
 
-  // 2. Parse & Group Rows Using the Determined Mapping
+  // 2. Parse & Extract All Shift, Timestamp, and Raw Punch Data
   const executeParseWithMapping = (rows, hIdx, mapping) => {
-    const grouped = {};
+    const list = [];
     let matched = 0;
     let unmatched = 0;
 
@@ -295,21 +258,43 @@ export default function ImportData() {
 
       const rawEmpNum = mapping.empNum !== -1 ? (row[mapping.empNum] || '').toString().trim() : '';
       const rawName = mapping.name !== -1 ? (row[mapping.name] || '').toString().trim() : '';
-      const rawDateCell = mapping.date !== -1 ? row[mapping.date] : null;
-      const rawTimeCell = mapping.time !== -1 ? row[mapping.time] : null;
-      const rawType = mapping.type !== -1 ? (row[mapping.type] || '').toString().trim() : '';
-      const rawDevice = mapping.device !== -1 ? (row[mapping.device] || '').toString().trim() : '';
-
-      // Extract date and time
-      const dateInfo = parseDateTimeValue(rawDateCell);
-      const timeInfo = parseDateTimeValue(rawTimeCell);
-
-      const finalDate = dateInfo.date || timeInfo.date || new Date().toISOString().split('T')[0];
-      const finalTime = timeInfo.time || dateInfo.time || '08:30:00';
+      const rawDate = mapping.date !== -1 ? parseExcelDate(row[mapping.date]) : null;
+      const dayName = mapping.dayName !== -1 ? (row[mapping.dayName] || '').toString().trim() : '';
+      const shiftName = mapping.shiftName !== -1 ? (row[mapping.shiftName] || '').toString().trim() : '';
+      const shiftTime = mapping.shiftTime !== -1 ? (row[mapping.shiftTime] || '').toString().trim() : '';
+      const timestampStr = mapping.timestamp !== -1 ? (row[mapping.timestamp] || '').toString().trim() : '';
+      const statusText = mapping.status !== -1 ? (row[mapping.status] || '').toString().trim() : '';
+      const rawPunchesStr = mapping.rawPunches !== -1 ? (row[mapping.rawPunches] || '').toString().trim() : '';
 
       if (!rawEmpNum && !rawName) continue;
 
-      // Match with system employees
+      // Extract Check-In and Check-Out from Timestamp (Primary Source)
+      // Example: "07:55:00 -- 12:08:00 & 16:04:00 -- 20:18:00" or "08:01:00 -- 13:00:00"
+      let checkIn = '';
+      let checkOut = '';
+      let shiftPunches = [];
+
+      if (timestampStr) {
+        // Extract all time patterns (HH:mm:ss or HH:mm)
+        const times = timestampStr.match(/\d{1,2}:\d{2}(:\d{2})?/g) || [];
+        if (times.length > 0) {
+          checkIn = times[0];
+          checkOut = times.length > 1 ? times[times.length - 1] : '';
+          shiftPunches = times;
+        }
+      }
+
+      // Secondary Fallback: Use "البصمات خلال اليوم" if timestamp was empty
+      let rawPunchesList = [];
+      if (rawPunchesStr) {
+        rawPunchesList = rawPunchesStr.split(/[,،;]+/).map(p => p.trim()).filter(Boolean);
+        if (!checkIn && rawPunchesList.length > 0) {
+          checkIn = rawPunchesList[0];
+          checkOut = rawPunchesList.length > 1 ? rawPunchesList[rawPunchesList.length - 1] : '';
+        }
+      }
+
+      // Match employee from system
       const normRawName = normalizeArabic(rawName);
       const cleanEmpNum = rawEmpNum.replace(/\D/g, '');
 
@@ -318,89 +303,68 @@ export default function ImportData() {
         const empNat = (emp.national_id || '').toString().trim();
         const empName = normalizeArabic(emp.full_name);
 
-        // 1. Match by Employee Number
         if (cleanEmpNum && empNum && cleanEmpNum === empNum) return true;
-        
-        // 2. Match by National ID
         if (cleanEmpNum && empNat && cleanEmpNum === empNat) return true;
-
-        // 3. Match by Name Similarity
-        if (normRawName && empName) {
-          if (empName === normRawName) return true;
-          if (empName.includes(normRawName) || normRawName.includes(empName)) return true;
-          
-          // Match first + last names
-          const empParts = empName.split(' ');
-          const rawParts = normRawName.split(' ');
-          if (empParts[0] && rawParts[0] && empParts[0] === rawParts[0] && empParts[empParts.length - 1] === rawParts[rawParts.length - 1]) {
-            return true;
-          }
-        }
-
+        if (normRawName && empName && (empName.includes(normRawName) || normRawName.includes(empName))) return true;
         return false;
       });
 
-      const key = `${matchedEmp?.id || rawEmpNum || rawName}_${finalDate}`;
+      if (matchedEmp) matched++;
+      else unmatched++;
 
-      if (!grouped[key]) {
-        grouped[key] = {
-          key,
-          employee: matchedEmp || null,
-          rawEmpNum,
-          rawName: rawName || matchedEmp?.full_name || 'موظف غير مسجل',
-          date: finalDate,
-          punches: [],
-          device: rawDevice || 'جهاز فرع كيا / الرئيسي'
-        };
+      // Compute status & delay
+      let computedStatus = 'present';
+      if (statusText === 'غائب' || statusText.includes('غياب')) {
+        computedStatus = 'absent';
+      } else if (statusText === 'إجازة' || statusText.includes('اجاز')) {
+        computedStatus = 'on_leave';
+      } else if (statusText === 'معفى') {
+        computedStatus = 'exempt';
+      } else if (checkIn) {
+        // Compare with Shift Time if available (e.g. 08:00)
+        const shiftStartHour = parseInt((shiftTime.split('--')[0] || shiftTime.split('-')[0] || '08').trim().split(':')[0], 10) || 8;
+        const inHour = parseInt(checkIn.split(':')[0], 10) || 8;
+        const inMin = parseInt(checkIn.split(':')[1], 10) || 0;
+        if (inHour > shiftStartHour || (inHour === shiftStartHour && inMin > 15)) {
+          computedStatus = 'late';
+        }
       }
 
-      grouped[key].punches.push({
-        time: finalTime,
-        type: rawType,
-        row
+      list.push({
+        id: `rec_${r}_${cleanEmpNum}`,
+        employee: matchedEmp || null,
+        rawEmpNum,
+        rawName: rawName || matchedEmp?.full_name || 'موظف غير مسجل',
+        date: rawDate || new Date().toISOString().split('T')[0],
+        dayName: dayName || 'السبت',
+        shiftName: shiftName || matchedEmp?.shift || 'فترة العمل المعتمدة',
+        shiftTime: shiftTime || '08:00 -- 17:00',
+        timestampStr,
+        rawPunchesStr,
+        rawPunchesList,
+        checkIn: checkIn || (computedStatus === 'present' ? '08:00:00' : '—'),
+        checkOut: checkOut || '—',
+        status: computedStatus,
+        statusLabel: statusText || (computedStatus === 'late' ? 'متأخر' : 'حاضر في الموعد')
       });
     }
 
-    // Process each employee day into check-in and check-out
-    const processed = Object.values(grouped).map(item => {
-      item.punches.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-
-      const checkInTime = item.punches[0]?.time || '08:30:00';
-      const checkOutTime = item.punches.length > 1 ? item.punches[item.punches.length - 1].time : null;
-
-      // Status: late if check in after 09:15
-      const hours = parseInt(checkInTime.split(':')[0], 10) || 8;
-      const mins = parseInt(checkInTime.split(':')[1], 10) || 0;
-      const isLate = hours > 9 || (hours === 9 && mins > 15);
-
-      if (item.employee) matched++;
-      else unmatched++;
-
-      return {
-        ...item,
-        check_in_str: checkInTime,
-        check_out_str: checkOutTime,
-        status: isLate ? 'late' : 'present',
-        punch_count: item.punches.length
-      };
-    });
-
-    setParsedRecords(processed);
+    setParsedRecords(list);
     setMatchedCount(matched);
     setUnmatchedCount(unmatched);
   };
 
-  // Re-run parsing when user changes column mapping manually
+  // Re-run parsing on manual column mapping change
   const handleMappingChange = (field, newColIdx) => {
     const updated = { ...colMap, [field]: parseInt(newColIdx, 10) };
     setColMap(updated);
     if (rawSheetRows.length > 0) {
       executeParseWithMapping(rawSheetRows, headerIndex, updated);
-      toast({ title: 'تم تحديث مطابقة الأعمدة وإعادة تحليل السجلات آلياً' });
+      toast({ title: 'تم تحديث مطابقة الأعمدة وإعادة استخراج الطابع الزمني' });
     }
   };
 
-  // Confirm and Save All Attendance Records
+  // Save All Attendance Records
   const handleConfirmImport = async () => {
     if (parsedRecords.length === 0) return;
     setImporting(true);
@@ -414,21 +378,25 @@ export default function ImportData() {
         const rec = parsedRecords[i];
         const emp = rec.employee;
 
-        const checkInIso = rec.date ? `${rec.date}T${rec.check_in_str}` : new Date().toISOString();
-        const checkOutIso = rec.check_out_str && rec.date ? `${rec.date}T${rec.check_out_str}` : null;
+        const checkInIso = rec.checkIn !== '—' && rec.date ? `${rec.date}T${rec.checkIn}` : null;
+        const checkOutIso = rec.checkOut !== '—' && rec.date ? `${rec.date}T${rec.checkOut}` : null;
 
         await base44.entities.AttendanceLog.create({
           user_id: emp?.id || ('usr_' + (rec.rawEmpNum || 'temp')),
           employee_number: emp?.employee_number || rec.rawEmpNum,
           national_id: emp?.national_id || '',
           employee_name: emp?.full_name || rec.rawName,
-          branch_name: emp?.branch_name || rec.device || 'فرع كيا',
+          branch_name: emp?.branch_name || 'فرع كيا / الإدارة',
+          shift_name: rec.shiftName,
+          shift_time: rec.shiftTime,
           log_date: rec.date,
+          day_name: rec.dayName,
           check_in: checkInIso,
           check_out: checkOutIso,
           status: rec.status,
-          source: 'excel_biometric_import',
-          punches_summary: `${rec.punch_count} حركات مسجلة`
+          timestamp_raw: rec.timestampStr,
+          punches_raw: rec.rawPunchesStr,
+          source: 'excel_biometric_import'
         });
 
         savedCount++;
@@ -437,7 +405,7 @@ export default function ImportData() {
 
       setImportedSuccess(true);
       toast({
-        title: `🎉 تم استيراد ${savedCount} سجل بصمة بنجاح إلى جدول الحضور والتقارير!`
+        title: `🎉 تم استيراد ${savedCount} سجل دوام وبصمات معتمدة بنجاح!`
       });
 
     } catch (err) {
@@ -446,26 +414,6 @@ export default function ImportData() {
     } finally {
       setImporting(false);
     }
-  };
-
-  const handleDownloadSample = () => {
-    const sampleData = [
-      ['#', 'الرقم الوظيفي', 'اسم الموظف', 'التاريخ والوقت', 'نوع الحركة', 'الجهاز / الفرع'],
-      ['1', '1022', 'يحيى باشا', '2025-02-26 08:15:00', 'Check-In', 'جهاز فرع كيا (EK0201000044)'],
-      ['2', '1022', 'يحيى باشا', '2025-02-26 16:45:00', 'Check-Out', 'جهاز فرع كيا (EK0201000044)'],
-      ['3', '1001', 'فهد الجوعي', '2025-02-26 08:30:00', 'Check-In', 'الفرع الرئيسي'],
-      ['4', '1001', 'فهد الجوعي', '2025-02-26 17:00:00', 'Check-Out', 'الفرع الرئيسي'],
-      ['5', '1002', 'محمود طه المحيميد', '2025-02-26 09:20:00', 'Check-In', 'فرع كيا'],
-      ['6', '1002', 'محمود طه المحيميد', '2025-02-26 18:00:00', 'Check-Out', 'فرع كيا'],
-      ['7', '1005', 'هشام ابوالفضل زغلول', '2025-02-26 08:00:00', 'Check-In', 'الإدارة العامة'],
-      ['8', '1005', 'هشام ابوالفضل زغلول', '2025-02-26 16:00:00', 'Check-Out', 'الإدارة العامة']
-    ];
-
-    const ws = XLSX.utils.aoa_to_sheet(sampleData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'سجلات الحضور');
-    XLSX.writeFile(wb, 'نموذج_بصمات_Green_Arrow_HR.xlsx');
-    toast({ title: 'تم تحميل نموذج الـ Excel التجريبي بنجاح 📥' });
   };
 
   const handleReset = () => {
@@ -477,7 +425,7 @@ export default function ImportData() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto" dir="rtl">
+    <div className="space-y-6 max-w-7xl mx-auto" dir="rtl">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -486,21 +434,12 @@ export default function ImportData() {
             <UploadCloud className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-heading font-extrabold text-foreground">استيراد ومطابقة كشوفات البصمة (Excel / CSV)</h1>
+            <h1 className="text-2xl font-heading font-extrabold text-foreground">استيراد ومطابقة كشوفات البصمة والطابع الزمني</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              رفع وتفكيك كشوفات البصمات من نظام اكتفاء والأجهزة السابقة ومطابقتها آلياً بالرقم الوظيفي واسم الموظف
+              استخراج أوقات الدخول والخروج من الطابع الزمني ومقارنتها بوردية الموظف والبصمات الإضافية خلال اليوم
             </p>
           </div>
         </div>
-
-        <Button
-          variant="outline"
-          onClick={handleDownloadSample}
-          className="rounded-xl text-xs font-bold gap-2 border-emerald-500/30 text-emerald-700 hover:bg-emerald-50 shrink-0"
-        >
-          <Download className="w-4 h-4 text-emerald-600" />
-          <span>تحميل نموذج Excel تجريبي</span>
-        </Button>
       </div>
 
       {/* 1. UPLOAD DROPZONE AREA */}
@@ -525,10 +464,10 @@ export default function ImportData() {
 
           <div className="space-y-1">
             <h3 className="font-heading font-black text-lg text-foreground">
-              اسحب وأفلت ملف إكسيل البصمة هنا أو انقر للاختيار
+              اسحب وأفلت كشف إكسيل البصمات والطابع الزمني هنا
             </h3>
             <p className="text-xs text-muted-foreground">
-              يدعم ملفات <strong>.xlsx</strong> و <strong>.xls</strong> و <strong>.csv</strong> المصدرة من نظام اكتفاء (Ektefa) وكافة أجهزة البصمة
+              يدعم ملفات <strong>سحب بصمات اكتفاء.xlsx</strong> وكافة كشوفات الحضور متعددة الفترات
             </p>
           </div>
 
@@ -539,17 +478,23 @@ export default function ImportData() {
             </Button>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4 text-[11px] text-muted-foreground border-t border-border/40">
-            <span className="flex items-center gap-1 font-semibold text-emerald-700">
-              <Check className="w-3.5 h-3.5" /> مطابقة ذكية بالرقم الوظيفي (1001, 1022...) واسم الموظف
-            </span>
-            <span className="flex items-center gap-1 font-semibold text-emerald-700">
-              <Check className="w-3.5 h-3.5" /> دمج بصمات الحضور والانصراف واحتساب التأخير آلياً
-            </span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 text-xs text-muted-foreground border-t border-border/40 max-w-2xl mx-auto text-right">
+            <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
+              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>اعتماد الطابع الزمني للدخول والخروج</span>
+            </div>
+            <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
+              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>مطابقة وقت الفترة والوردية المثبتة</span>
+            </div>
+            <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
+              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>رصد بصمات اليوم وحالات التأخير</span>
+            </div>
           </div>
         </Card>
       ) : (
-        /* 2. PARSED DATA PREVIEW & MATCHING DASHBOARD */
+        /* 2. PARSED DATA PREVIEW & ADVANCED TIMELOG DASHBOARD */
         <div className="space-y-6 animate-in fade-in duration-300">
           
           {/* Summary Stats Card */}
@@ -562,7 +507,7 @@ export default function ImportData() {
                 <div>
                   <h3 className="font-heading font-bold text-sm text-foreground">{file.name}</h3>
                   <p className="text-xs text-muted-foreground">
-                    الحجم: {(file.size / 1024).toFixed(1)} KB • إجمالي السجلات المعالجة: {parsedRecords.length}
+                    إجمالي سجلات الدوام المعالجة: {parsedRecords.length} سجل
                   </p>
                 </div>
               </div>
@@ -611,17 +556,17 @@ export default function ImportData() {
               </div>
             </div>
 
-            {/* Manual Column Mapping Config Box (Collapsible) */}
+            {/* Manual Column Mapping Config Box */}
             {showMapping && (
               <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-3 animate-in fade-in">
                 <div className="flex items-center gap-2 font-bold text-xs text-emerald-900">
                   <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
-                  <span>تحديد الأعمدة يدوياً في حال كانت تركيبة الملف مختلفة:</span>
+                  <span>تحديد أعمدة كشف البصمات يدوياً:</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-700">عمود الرقم الوظيفي / PIN</label>
+                    <label className="font-bold text-slate-700">عمود الرقم الوظيفي</label>
                     <Select value={colMap.empNum.toString()} onValueChange={(v) => handleMappingChange('empNum', v)}>
                       <SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -641,8 +586,8 @@ export default function ImportData() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-700">عمود التاريخ / وقت البصمة</label>
-                    <Select value={colMap.date.toString()} onValueChange={(v) => handleMappingChange('date', v)}>
+                    <label className="font-bold text-slate-700">عمود الطابع الزمني (الدخول/الخروج)</label>
+                    <Select value={colMap.timestamp.toString()} onValueChange={(v) => handleMappingChange('timestamp', v)}>
                       <SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h} (عمود {i + 1})</SelectItem>)}
@@ -651,11 +596,10 @@ export default function ImportData() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-700">عمود وقت البصمة (إن وجد منفصلاً)</label>
-                    <Select value={colMap.time.toString()} onValueChange={(v) => handleMappingChange('time', v)}>
+                    <label className="font-bold text-slate-700">عمود وقت الفترة (الوردية الرسمية)</label>
+                    <Select value={colMap.shiftTime.toString()} onValueChange={(v) => handleMappingChange('shiftTime', v)}>
                       <SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="-1">غير موجود (مدمج مع التاريخ)</SelectItem>
                         {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h} (عمود {i + 1})</SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -665,10 +609,10 @@ export default function ImportData() {
               </div>
             )}
 
-            {/* Matching Metrics Badges */}
+            {/* Metrics Badges */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
               <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
-                <p className="text-[11px] text-muted-foreground font-bold">إجمالي السجلات المعالجة</p>
+                <p className="text-[11px] text-muted-foreground font-bold">إجمالي سجلات الدوام</p>
                 <p className="text-xl font-heading font-black text-foreground mt-0.5">{parsedRecords.length}</p>
               </div>
 
@@ -678,16 +622,16 @@ export default function ImportData() {
               </div>
 
               <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-center">
-                <p className="text-[11px] text-amber-800 font-bold">حركات حضور / انصراف</p>
+                <p className="text-[11px] text-amber-800 font-bold">حالات الحضور والتأخير</p>
                 <p className="text-xl font-heading font-black text-amber-700 mt-0.5">
-                  {parsedRecords.reduce((acc, r) => acc + (r.punch_count || 1), 0)}
+                  {parsedRecords.filter(r => r.status === 'present' || r.status === 'late').length}
                 </p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
-                <p className="text-[11px] text-blue-800 font-bold">حالة المزامنة</p>
+                <p className="text-[11px] text-blue-800 font-bold">حالة الاعتماد</p>
                 <p className="text-sm font-heading font-bold text-blue-700 mt-1.5">
-                  {importedSuccess ? '✅ معتمد ومسجل' : '⏳ جاهز للاعتماد'}
+                  {importedSuccess ? '✅ معتمد في الحضور' : '⏳ جاهز للاعتماد'}
                 </p>
               </div>
             </div>
@@ -695,7 +639,7 @@ export default function ImportData() {
             {importing && (
               <div className="space-y-1.5 pt-2">
                 <div className="flex justify-between text-xs text-muted-foreground font-bold">
-                  <span>جاري المزامنة مع قاعدة البيانات السحابية...</span>
+                  <span>جاري حفظ السجلات وتحديث كشوفات الحضور...</span>
                   <span>{importProgress}%</span>
                 </div>
                 <Progress value={importProgress} className="h-2" />
@@ -706,7 +650,7 @@ export default function ImportData() {
               <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span>تم حفظ كافة سجلات البصمات بنجاح! يمكنك الآن مشاهدة الحضور وتقارير الموظفين مباشرة.</span>
+                  <span>تم حفظ كافة البصمات وسجلات الطابع الزمني بنجاح! يمكنك الآن مراجعتها في شاشة الحضور.</span>
                 </div>
                 <Button 
                   size="sm" 
@@ -719,86 +663,113 @@ export default function ImportData() {
             )}
           </Card>
 
-          {/* Table Preview */}
+          {/* Detailed Table Preview */}
           <Card className="border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
             <div className="p-4 border-b border-border/40 flex items-center justify-between bg-secondary/30">
-              <h3 className="font-heading font-bold text-sm text-foreground flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-emerald-600" />
-                <span>معاينة البيانات ومطابقة الموظفين قبل الحفظ النهائي</span>
-              </h3>
+                <h3 className="font-heading font-bold text-sm text-foreground">
+                  معاينة الطابع الزمني والدخول والخروج والبصمات خلال اليوم
+                </h3>
+              </div>
               <Badge variant="outline" className="font-mono text-xs">
-                عرض أول {Math.min(50, parsedRecords.length)} سجل
+                عرض {parsedRecords.length} سجل
               </Badge>
             </div>
 
-            <div className="overflow-x-auto max-h-[500px]">
+            <div className="overflow-x-auto max-h-[550px]">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-secondary/60 sticky top-0 z-10">
-                    <TableHead>الموظف المطابق في النظام</TableHead>
-                    <TableHead>الرقم الوظيفي</TableHead>
-                    <TableHead>التاريخ</TableHead>
-                    <TableHead>وقت الحضور (Check-In)</TableHead>
-                    <TableHead>وقت الانصراف (Check-Out)</TableHead>
-                    <TableHead>عدد الحركات</TableHead>
-                    <TableHead>الحالة المحتسبة</TableHead>
-                    <TableHead>الفرع / الجهاز</TableHead>
+                  <TableRow className="bg-secondary/60 sticky top-0 z-10 text-xs">
+                    <TableHead>الموظف المطابق</TableHead>
+                    <TableHead>الرقم</TableHead>
+                    <TableHead>التاريخ واليوم</TableHead>
+                    <TableHead>الوردية (وقت الفترة)</TableHead>
+                    <TableHead>الدخول المعتمد</TableHead>
+                    <TableHead>الخروج المعتمد</TableHead>
+                    <TableHead>الطابع الزمني المنظم</TableHead>
+                    <TableHead>البصمات خلال اليوم</TableHead>
+                    <TableHead>الحالة</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {parsedRecords.slice(0, 50).map((rec, idx) => (
-                    <TableRow key={idx} className="hover:bg-secondary/30">
+                  {parsedRecords.slice(0, 100).map((rec, idx) => (
+                    <TableRow key={idx} className="hover:bg-secondary/30 text-xs">
+                      
+                      {/* Employee */}
                       <TableCell>
                         {rec.employee ? (
                           <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                             <div>
                               <p className="font-bold text-xs text-foreground">{rec.employee.full_name}</p>
-                              <p className="text-[10px] text-muted-foreground">#{rec.employee.employee_number} • {rec.employee.department_name || 'موظف'}</p>
+                              <p className="text-[10px] text-muted-foreground">{rec.employee.branch_name || 'الفرع'}</p>
                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 text-amber-700">
-                            <AlertCircle className="w-4 h-4 text-amber-500" />
-                            <div>
-                              <p className="font-bold text-xs">{rec.rawName || 'غير مسجل'}</p>
-                              <p className="text-[10px] text-amber-600">سيتم حفظه كحساب جديد</p>
-                            </div>
+                          <div className="flex items-center gap-1.5 text-amber-700">
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                            <span className="font-bold text-xs">{rec.rawName}</span>
                           </div>
                         )}
                       </TableCell>
 
-                      <TableCell className="font-mono text-xs font-bold text-slate-700">
-                        {rec.employee?.employee_number || rec.rawEmpNum || '—'}
+                      {/* Emp Number */}
+                      <TableCell className="font-mono font-bold text-slate-700">
+                        {rec.employee?.employee_number || rec.rawEmpNum}
                       </TableCell>
 
-                      <TableCell className="font-mono text-xs text-foreground font-medium">
-                        {rec.date}
+                      {/* Date & Day */}
+                      <TableCell>
+                        <p className="font-mono font-semibold text-foreground">{rec.date}</p>
+                        <p className="text-[10px] text-muted-foreground">{rec.dayName}</p>
                       </TableCell>
 
-                      <TableCell className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50/60 px-2.5 py-1 rounded-lg border border-emerald-200/60">
-                        {rec.check_in_str || '—'}
-                      </TableCell>
-
-                      <TableCell className="font-mono text-xs font-bold text-blue-700 bg-blue-50/60 px-2.5 py-1 rounded-lg border border-blue-200/60">
-                        {rec.check_out_str || '—'}
-                      </TableCell>
-
-                      <TableCell className="text-center font-mono text-xs font-bold">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
-                          {rec.punch_count}
+                      {/* Shift & Time */}
+                      <TableCell>
+                        <p className="font-bold text-[11px] text-slate-800 dark:text-slate-200">{rec.shiftName}</p>
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400 mt-0.5" dir="ltr">
+                          {rec.shiftTime}
                         </span>
                       </TableCell>
 
+                      {/* Check-In */}
+                      <TableCell className="font-mono font-black text-emerald-700 bg-emerald-50/50 px-2 py-1 rounded">
+                        {rec.checkIn}
+                      </TableCell>
+
+                      {/* Check-Out */}
+                      <TableCell className="font-mono font-black text-blue-700 bg-blue-50/50 px-2 py-1 rounded">
+                        {rec.checkOut}
+                      </TableCell>
+
+                      {/* Structured Timestamp */}
+                      <TableCell className="max-w-[200px]">
+                        <span className="text-[10px] font-mono text-slate-700 dark:text-slate-300 block truncate" title={rec.timestampStr} dir="ltr">
+                          {rec.timestampStr || '—'}
+                        </span>
+                      </TableCell>
+
+                      {/* All Raw Punches */}
+                      <TableCell className="max-w-[160px]">
+                        <span className="text-[10px] font-mono text-slate-500 block truncate" title={rec.rawPunchesStr} dir="ltr">
+                          {rec.rawPunchesStr || '—'}
+                        </span>
+                      </TableCell>
+
+                      {/* Status */}
                       <TableCell>
-                        <Badge className={rec.status === 'late' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
-                          {rec.status === 'late' ? 'متأخر' : 'حاضر في الموعد'}
+                        <Badge className={
+                          rec.status === 'late' ? 'bg-amber-100 text-amber-800 border-amber-300' :
+                          rec.status === 'absent' ? 'bg-red-100 text-red-800 border-red-300' :
+                          rec.status === 'on_leave' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                          rec.status === 'exempt' ? 'bg-purple-100 text-purple-800 border-purple-300' :
+                          'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        }>
+                          {rec.statusLabel}
                         </Badge>
                       </TableCell>
 
-                      <TableCell className="text-xs text-muted-foreground">
-                        {rec.employee?.branch_name || rec.device || 'فرع كيا'}
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
