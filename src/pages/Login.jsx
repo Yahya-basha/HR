@@ -52,7 +52,6 @@ export default function Login() {
     try {
       const loggedUser = await base44.auth.loginViaNationalIdOrUsername(domain, username, password);
       
-      // Smart Redirect based on role
       if (loggedUser.role === 'employee') {
         window.location.href = '/portal';
       } else {
@@ -77,12 +76,12 @@ export default function Login() {
 
         {/* Top Header Tag */}
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#0B1F3A] text-white flex items-center justify-center font-black text-xl shadow-lg border border-[#D4AF37]">
+          <div className="flex items-center gap-3.5">
+            <div className="w-14 h-14 rounded-2xl bg-white/95 backdrop-blur-md border border-white shadow-[0_8px_25px_rgba(0,0,0,0.15)] ring-2 ring-white/50 flex items-center justify-center p-2 shrink-0">
               {companyProfile.logo_url ? (
-                <img src={companyProfile.logo_url} alt="Logo" className="w-full h-full object-contain p-1.5" />
+                <img src={companyProfile.logo_url} alt="Logo" className="w-full h-full object-contain filter drop-shadow-sm" />
               ) : (
-                <span className="text-[#D4AF37]">DC</span>
+                <span className="text-[#0B1F3A] font-black text-xl font-serif">DC</span>
               )}
             </div>
             <div>
@@ -130,7 +129,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Slider Dots */}
             <div className="flex items-center justify-center gap-1.5 mt-4 pt-2">
               <span className="w-6 h-1.5 rounded-full bg-[#0B1F3A]"></span>
               <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
@@ -156,12 +154,12 @@ export default function Login() {
         
         {/* Top Brand Logo for Mobile */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0B1F3A] to-[#1E3A8A] text-white flex items-center justify-center font-bold text-xl shadow-md border border-[#D4AF37]/50">
+          <div className="flex items-center gap-3.5">
+            <div className="w-14 h-14 rounded-2xl bg-white/95 backdrop-blur-md border border-white shadow-[0_8px_25px_rgba(0,0,0,0.1)] ring-2 ring-white/50 flex items-center justify-center p-2 shrink-0">
               {companyProfile.logo_url ? (
-                <img src={companyProfile.logo_url} alt="Logo" className="w-full h-full object-contain p-1" />
+                <img src={companyProfile.logo_url} alt="Logo" className="w-full h-full object-contain filter drop-shadow-sm" />
               ) : (
-                <span className="text-[#D4AF37] font-serif">DC</span>
+                <span className="text-[#0B1F3A] font-black text-xl font-serif">DC</span>
               )}
             </div>
             <div>
@@ -214,7 +212,7 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Field 2: Username (National ID / Employee Number) - BLANK BY DEFAULT */}
+            {/* Field 2: Username (National ID / Employee Number) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span>رقم الهوية الوطنية / الإقامة / الرقم الوظيفي</span>
@@ -234,7 +232,7 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Field 3: Password - BLANK BY DEFAULT */}
+            {/* Field 3: Password */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span>كلمة المرور</span>
