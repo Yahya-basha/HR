@@ -66,29 +66,45 @@ export default function Devices() {
         base44.entities.Employee.list()
       ]);
 
-      const initialDevices = [
+            const initialDevices = [
         {
-          id: 'dev_1',
-          name: 'جهاز بصمة الإدارة العامة',
-          serial_number: 'ZK-ADMS-998821',
-          branch_id: 'br_1',
-          branch_name: 'الفرع الرئيسي - الرياض',
-          brand: 'ZKTeco ProFace X / MB20',
-          ip_address: '192.168.1.201',
+          id: 'dev_kia_01',
+          name: 'جهاز بصمة فرع كيا (Ektefa AI Face & Fingerprint)',
+          serial_number: 'EK0201000044',
+          branch_id: 'br_kia',
+          branch_name: 'فرع كيا',
+          brand: 'Ektefa ai806 (Face / Fingerprint / Card)',
+          ip_address: '192.168.8.81',
+          port: '5005',
+          firmware: 'ai806_fp50v_v5.13',
           status: 'online',
           last_sync: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
           api_endpoint: 'https://gold-hare-970225.hostingersite.com/api/adms/push'
         },
         {
-          id: 'dev_2',
-          name: 'جهاز بصمة مستودع جدة',
-          serial_number: 'ZK-K40-441102',
-          branch_id: 'br_2',
-          branch_name: 'فرع جدة',
-          brand: 'ZKTeco K40 / SilkBio',
-          ip_address: '192.168.2.201',
+          id: 'dev_main_01',
+          name: 'جهاز بصمة الإدارة العامة والفرع الرئيسي',
+          serial_number: 'ZK-ADMS-998821',
+          branch_id: 'br_main',
+          branch_name: 'الفرع الرئيسي',
+          brand: 'ZKTeco ProFace X',
+          ip_address: '192.168.1.201',
+          port: '5005',
           status: 'online',
           last_sync: '10:45 ص',
+          api_endpoint: 'https://gold-hare-970225.hostingersite.com/api/adms/push'
+        },
+        {
+          id: 'dev_hyundai_01',
+          name: 'جهاز بصمة فرع هونداي',
+          serial_number: 'EK0201000045',
+          branch_id: 'br_hyundai',
+          branch_name: 'فرع هونداي',
+          brand: 'Ektefa ai806 (Face & Fingerprint)',
+          ip_address: '192.168.8.82',
+          port: '5005',
+          status: 'online',
+          last_sync: '11:00 ص',
           api_endpoint: 'https://gold-hare-970225.hostingersite.com/api/adms/push'
         }
       ];
