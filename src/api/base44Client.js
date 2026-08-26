@@ -27,7 +27,7 @@ const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Versioned key to ensure instant hydration in browser
-const STORAGE_PREFIX = 'hr_flow_v5_dora_';
+const STORAGE_PREFIX = 'hr_flow_v6_dora_';
 
 export const initialData = {
   Company: [
@@ -597,11 +597,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T08:01:00",
-    "check_out": "2026-08-01T13:02:00",
+    "check_in": "2026-08-01T08:00:00",
+    "check_out": "2026-08-01T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:01:00 -- 13:02:00",
-    "punches_raw": "08:01, 13:02"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-01",
@@ -610,11 +610,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T08:47:00",
-    "check_out": "2026-08-01T21:03:00",
+    "check_in": "2026-08-01T08:19:00",
+    "check_out": "2026-08-01T21:14:00",
     "status": "present",
-    "timestamp_raw": "08:47:00 -- 13:02:00 & 16:08:00 -- 21:03:00",
-    "punches_raw": "08:47, 13:02, 16:08, 21:03"
+    "timestamp_raw": "08:19:00 -- 12:45:00 & 16:48:00 -- 21:14:00",
+    "punches_raw": "08:19, 12:45, 16:48, 21:14"
   },
   {
     "id": "att_1005_2026-08-01",
@@ -623,11 +623,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T07:48:00",
-    "check_out": "2026-08-01T20:03:00",
+    "check_in": "2026-08-01T07:55:00",
+    "check_out": "2026-08-01T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:02:00 & 16:10:00 -- 20:03:00",
-    "punches_raw": "07:48, 12:02, 16:10, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-01",
@@ -636,11 +636,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T07:49:00",
-    "check_out": "2026-08-01T20:03:00",
+    "check_in": "2026-08-01T07:55:00",
+    "check_out": "2026-08-01T20:18:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:02:00 & 16:12:00 -- 20:03:00",
-    "punches_raw": "07:49, 12:02, 16:12, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:04:00 -- 20:18:00",
+    "punches_raw": "07:55, 12:08, 16:04, 20:18"
   },
   {
     "id": "att_1004_2026-08-01",
@@ -649,11 +649,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T07:50:00",
-    "check_out": "2026-08-01T20:03:00",
+    "check_in": "2026-08-01T07:55:00",
+    "check_out": "2026-08-01T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:02:00 & 16:14:00 -- 20:03:00",
-    "punches_raw": "07:50, 12:02, 16:14, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-01",
@@ -662,11 +662,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T08:06:00",
-    "check_out": "2026-08-01T13:02:00",
+    "check_in": "2026-08-01T08:00:00",
+    "check_out": "2026-08-01T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:06:00 -- 13:02:00",
-    "punches_raw": "08:06, 13:02"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-01",
@@ -675,11 +675,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T08:07:00",
-    "check_out": "2026-08-01T13:02:00",
+    "check_in": "2026-08-01T08:00:00",
+    "check_out": "2026-08-01T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:07:00 -- 13:02:00",
-    "punches_raw": "08:07, 13:02"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-01",
@@ -688,11 +688,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T07:53:00",
-    "check_out": "2026-08-01T20:03:00",
+    "check_in": "2026-08-01T07:55:00",
+    "check_out": "2026-08-01T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:02:00 & 16:05:00 -- 20:03:00",
-    "punches_raw": "07:53, 12:02, 16:05, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-01",
@@ -715,10 +715,10 @@ export const initialData = {
     "log_date": "2026-08-01",
     "day_name": "السبت",
     "check_in": "2026-08-01T07:55:00",
-    "check_out": "2026-08-01T20:03:00",
+    "check_out": "2026-08-01T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:02:00 & 16:09:00 -- 20:03:00",
-    "punches_raw": "07:55, 12:02, 16:09, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-01",
@@ -727,11 +727,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T16:11:00",
-    "check_out": "2026-08-01T21:02:00",
+    "check_in": "2026-08-01T16:00:00",
+    "check_out": "2026-08-01T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:11:00 -- 21:02:00",
-    "punches_raw": "16:11, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-01",
@@ -740,11 +740,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T08:12:00",
-    "check_out": "2026-08-01T13:02:00",
+    "check_in": "2026-08-01T08:00:00",
+    "check_out": "2026-08-01T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:12:00 -- 13:02:00",
-    "punches_raw": "08:12, 13:02"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-01",
@@ -753,11 +753,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T16:13:00",
-    "check_out": "2026-08-01T21:02:00",
+    "check_in": "2026-08-01T16:00:00",
+    "check_out": "2026-08-01T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:13:00 -- 21:02:00",
-    "punches_raw": "16:13, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-01",
@@ -766,11 +766,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T16:14:00",
-    "check_out": "2026-08-01T21:02:00",
+    "check_in": "2026-08-01T16:00:00",
+    "check_out": "2026-08-01T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:02:00",
-    "punches_raw": "16:14, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-01",
@@ -780,10 +780,10 @@ export const initialData = {
     "log_date": "2026-08-01",
     "day_name": "السبت",
     "check_in": "2026-08-01T16:00:00",
-    "check_out": "2026-08-01T21:02:00",
+    "check_out": "2026-08-01T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:02:00",
-    "punches_raw": "16:00, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-01",
@@ -792,11 +792,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T07:46:00",
-    "check_out": "2026-08-01T20:03:00",
+    "check_in": "2026-08-01T07:55:00",
+    "check_out": "2026-08-01T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:46:00 -- 12:02:00 & 16:06:00 -- 20:03:00",
-    "punches_raw": "07:46, 12:02, 16:06, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-01",
@@ -805,11 +805,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T07:47:00",
-    "check_out": "2026-08-01T20:03:00",
+    "check_in": "2026-08-01T07:55:00",
+    "check_out": "2026-08-01T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:02:00 & 16:08:00 -- 20:03:00",
-    "punches_raw": "07:47, 12:02, 16:08, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-01",
@@ -818,11 +818,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T07:48:00",
-    "check_out": "2026-08-01T20:03:00",
+    "check_in": "2026-08-01T07:55:00",
+    "check_out": "2026-08-01T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:02:00 & 16:10:00 -- 20:03:00",
-    "punches_raw": "07:48, 12:02, 16:10, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-01",
@@ -831,11 +831,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T16:04:00",
-    "check_out": "2026-08-01T21:02:00",
+    "check_in": "2026-08-01T16:00:00",
+    "check_out": "2026-08-01T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:02:00",
-    "punches_raw": "16:04, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-02",
@@ -844,11 +844,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T08:02:00",
-    "check_out": "2026-08-02T13:04:00",
+    "check_in": "2026-08-02T08:00:00",
+    "check_out": "2026-08-02T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:02:00 -- 13:04:00",
-    "punches_raw": "08:02, 13:04"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-02",
@@ -857,11 +857,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T08:48:00",
-    "check_out": "2026-08-02T21:06:00",
+    "check_in": "2026-08-02T08:47:00",
+    "check_out": "2026-08-02T21:12:00",
     "status": "present",
-    "timestamp_raw": "08:48:00 -- 13:04:00 & 16:09:00 -- 21:06:00",
-    "punches_raw": "08:48, 13:04, 16:09, 21:06"
+    "timestamp_raw": "08:47:00 -- 13:05:00 & 16:17:00 -- 21:12:00",
+    "punches_raw": "08:47, 13:05, 16:17, 21:12"
   },
   {
     "id": "att_1005_2026-08-02",
@@ -870,11 +870,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:49:00",
-    "check_out": "2026-08-02T20:06:00",
+    "check_in": "2026-08-02T07:55:00",
+    "check_out": "2026-08-02T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:04:00 & 16:11:00 -- 20:06:00",
-    "punches_raw": "07:49, 12:04, 16:11, 20:06"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-02",
@@ -883,11 +883,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:50:00",
-    "check_out": "2026-08-02T20:06:00",
+    "check_in": "2026-08-02T07:55:00",
+    "check_out": "2026-08-02T20:51:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:04:00 & 16:13:00 -- 20:06:00",
-    "punches_raw": "07:50, 12:04, 16:13, 20:06"
+    "timestamp_raw": "07:55:00 -- 12:16:00 & 16:09:00 -- 20:51:00",
+    "punches_raw": "07:55, 12:16, 16:09, 20:51"
   },
   {
     "id": "att_1004_2026-08-02",
@@ -896,11 +896,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:51:00",
-    "check_out": "2026-08-02T20:06:00",
+    "check_in": "2026-08-02T07:55:00",
+    "check_out": "2026-08-02T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:04:00 & 16:15:00 -- 20:06:00",
-    "punches_raw": "07:51, 12:04, 16:15, 20:06"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-02",
@@ -909,11 +909,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T08:07:00",
-    "check_out": "2026-08-02T13:04:00",
+    "check_in": "2026-08-02T08:00:00",
+    "check_out": "2026-08-02T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:07:00 -- 13:04:00",
-    "punches_raw": "08:07, 13:04"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-02",
@@ -922,11 +922,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T08:08:00",
-    "check_out": "2026-08-02T13:04:00",
+    "check_in": "2026-08-02T08:00:00",
+    "check_out": "2026-08-02T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:08:00 -- 13:04:00",
-    "punches_raw": "08:08, 13:04"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-02",
@@ -935,11 +935,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:54:00",
-    "check_out": "2026-08-02T20:06:00",
+    "check_in": "2026-08-02T07:55:00",
+    "check_out": "2026-08-02T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:04:00 & 16:06:00 -- 20:06:00",
-    "punches_raw": "07:54, 12:04, 16:06, 20:06"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-02",
@@ -961,11 +961,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:56:00",
-    "check_out": "2026-08-02T20:06:00",
+    "check_in": "2026-08-02T07:55:00",
+    "check_out": "2026-08-02T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:04:00 & 16:10:00 -- 20:06:00",
-    "punches_raw": "07:56, 12:04, 16:10, 20:06"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-02",
@@ -974,11 +974,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T16:12:00",
-    "check_out": "2026-08-02T21:04:00",
+    "check_in": "2026-08-02T16:00:00",
+    "check_out": "2026-08-02T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:12:00 -- 21:04:00",
-    "punches_raw": "16:12, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-02",
@@ -987,11 +987,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T08:13:00",
-    "check_out": "2026-08-02T13:04:00",
+    "check_in": "2026-08-02T08:00:00",
+    "check_out": "2026-08-02T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:13:00 -- 13:04:00",
-    "punches_raw": "08:13, 13:04"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-02",
@@ -1000,11 +1000,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T16:14:00",
-    "check_out": "2026-08-02T21:04:00",
+    "check_in": "2026-08-02T16:00:00",
+    "check_out": "2026-08-02T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:04:00",
-    "punches_raw": "16:14, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-02",
@@ -1014,10 +1014,10 @@ export const initialData = {
     "log_date": "2026-08-02",
     "day_name": "الأحد",
     "check_in": "2026-08-02T16:00:00",
-    "check_out": "2026-08-02T21:04:00",
+    "check_out": "2026-08-02T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:04:00",
-    "punches_raw": "16:00, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-02",
@@ -1026,11 +1026,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T16:01:00",
-    "check_out": "2026-08-02T21:04:00",
+    "check_in": "2026-08-02T16:00:00",
+    "check_out": "2026-08-02T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:04:00",
-    "punches_raw": "16:01, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-02",
@@ -1039,11 +1039,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:47:00",
-    "check_out": "2026-08-02T20:06:00",
+    "check_in": "2026-08-02T07:55:00",
+    "check_out": "2026-08-02T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:04:00 & 16:07:00 -- 20:06:00",
-    "punches_raw": "07:47, 12:04, 16:07, 20:06"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-02",
@@ -1052,11 +1052,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:48:00",
-    "check_out": "2026-08-02T20:06:00",
+    "check_in": "2026-08-02T07:55:00",
+    "check_out": "2026-08-02T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:04:00 & 16:09:00 -- 20:06:00",
-    "punches_raw": "07:48, 12:04, 16:09, 20:06"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-02",
@@ -1065,11 +1065,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:49:00",
-    "check_out": "2026-08-02T20:06:00",
+    "check_in": "2026-08-02T07:55:00",
+    "check_out": "2026-08-02T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:04:00 & 16:11:00 -- 20:06:00",
-    "punches_raw": "07:49, 12:04, 16:11, 20:06"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-02",
@@ -1078,11 +1078,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T16:05:00",
-    "check_out": "2026-08-02T21:04:00",
+    "check_in": "2026-08-02T16:00:00",
+    "check_out": "2026-08-02T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:05:00 -- 21:04:00",
-    "punches_raw": "16:05, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-03",
@@ -1091,11 +1091,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T08:03:00",
-    "check_out": "2026-08-03T13:06:00",
+    "check_in": "2026-08-03T08:00:00",
+    "check_out": "2026-08-03T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:03:00 -- 13:06:00",
-    "punches_raw": "08:03, 13:06"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-03",
@@ -1104,11 +1104,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T08:49:00",
-    "check_out": "2026-08-03T21:09:00",
+    "check_in": "2026-08-03T08:38:00",
+    "check_out": "2026-08-03T20:59:00",
     "status": "present",
-    "timestamp_raw": "08:49:00 -- 13:06:00 & 16:10:00 -- 21:09:00",
-    "punches_raw": "08:49, 13:06, 16:10, 21:09"
+    "timestamp_raw": "08:38:00 -- 12:50:00 & 16:29:00 -- 20:59:00",
+    "punches_raw": "08:38, 12:50, 16:29, 20:59"
   },
   {
     "id": "att_1005_2026-08-03",
@@ -1117,11 +1117,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T07:50:00",
-    "check_out": "2026-08-03T20:09:00",
+    "check_in": "2026-08-03T07:55:00",
+    "check_out": "2026-08-03T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:06:00 & 16:12:00 -- 20:09:00",
-    "punches_raw": "07:50, 12:06, 16:12, 20:09"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-03",
@@ -1130,11 +1130,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T07:51:00",
-    "check_out": "2026-08-03T20:09:00",
+    "check_in": "2026-08-03T07:56:00",
+    "check_out": "2026-08-03T20:51:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:06:00 & 16:14:00 -- 20:09:00",
-    "punches_raw": "07:51, 12:06, 16:14, 20:09"
+    "timestamp_raw": "07:56:00 -- 12:16:00 & 16:09:00 -- 20:51:00",
+    "punches_raw": "07:56, 12:16, 16:09, 20:51"
   },
   {
     "id": "att_1004_2026-08-03",
@@ -1143,11 +1143,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T07:52:00",
-    "check_out": "2026-08-03T20:09:00",
+    "check_in": "2026-08-03T07:55:00",
+    "check_out": "2026-08-03T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:06:00 & 16:16:00 -- 20:09:00",
-    "punches_raw": "07:52, 12:06, 16:16, 20:09"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-03",
@@ -1156,11 +1156,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T08:08:00",
-    "check_out": "2026-08-03T13:06:00",
+    "check_in": "2026-08-03T08:00:00",
+    "check_out": "2026-08-03T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:08:00 -- 13:06:00",
-    "punches_raw": "08:08, 13:06"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-03",
@@ -1169,11 +1169,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T08:09:00",
-    "check_out": "2026-08-03T13:06:00",
+    "check_in": "2026-08-03T08:00:00",
+    "check_out": "2026-08-03T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:09:00 -- 13:06:00",
-    "punches_raw": "08:09, 13:06"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-03",
@@ -1183,10 +1183,10 @@ export const initialData = {
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
     "check_in": "2026-08-03T07:55:00",
-    "check_out": "2026-08-03T20:09:00",
+    "check_out": "2026-08-03T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:06:00 & 16:07:00 -- 20:09:00",
-    "punches_raw": "07:55, 12:06, 16:07, 20:09"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-03",
@@ -1208,11 +1208,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T07:57:00",
-    "check_out": "2026-08-03T20:09:00",
+    "check_in": "2026-08-03T07:55:00",
+    "check_out": "2026-08-03T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:06:00 & 16:11:00 -- 20:09:00",
-    "punches_raw": "07:57, 12:06, 16:11, 20:09"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-03",
@@ -1221,11 +1221,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T16:13:00",
-    "check_out": "2026-08-03T21:06:00",
+    "check_in": "2026-08-03T16:00:00",
+    "check_out": "2026-08-03T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:13:00 -- 21:06:00",
-    "punches_raw": "16:13, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-03",
@@ -1234,11 +1234,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T08:14:00",
-    "check_out": "2026-08-03T13:06:00",
+    "check_in": "2026-08-03T08:00:00",
+    "check_out": "2026-08-03T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:14:00 -- 13:06:00",
-    "punches_raw": "08:14, 13:06"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-03",
@@ -1248,10 +1248,10 @@ export const initialData = {
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
     "check_in": "2026-08-03T16:00:00",
-    "check_out": "2026-08-03T21:06:00",
+    "check_out": "2026-08-03T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:06:00",
-    "punches_raw": "16:00, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-03",
@@ -1260,11 +1260,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T16:01:00",
-    "check_out": "2026-08-03T21:06:00",
+    "check_in": "2026-08-03T16:00:00",
+    "check_out": "2026-08-03T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:06:00",
-    "punches_raw": "16:01, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-03",
@@ -1273,11 +1273,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T16:02:00",
-    "check_out": "2026-08-03T21:06:00",
+    "check_in": "2026-08-03T16:00:00",
+    "check_out": "2026-08-03T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:02:00 -- 21:06:00",
-    "punches_raw": "16:02, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-03",
@@ -1286,11 +1286,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T07:48:00",
-    "check_out": "2026-08-03T20:09:00",
+    "check_in": "2026-08-03T07:55:00",
+    "check_out": "2026-08-03T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:06:00 & 16:08:00 -- 20:09:00",
-    "punches_raw": "07:48, 12:06, 16:08, 20:09"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-03",
@@ -1299,11 +1299,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T07:49:00",
-    "check_out": "2026-08-03T20:09:00",
+    "check_in": "2026-08-03T07:55:00",
+    "check_out": "2026-08-03T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:06:00 & 16:10:00 -- 20:09:00",
-    "punches_raw": "07:49, 12:06, 16:10, 20:09"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-03",
@@ -1312,11 +1312,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T07:50:00",
-    "check_out": "2026-08-03T20:09:00",
+    "check_in": "2026-08-03T07:55:00",
+    "check_out": "2026-08-03T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:06:00 & 16:12:00 -- 20:09:00",
-    "punches_raw": "07:50, 12:06, 16:12, 20:09"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-03",
@@ -1325,11 +1325,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T16:06:00",
-    "check_out": "2026-08-03T21:06:00",
+    "check_in": "2026-08-03T16:00:00",
+    "check_out": "2026-08-03T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:06:00",
-    "punches_raw": "16:06, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-04",
@@ -1338,11 +1338,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T08:04:00",
-    "check_out": "2026-08-04T13:08:00",
+    "check_in": "2026-08-04T08:00:00",
+    "check_out": "2026-08-04T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:04:00 -- 13:08:00",
-    "punches_raw": "08:04, 13:08"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-04",
@@ -1351,11 +1351,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T08:50:00",
-    "check_out": "2026-08-04T21:12:00",
+    "check_in": "2026-08-04T08:41:00",
+    "check_out": "2026-08-04T20:59:00",
     "status": "present",
-    "timestamp_raw": "08:50:00 -- 13:08:00 & 16:11:00 -- 21:12:00",
-    "punches_raw": "08:50, 13:08, 16:11, 21:12"
+    "timestamp_raw": "08:41:00 -- 12:53:00 & 16:21:00 -- 20:59:00",
+    "punches_raw": "08:41, 12:53, 16:21, 20:59"
   },
   {
     "id": "att_1005_2026-08-04",
@@ -1364,11 +1364,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:51:00",
-    "check_out": "2026-08-04T20:12:00",
+    "check_in": "2026-08-04T07:55:00",
+    "check_out": "2026-08-04T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:08:00 & 16:13:00 -- 20:12:00",
-    "punches_raw": "07:51, 12:08, 16:13, 20:12"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-04",
@@ -1377,11 +1377,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:52:00",
-    "check_out": "2026-08-04T20:12:00",
+    "check_in": "2026-08-04T07:54:00",
+    "check_out": "2026-08-04T20:17:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:08:00 & 16:15:00 -- 20:12:00",
-    "punches_raw": "07:52, 12:08, 16:15, 20:12"
+    "timestamp_raw": "07:54:00 -- 12:03:00 & 16:05:00 -- 20:17:00",
+    "punches_raw": "07:54, 12:03, 16:05, 20:17"
   },
   {
     "id": "att_1004_2026-08-04",
@@ -1390,11 +1390,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:53:00",
-    "check_out": "2026-08-04T20:12:00",
+    "check_in": "2026-08-04T07:55:00",
+    "check_out": "2026-08-04T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:08:00 & 16:17:00 -- 20:12:00",
-    "punches_raw": "07:53, 12:08, 16:17, 20:12"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-04",
@@ -1403,11 +1403,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T08:09:00",
-    "check_out": "2026-08-04T13:08:00",
+    "check_in": "2026-08-04T08:00:00",
+    "check_out": "2026-08-04T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:09:00 -- 13:08:00",
-    "punches_raw": "08:09, 13:08"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-04",
@@ -1416,11 +1416,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T08:10:00",
-    "check_out": "2026-08-04T13:08:00",
+    "check_in": "2026-08-04T08:00:00",
+    "check_out": "2026-08-04T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:10:00 -- 13:08:00",
-    "punches_raw": "08:10, 13:08"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-04",
@@ -1429,11 +1429,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:56:00",
-    "check_out": "2026-08-04T20:12:00",
+    "check_in": "2026-08-04T07:55:00",
+    "check_out": "2026-08-04T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:08:00 & 16:08:00 -- 20:12:00",
-    "punches_raw": "07:56, 12:08, 16:08, 20:12"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-04",
@@ -1455,11 +1455,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:58:00",
-    "check_out": "2026-08-04T20:12:00",
+    "check_in": "2026-08-04T07:55:00",
+    "check_out": "2026-08-04T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:08:00 & 16:12:00 -- 20:12:00",
-    "punches_raw": "07:58, 12:08, 16:12, 20:12"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-04",
@@ -1468,11 +1468,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T16:14:00",
-    "check_out": "2026-08-04T21:08:00",
+    "check_in": "2026-08-04T16:00:00",
+    "check_out": "2026-08-04T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:08:00",
-    "punches_raw": "16:14, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-04",
@@ -1482,10 +1482,10 @@ export const initialData = {
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
     "check_in": "2026-08-04T08:00:00",
-    "check_out": "2026-08-04T13:08:00",
+    "check_out": "2026-08-04T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:00:00 -- 13:08:00",
-    "punches_raw": "08:00, 13:08"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-04",
@@ -1494,11 +1494,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T16:01:00",
-    "check_out": "2026-08-04T21:08:00",
+    "check_in": "2026-08-04T16:00:00",
+    "check_out": "2026-08-04T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:08:00",
-    "punches_raw": "16:01, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-04",
@@ -1507,11 +1507,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T16:02:00",
-    "check_out": "2026-08-04T21:08:00",
+    "check_in": "2026-08-04T16:00:00",
+    "check_out": "2026-08-04T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:02:00 -- 21:08:00",
-    "punches_raw": "16:02, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-04",
@@ -1520,11 +1520,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T16:03:00",
-    "check_out": "2026-08-04T21:08:00",
+    "check_in": "2026-08-04T16:00:00",
+    "check_out": "2026-08-04T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:08:00",
-    "punches_raw": "16:03, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-04",
@@ -1533,11 +1533,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:49:00",
-    "check_out": "2026-08-04T20:12:00",
+    "check_in": "2026-08-04T07:55:00",
+    "check_out": "2026-08-04T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:08:00 & 16:09:00 -- 20:12:00",
-    "punches_raw": "07:49, 12:08, 16:09, 20:12"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-04",
@@ -1546,11 +1546,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:50:00",
-    "check_out": "2026-08-04T20:12:00",
+    "check_in": "2026-08-04T07:55:00",
+    "check_out": "2026-08-04T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:08:00 & 16:11:00 -- 20:12:00",
-    "punches_raw": "07:50, 12:08, 16:11, 20:12"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-04",
@@ -1559,11 +1559,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:51:00",
-    "check_out": "2026-08-04T20:12:00",
+    "check_in": "2026-08-04T07:55:00",
+    "check_out": "2026-08-04T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:08:00 & 16:13:00 -- 20:12:00",
-    "punches_raw": "07:51, 12:08, 16:13, 20:12"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-04",
@@ -1572,11 +1572,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T16:07:00",
-    "check_out": "2026-08-04T21:08:00",
+    "check_in": "2026-08-04T16:00:00",
+    "check_out": "2026-08-04T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:08:00",
-    "punches_raw": "16:07, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-05",
@@ -1585,11 +1585,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T08:05:00",
-    "check_out": "2026-08-05T13:10:00",
+    "check_in": "2026-08-05T08:00:00",
+    "check_out": "2026-08-05T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:05:00 -- 13:10:00",
-    "punches_raw": "08:05, 13:10"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-05",
@@ -1598,11 +1598,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T08:51:00",
-    "check_out": "2026-08-05T21:15:00",
+    "check_in": "2026-08-05T08:55:00",
+    "check_out": "2026-08-05T21:04:00",
     "status": "present",
-    "timestamp_raw": "08:51:00 -- 13:10:00 & 16:12:00 -- 21:15:00",
-    "punches_raw": "08:51, 13:10, 16:12, 21:15"
+    "timestamp_raw": "08:55:00 -- 13:17:00 & 16:09:00 -- 21:04:00",
+    "punches_raw": "08:55, 13:17, 16:09, 21:04"
   },
   {
     "id": "att_1005_2026-08-05",
@@ -1611,11 +1611,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:52:00",
+    "check_in": "2026-08-05T07:55:00",
     "check_out": "2026-08-05T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:10:00 & 16:14:00 -- 20:15:00",
-    "punches_raw": "07:52, 12:10, 16:14, 20:15"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-05",
@@ -1624,11 +1624,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:53:00",
-    "check_out": "2026-08-05T20:15:00",
+    "check_in": "2026-08-05T07:58:00",
+    "check_out": "2026-08-05T20:12:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:10:00 & 16:16:00 -- 20:15:00",
-    "punches_raw": "07:53, 12:10, 16:16, 20:15"
+    "timestamp_raw": "07:58:00 -- 12:07:00 & 16:06:00 -- 20:12:00",
+    "punches_raw": "07:58, 12:07, 16:06, 20:12"
   },
   {
     "id": "att_1004_2026-08-05",
@@ -1637,11 +1637,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:54:00",
+    "check_in": "2026-08-05T07:55:00",
     "check_out": "2026-08-05T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:10:00 & 16:18:00 -- 20:15:00",
-    "punches_raw": "07:54, 12:10, 16:18, 20:15"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-05",
@@ -1650,11 +1650,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T08:10:00",
-    "check_out": "2026-08-05T13:10:00",
+    "check_in": "2026-08-05T08:00:00",
+    "check_out": "2026-08-05T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:10:00 -- 13:10:00",
-    "punches_raw": "08:10, 13:10"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-05",
@@ -1663,11 +1663,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T08:11:00",
-    "check_out": "2026-08-05T13:10:00",
+    "check_in": "2026-08-05T08:00:00",
+    "check_out": "2026-08-05T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:11:00 -- 13:10:00",
-    "punches_raw": "08:11, 13:10"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-05",
@@ -1676,11 +1676,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:57:00",
+    "check_in": "2026-08-05T07:55:00",
     "check_out": "2026-08-05T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:10:00 & 16:09:00 -- 20:15:00",
-    "punches_raw": "07:57, 12:10, 16:09, 20:15"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-05",
@@ -1702,11 +1702,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:59:00",
+    "check_in": "2026-08-05T07:55:00",
     "check_out": "2026-08-05T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:10:00 & 16:13:00 -- 20:15:00",
-    "punches_raw": "07:59, 12:10, 16:13, 20:15"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-05",
@@ -1716,10 +1716,10 @@ export const initialData = {
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
     "check_in": "2026-08-05T16:00:00",
-    "check_out": "2026-08-05T21:10:00",
+    "check_out": "2026-08-05T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:10:00",
-    "punches_raw": "16:00, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-05",
@@ -1728,11 +1728,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T08:01:00",
-    "check_out": "2026-08-05T13:10:00",
+    "check_in": "2026-08-05T08:00:00",
+    "check_out": "2026-08-05T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:01:00 -- 13:10:00",
-    "punches_raw": "08:01, 13:10"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-05",
@@ -1741,11 +1741,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T16:02:00",
-    "check_out": "2026-08-05T21:10:00",
+    "check_in": "2026-08-05T16:00:00",
+    "check_out": "2026-08-05T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:02:00 -- 21:10:00",
-    "punches_raw": "16:02, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-05",
@@ -1754,11 +1754,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T16:03:00",
-    "check_out": "2026-08-05T21:10:00",
+    "check_in": "2026-08-05T16:00:00",
+    "check_out": "2026-08-05T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:10:00",
-    "punches_raw": "16:03, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-05",
@@ -1767,11 +1767,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T16:04:00",
-    "check_out": "2026-08-05T21:10:00",
+    "check_in": "2026-08-05T16:00:00",
+    "check_out": "2026-08-05T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:10:00",
-    "punches_raw": "16:04, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-05",
@@ -1780,11 +1780,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:50:00",
+    "check_in": "2026-08-05T07:55:00",
     "check_out": "2026-08-05T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:10:00 & 16:10:00 -- 20:15:00",
-    "punches_raw": "07:50, 12:10, 16:10, 20:15"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-05",
@@ -1793,11 +1793,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:51:00",
+    "check_in": "2026-08-05T07:55:00",
     "check_out": "2026-08-05T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:10:00 & 16:12:00 -- 20:15:00",
-    "punches_raw": "07:51, 12:10, 16:12, 20:15"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-05",
@@ -1806,11 +1806,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:52:00",
+    "check_in": "2026-08-05T07:55:00",
     "check_out": "2026-08-05T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:10:00 & 16:14:00 -- 20:15:00",
-    "punches_raw": "07:52, 12:10, 16:14, 20:15"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-05",
@@ -1819,11 +1819,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T16:08:00",
-    "check_out": "2026-08-05T21:10:00",
+    "check_in": "2026-08-05T16:00:00",
+    "check_out": "2026-08-05T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:10:00",
-    "punches_raw": "16:08, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-06",
@@ -1832,11 +1832,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T08:06:00",
-    "check_out": "2026-08-06T13:12:00",
+    "check_in": "2026-08-06T08:00:00",
+    "check_out": "2026-08-06T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:06:00 -- 13:12:00",
-    "punches_raw": "08:06, 13:12"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-06",
@@ -1845,11 +1845,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T08:52:00",
-    "check_out": "2026-08-06T21:18:00",
+    "check_in": "2026-08-06T08:57:00",
+    "check_out": "2026-08-06T21:07:00",
     "status": "present",
-    "timestamp_raw": "08:52:00 -- 13:12:00 & 16:13:00 -- 21:18:00",
-    "punches_raw": "08:52, 13:12, 16:13, 21:18"
+    "timestamp_raw": "08:57:00 -- 13:09:00 & 16:41:00 -- 21:07:00",
+    "punches_raw": "08:57, 13:09, 16:41, 21:07"
   },
   {
     "id": "att_1005_2026-08-06",
@@ -1858,11 +1858,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T07:53:00",
-    "check_out": "2026-08-06T20:18:00",
+    "check_in": "2026-08-06T07:55:00",
+    "check_out": "2026-08-06T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:12:00 & 16:15:00 -- 20:18:00",
-    "punches_raw": "07:53, 12:12, 16:15, 20:18"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-06",
@@ -1871,11 +1871,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T07:54:00",
-    "check_out": "2026-08-06T20:18:00",
+    "check_in": "2026-08-06T07:53:00",
+    "check_out": "2026-08-06T20:08:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:12:00 & 16:17:00 -- 20:18:00",
-    "punches_raw": "07:54, 12:12, 16:17, 20:18"
+    "timestamp_raw": "07:53:00 -- 12:08:00 & 16:05:00 -- 20:08:00",
+    "punches_raw": "07:53, 12:08, 16:05, 20:08"
   },
   {
     "id": "att_1004_2026-08-06",
@@ -1885,10 +1885,10 @@ export const initialData = {
     "log_date": "2026-08-06",
     "day_name": "الخميس",
     "check_in": "2026-08-06T07:55:00",
-    "check_out": "2026-08-06T20:18:00",
+    "check_out": "2026-08-06T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:12:00 & 16:19:00 -- 20:18:00",
-    "punches_raw": "07:55, 12:12, 16:19, 20:18"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-06",
@@ -1897,11 +1897,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T08:11:00",
-    "check_out": "2026-08-06T13:12:00",
+    "check_in": "2026-08-06T08:00:00",
+    "check_out": "2026-08-06T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:11:00 -- 13:12:00",
-    "punches_raw": "08:11, 13:12"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-06",
@@ -1910,11 +1910,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T08:12:00",
-    "check_out": "2026-08-06T13:12:00",
+    "check_in": "2026-08-06T08:00:00",
+    "check_out": "2026-08-06T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:12:00 -- 13:12:00",
-    "punches_raw": "08:12, 13:12"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-06",
@@ -1923,11 +1923,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T07:58:00",
-    "check_out": "2026-08-06T20:18:00",
+    "check_in": "2026-08-06T07:55:00",
+    "check_out": "2026-08-06T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:12:00 & 16:10:00 -- 20:18:00",
-    "punches_raw": "07:58, 12:12, 16:10, 20:18"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-06",
@@ -1949,11 +1949,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T07:45:00",
-    "check_out": "2026-08-06T20:18:00",
+    "check_in": "2026-08-06T07:55:00",
+    "check_out": "2026-08-06T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:12:00 & 16:14:00 -- 20:18:00",
-    "punches_raw": "07:45, 12:12, 16:14, 20:18"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-06",
@@ -1962,11 +1962,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T16:01:00",
-    "check_out": "2026-08-06T21:12:00",
+    "check_in": "2026-08-06T16:00:00",
+    "check_out": "2026-08-06T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:12:00",
-    "punches_raw": "16:01, 21:12"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-06",
@@ -1975,11 +1975,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T08:02:00",
-    "check_out": "2026-08-06T13:12:00",
+    "check_in": "2026-08-06T08:00:00",
+    "check_out": "2026-08-06T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:02:00 -- 13:12:00",
-    "punches_raw": "08:02, 13:12"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-06",
@@ -1988,11 +1988,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T16:03:00",
-    "check_out": "2026-08-06T21:12:00",
+    "check_in": "2026-08-06T16:00:00",
+    "check_out": "2026-08-06T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:12:00",
-    "punches_raw": "16:03, 21:12"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-06",
@@ -2001,11 +2001,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T16:04:00",
-    "check_out": "2026-08-06T21:12:00",
+    "check_in": "2026-08-06T16:00:00",
+    "check_out": "2026-08-06T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:12:00",
-    "punches_raw": "16:04, 21:12"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-06",
@@ -2014,11 +2014,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T16:05:00",
-    "check_out": "2026-08-06T21:12:00",
+    "check_in": "2026-08-06T16:00:00",
+    "check_out": "2026-08-06T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:05:00 -- 21:12:00",
-    "punches_raw": "16:05, 21:12"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-06",
@@ -2027,11 +2027,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T07:51:00",
-    "check_out": "2026-08-06T20:18:00",
+    "check_in": "2026-08-06T07:55:00",
+    "check_out": "2026-08-06T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:12:00 & 16:11:00 -- 20:18:00",
-    "punches_raw": "07:51, 12:12, 16:11, 20:18"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-06",
@@ -2040,11 +2040,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T07:52:00",
-    "check_out": "2026-08-06T20:18:00",
+    "check_in": "2026-08-06T07:55:00",
+    "check_out": "2026-08-06T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:12:00 & 16:13:00 -- 20:18:00",
-    "punches_raw": "07:52, 12:12, 16:13, 20:18"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-06",
@@ -2053,11 +2053,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T07:53:00",
-    "check_out": "2026-08-06T20:18:00",
+    "check_in": "2026-08-06T07:55:00",
+    "check_out": "2026-08-06T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:12:00 & 16:15:00 -- 20:18:00",
-    "punches_raw": "07:53, 12:12, 16:15, 20:18"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-06",
@@ -2066,11 +2066,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T16:09:00",
-    "check_out": "2026-08-06T21:12:00",
+    "check_in": "2026-08-06T16:00:00",
+    "check_out": "2026-08-06T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:09:00 -- 21:12:00",
-    "punches_raw": "16:09, 21:12"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-07",
@@ -2092,11 +2092,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:14:00",
+    "check_out": "2026-08-07T20:14:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:14:00 -- 20:14:00",
+    "punches_raw": "16:14, 20:14"
   },
   {
     "id": "att_1005_2026-08-07",
@@ -2105,11 +2105,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:07:00",
+    "check_out": "2026-08-07T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1002_2026-08-07",
@@ -2118,11 +2118,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:07:00",
+    "check_out": "2026-08-07T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1004_2026-08-07",
@@ -2131,11 +2131,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:07:00",
+    "check_out": "2026-08-07T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1008_2026-08-07",
@@ -2170,11 +2170,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:07:00",
+    "check_out": "2026-08-07T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1015_2026-08-07",
@@ -2196,11 +2196,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:07:00",
+    "check_out": "2026-08-07T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1018_2026-08-07",
@@ -2274,11 +2274,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:07:00",
+    "check_out": "2026-08-07T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1033_2026-08-07",
@@ -2287,11 +2287,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:07:00",
+    "check_out": "2026-08-07T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1034_2026-08-07",
@@ -2300,11 +2300,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:13:00",
-    "check_out": "2026-08-07T20:25:00",
+    "check_in": "2026-08-07T16:07:00",
+    "check_out": "2026-08-07T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:13:00 -- 20:25:00",
-    "punches_raw": "16:13, 20:25"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1035_2026-08-07",
@@ -2326,11 +2326,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T08:08:00",
-    "check_out": "2026-08-08T13:01:00",
+    "check_in": "2026-08-08T08:00:00",
+    "check_out": "2026-08-08T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:08:00 -- 13:01:00",
-    "punches_raw": "08:08, 13:01"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-08",
@@ -2339,11 +2339,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T08:54:00",
+    "check_in": "2026-08-08T08:37:00",
     "check_out": "2026-08-08T21:24:00",
     "status": "present",
-    "timestamp_raw": "08:54:00 -- 13:16:00 & 16:15:00 -- 21:24:00",
-    "punches_raw": "08:54, 13:16, 16:15, 21:24"
+    "timestamp_raw": "08:37:00 -- 13:11:00 & 16:18:00 -- 21:24:00",
+    "punches_raw": "08:37, 13:11, 16:18, 21:24"
   },
   {
     "id": "att_1005_2026-08-08",
@@ -2353,10 +2353,10 @@ export const initialData = {
     "log_date": "2026-08-08",
     "day_name": "السبت",
     "check_in": "2026-08-08T07:55:00",
-    "check_out": "2026-08-08T20:24:00",
+    "check_out": "2026-08-08T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:16:00 & 16:17:00 -- 20:24:00",
-    "punches_raw": "07:55, 12:16, 16:17, 20:24"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-08",
@@ -2365,11 +2365,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T07:56:00",
-    "check_out": "2026-08-08T20:24:00",
+    "check_in": "2026-08-08T07:53:00",
+    "check_out": "2026-08-08T20:21:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:16:00 & 16:19:00 -- 20:24:00",
-    "punches_raw": "07:56, 12:16, 16:19, 20:24"
+    "timestamp_raw": "07:53:00 -- 12:08:00 & 16:07:00 -- 20:21:00",
+    "punches_raw": "07:53, 12:08, 16:07, 20:21"
   },
   {
     "id": "att_1004_2026-08-08",
@@ -2378,11 +2378,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T07:57:00",
-    "check_out": "2026-08-08T20:24:00",
+    "check_in": "2026-08-08T07:55:00",
+    "check_out": "2026-08-08T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:16:00 & 16:06:00 -- 20:24:00",
-    "punches_raw": "07:57, 12:16, 16:06, 20:24"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-08",
@@ -2391,11 +2391,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T08:13:00",
-    "check_out": "2026-08-08T13:01:00",
+    "check_in": "2026-08-08T08:00:00",
+    "check_out": "2026-08-08T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:13:00 -- 13:01:00",
-    "punches_raw": "08:13, 13:01"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-08",
@@ -2404,11 +2404,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T08:14:00",
-    "check_out": "2026-08-08T13:01:00",
+    "check_in": "2026-08-08T08:00:00",
+    "check_out": "2026-08-08T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:14:00 -- 13:01:00",
-    "punches_raw": "08:14, 13:01"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-08",
@@ -2417,11 +2417,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T07:45:00",
-    "check_out": "2026-08-08T20:24:00",
+    "check_in": "2026-08-08T07:55:00",
+    "check_out": "2026-08-08T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:16:00 & 16:12:00 -- 20:24:00",
-    "punches_raw": "07:45, 12:16, 16:12, 20:24"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-08",
@@ -2443,11 +2443,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T07:47:00",
-    "check_out": "2026-08-08T20:24:00",
+    "check_in": "2026-08-08T07:55:00",
+    "check_out": "2026-08-08T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:16:00 & 16:16:00 -- 20:24:00",
-    "punches_raw": "07:47, 12:16, 16:16, 20:24"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-08",
@@ -2456,11 +2456,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T16:03:00",
-    "check_out": "2026-08-08T21:01:00",
+    "check_in": "2026-08-08T16:00:00",
+    "check_out": "2026-08-08T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:01:00",
-    "punches_raw": "16:03, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-08",
@@ -2469,11 +2469,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T08:04:00",
-    "check_out": "2026-08-08T13:01:00",
+    "check_in": "2026-08-08T08:00:00",
+    "check_out": "2026-08-08T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:04:00 -- 13:01:00",
-    "punches_raw": "08:04, 13:01"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-08",
@@ -2482,11 +2482,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T16:05:00",
-    "check_out": "2026-08-08T21:01:00",
+    "check_in": "2026-08-08T16:00:00",
+    "check_out": "2026-08-08T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:05:00 -- 21:01:00",
-    "punches_raw": "16:05, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-08",
@@ -2495,11 +2495,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T16:06:00",
-    "check_out": "2026-08-08T21:01:00",
+    "check_in": "2026-08-08T16:00:00",
+    "check_out": "2026-08-08T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:01:00",
-    "punches_raw": "16:06, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-08",
@@ -2508,11 +2508,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T16:07:00",
-    "check_out": "2026-08-08T21:01:00",
+    "check_in": "2026-08-08T16:00:00",
+    "check_out": "2026-08-08T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:01:00",
-    "punches_raw": "16:07, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-08",
@@ -2521,11 +2521,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T07:53:00",
-    "check_out": "2026-08-08T20:24:00",
+    "check_in": "2026-08-08T07:55:00",
+    "check_out": "2026-08-08T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:16:00 & 16:13:00 -- 20:24:00",
-    "punches_raw": "07:53, 12:16, 16:13, 20:24"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-08",
@@ -2534,11 +2534,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T07:54:00",
-    "check_out": "2026-08-08T20:24:00",
+    "check_in": "2026-08-08T07:55:00",
+    "check_out": "2026-08-08T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:16:00 & 16:15:00 -- 20:24:00",
-    "punches_raw": "07:54, 12:16, 16:15, 20:24"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-08",
@@ -2548,10 +2548,10 @@ export const initialData = {
     "log_date": "2026-08-08",
     "day_name": "السبت",
     "check_in": "2026-08-08T07:55:00",
-    "check_out": "2026-08-08T20:24:00",
+    "check_out": "2026-08-08T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:16:00 & 16:17:00 -- 20:24:00",
-    "punches_raw": "07:55, 12:16, 16:17, 20:24"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-08",
@@ -2560,11 +2560,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-08",
     "day_name": "السبت",
-    "check_in": "2026-08-08T16:11:00",
-    "check_out": "2026-08-08T21:01:00",
+    "check_in": "2026-08-08T16:00:00",
+    "check_out": "2026-08-08T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:11:00 -- 21:01:00",
-    "punches_raw": "16:11, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-09",
@@ -2573,11 +2573,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T08:09:00",
-    "check_out": "2026-08-09T13:03:00",
+    "check_in": "2026-08-09T08:00:00",
+    "check_out": "2026-08-09T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:09:00 -- 13:03:00",
-    "punches_raw": "08:09, 13:03"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-09",
@@ -2586,11 +2586,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T08:55:00",
-    "check_out": "2026-08-09T21:02:00",
+    "check_in": "2026-08-09T08:59:00",
+    "check_out": "2026-08-09T21:07:00",
     "status": "present",
-    "timestamp_raw": "08:55:00 -- 13:18:00 & 16:16:00 -- 21:02:00",
-    "punches_raw": "08:55, 13:18, 16:16, 21:02"
+    "timestamp_raw": "08:59:00 -- 13:08:00 & 16:53:00 -- 21:07:00",
+    "punches_raw": "08:59, 13:08, 16:53, 21:07"
   },
   {
     "id": "att_1005_2026-08-09",
@@ -2599,11 +2599,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T07:56:00",
-    "check_out": "2026-08-09T20:02:00",
+    "check_in": "2026-08-09T07:55:00",
+    "check_out": "2026-08-09T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:18:00 & 16:18:00 -- 20:02:00",
-    "punches_raw": "07:56, 12:18, 16:18, 20:02"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-09",
@@ -2612,11 +2612,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T07:57:00",
-    "check_out": "2026-08-09T20:02:00",
+    "check_in": "2026-08-09T07:54:00",
+    "check_out": "2026-08-09T20:09:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:18:00 & 16:05:00 -- 20:02:00",
-    "punches_raw": "07:57, 12:18, 16:05, 20:02"
+    "timestamp_raw": "07:54:00 -- 12:00:00 & 16:06:00 -- 20:09:00",
+    "punches_raw": "07:54, 12:00, 16:06, 20:09"
   },
   {
     "id": "att_1004_2026-08-09",
@@ -2625,11 +2625,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T07:58:00",
-    "check_out": "2026-08-09T20:02:00",
+    "check_in": "2026-08-09T07:55:00",
+    "check_out": "2026-08-09T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:18:00 & 16:07:00 -- 20:02:00",
-    "punches_raw": "07:58, 12:18, 16:07, 20:02"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-09",
@@ -2638,11 +2638,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T08:14:00",
-    "check_out": "2026-08-09T13:03:00",
+    "check_in": "2026-08-09T08:00:00",
+    "check_out": "2026-08-09T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:14:00 -- 13:03:00",
-    "punches_raw": "08:14, 13:03"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-09",
@@ -2652,10 +2652,10 @@ export const initialData = {
     "log_date": "2026-08-09",
     "day_name": "الأحد",
     "check_in": "2026-08-09T08:00:00",
-    "check_out": "2026-08-09T13:03:00",
+    "check_out": "2026-08-09T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:00:00 -- 13:03:00",
-    "punches_raw": "08:00, 13:03"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-09",
@@ -2664,11 +2664,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T07:46:00",
-    "check_out": "2026-08-09T20:02:00",
+    "check_in": "2026-08-09T07:55:00",
+    "check_out": "2026-08-09T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:46:00 -- 12:18:00 & 16:13:00 -- 20:02:00",
-    "punches_raw": "07:46, 12:18, 16:13, 20:02"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-09",
@@ -2690,11 +2690,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T07:48:00",
-    "check_out": "2026-08-09T20:02:00",
+    "check_in": "2026-08-09T07:55:00",
+    "check_out": "2026-08-09T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:18:00 & 16:17:00 -- 20:02:00",
-    "punches_raw": "07:48, 12:18, 16:17, 20:02"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-09",
@@ -2703,11 +2703,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T16:04:00",
-    "check_out": "2026-08-09T21:03:00",
+    "check_in": "2026-08-09T16:00:00",
+    "check_out": "2026-08-09T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:03:00",
-    "punches_raw": "16:04, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-09",
@@ -2716,11 +2716,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T08:05:00",
-    "check_out": "2026-08-09T13:03:00",
+    "check_in": "2026-08-09T08:00:00",
+    "check_out": "2026-08-09T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:05:00 -- 13:03:00",
-    "punches_raw": "08:05, 13:03"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-09",
@@ -2729,11 +2729,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T16:06:00",
-    "check_out": "2026-08-09T21:03:00",
+    "check_in": "2026-08-09T16:00:00",
+    "check_out": "2026-08-09T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:03:00",
-    "punches_raw": "16:06, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-09",
@@ -2742,11 +2742,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T16:07:00",
-    "check_out": "2026-08-09T21:03:00",
+    "check_in": "2026-08-09T16:00:00",
+    "check_out": "2026-08-09T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:03:00",
-    "punches_raw": "16:07, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-09",
@@ -2755,11 +2755,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T16:08:00",
-    "check_out": "2026-08-09T21:03:00",
+    "check_in": "2026-08-09T16:00:00",
+    "check_out": "2026-08-09T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:03:00",
-    "punches_raw": "16:08, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-09",
@@ -2768,11 +2768,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T07:54:00",
-    "check_out": "2026-08-09T20:02:00",
+    "check_in": "2026-08-09T07:55:00",
+    "check_out": "2026-08-09T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:18:00 & 16:14:00 -- 20:02:00",
-    "punches_raw": "07:54, 12:18, 16:14, 20:02"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-09",
@@ -2782,10 +2782,10 @@ export const initialData = {
     "log_date": "2026-08-09",
     "day_name": "الأحد",
     "check_in": "2026-08-09T07:55:00",
-    "check_out": "2026-08-09T20:02:00",
+    "check_out": "2026-08-09T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:18:00 & 16:16:00 -- 20:02:00",
-    "punches_raw": "07:55, 12:18, 16:16, 20:02"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-09",
@@ -2794,11 +2794,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T07:56:00",
-    "check_out": "2026-08-09T20:02:00",
+    "check_in": "2026-08-09T07:55:00",
+    "check_out": "2026-08-09T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:18:00 & 16:18:00 -- 20:02:00",
-    "punches_raw": "07:56, 12:18, 16:18, 20:02"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-09",
@@ -2807,11 +2807,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-09",
     "day_name": "الأحد",
-    "check_in": "2026-08-09T16:12:00",
-    "check_out": "2026-08-09T21:03:00",
+    "check_in": "2026-08-09T16:00:00",
+    "check_out": "2026-08-09T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:12:00 -- 21:03:00",
-    "punches_raw": "16:12, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-10",
@@ -2820,11 +2820,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T08:10:00",
-    "check_out": "2026-08-10T13:05:00",
+    "check_in": "2026-08-10T08:00:00",
+    "check_out": "2026-08-10T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:10:00 -- 13:05:00",
-    "punches_raw": "08:10, 13:05"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-10",
@@ -2833,11 +2833,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T08:56:00",
-    "check_out": "2026-08-10T21:05:00",
+    "check_in": "2026-08-10T08:49:00",
+    "check_out": "2026-08-10T20:58:00",
     "status": "present",
-    "timestamp_raw": "08:56:00 -- 13:00:00 & 16:17:00 -- 21:05:00",
-    "punches_raw": "08:56, 13:00, 16:17, 21:05"
+    "timestamp_raw": "08:49:00 -- 12:59:00 & 16:30:00 -- 20:58:00",
+    "punches_raw": "08:49, 12:59, 16:30, 20:58"
   },
   {
     "id": "att_1005_2026-08-10",
@@ -2846,11 +2846,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T07:57:00",
-    "check_out": "2026-08-10T20:05:00",
+    "check_in": "2026-08-10T07:55:00",
+    "check_out": "2026-08-10T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:00:00 & 16:19:00 -- 20:05:00",
-    "punches_raw": "07:57, 12:00, 16:19, 20:05"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-10",
@@ -2859,11 +2859,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T07:58:00",
-    "check_out": "2026-08-10T20:05:00",
+    "check_in": "2026-08-10T07:52:00",
+    "check_out": "2026-08-10T20:12:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:00:00 & 16:06:00 -- 20:05:00",
-    "punches_raw": "07:58, 12:00, 16:06, 20:05"
+    "timestamp_raw": "07:52:00 -- 12:14:00 & 16:06:00 -- 20:12:00",
+    "punches_raw": "07:52, 12:14, 16:06, 20:12"
   },
   {
     "id": "att_1004_2026-08-10",
@@ -2872,11 +2872,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T07:59:00",
-    "check_out": "2026-08-10T20:05:00",
+    "check_in": "2026-08-10T07:55:00",
+    "check_out": "2026-08-10T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:00:00 & 16:08:00 -- 20:05:00",
-    "punches_raw": "07:59, 12:00, 16:08, 20:05"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-10",
@@ -2886,10 +2886,10 @@ export const initialData = {
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
     "check_in": "2026-08-10T08:00:00",
-    "check_out": "2026-08-10T13:05:00",
+    "check_out": "2026-08-10T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:00:00 -- 13:05:00",
-    "punches_raw": "08:00, 13:05"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-10",
@@ -2898,11 +2898,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T08:01:00",
-    "check_out": "2026-08-10T13:05:00",
+    "check_in": "2026-08-10T08:00:00",
+    "check_out": "2026-08-10T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:01:00 -- 13:05:00",
-    "punches_raw": "08:01, 13:05"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-10",
@@ -2911,11 +2911,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T07:47:00",
-    "check_out": "2026-08-10T20:05:00",
+    "check_in": "2026-08-10T07:55:00",
+    "check_out": "2026-08-10T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:00:00 & 16:14:00 -- 20:05:00",
-    "punches_raw": "07:47, 12:00, 16:14, 20:05"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-10",
@@ -2937,11 +2937,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T07:49:00",
-    "check_out": "2026-08-10T20:05:00",
+    "check_in": "2026-08-10T07:55:00",
+    "check_out": "2026-08-10T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:00:00 & 16:18:00 -- 20:05:00",
-    "punches_raw": "07:49, 12:00, 16:18, 20:05"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-10",
@@ -2950,11 +2950,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T16:05:00",
-    "check_out": "2026-08-10T21:05:00",
+    "check_in": "2026-08-10T16:00:00",
+    "check_out": "2026-08-10T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:05:00 -- 21:05:00",
-    "punches_raw": "16:05, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-10",
@@ -2963,11 +2963,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T08:06:00",
-    "check_out": "2026-08-10T13:05:00",
+    "check_in": "2026-08-10T08:00:00",
+    "check_out": "2026-08-10T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:06:00 -- 13:05:00",
-    "punches_raw": "08:06, 13:05"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-10",
@@ -2976,11 +2976,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T16:07:00",
-    "check_out": "2026-08-10T21:05:00",
+    "check_in": "2026-08-10T16:00:00",
+    "check_out": "2026-08-10T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:05:00",
-    "punches_raw": "16:07, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-10",
@@ -2989,11 +2989,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T16:08:00",
-    "check_out": "2026-08-10T21:05:00",
+    "check_in": "2026-08-10T16:00:00",
+    "check_out": "2026-08-10T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:05:00",
-    "punches_raw": "16:08, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-10",
@@ -3002,11 +3002,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T16:09:00",
-    "check_out": "2026-08-10T21:05:00",
+    "check_in": "2026-08-10T16:00:00",
+    "check_out": "2026-08-10T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:09:00 -- 21:05:00",
-    "punches_raw": "16:09, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-10",
@@ -3016,10 +3016,10 @@ export const initialData = {
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
     "check_in": "2026-08-10T07:55:00",
-    "check_out": "2026-08-10T20:05:00",
+    "check_out": "2026-08-10T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:00:00 & 16:15:00 -- 20:05:00",
-    "punches_raw": "07:55, 12:00, 16:15, 20:05"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-10",
@@ -3028,11 +3028,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T07:56:00",
-    "check_out": "2026-08-10T20:05:00",
+    "check_in": "2026-08-10T07:55:00",
+    "check_out": "2026-08-10T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:00:00 & 16:17:00 -- 20:05:00",
-    "punches_raw": "07:56, 12:00, 16:17, 20:05"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-10",
@@ -3041,11 +3041,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T07:57:00",
-    "check_out": "2026-08-10T20:05:00",
+    "check_in": "2026-08-10T07:55:00",
+    "check_out": "2026-08-10T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:00:00 & 16:19:00 -- 20:05:00",
-    "punches_raw": "07:57, 12:00, 16:19, 20:05"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-10",
@@ -3054,11 +3054,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-10",
     "day_name": "الإثنين",
-    "check_in": "2026-08-10T16:13:00",
-    "check_out": "2026-08-10T21:05:00",
+    "check_in": "2026-08-10T16:00:00",
+    "check_out": "2026-08-10T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:13:00 -- 21:05:00",
-    "punches_raw": "16:13, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-11",
@@ -3067,11 +3067,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T08:11:00",
-    "check_out": "2026-08-11T13:07:00",
+    "check_in": "2026-08-11T08:00:00",
+    "check_out": "2026-08-11T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:11:00 -- 13:07:00",
-    "punches_raw": "08:11, 13:07"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-11",
@@ -3080,11 +3080,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T08:57:00",
-    "check_out": "2026-08-11T21:08:00",
+    "check_in": "2026-08-11T08:44:00",
+    "check_out": "2026-08-11T21:01:00",
     "status": "present",
-    "timestamp_raw": "08:57:00 -- 13:02:00 & 16:18:00 -- 21:08:00",
-    "punches_raw": "08:57, 13:02, 16:18, 21:08"
+    "timestamp_raw": "08:44:00 -- 12:43:00 & 16:34:00 -- 21:01:00",
+    "punches_raw": "08:44, 12:43, 16:34, 21:01"
   },
   {
     "id": "att_1005_2026-08-11",
@@ -3093,11 +3093,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T07:58:00",
-    "check_out": "2026-08-11T20:08:00",
+    "check_in": "2026-08-11T07:55:00",
+    "check_out": "2026-08-11T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:02:00 & 16:05:00 -- 20:08:00",
-    "punches_raw": "07:58, 12:02, 16:05, 20:08"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-11",
@@ -3106,11 +3106,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T07:59:00",
-    "check_out": "2026-08-11T20:08:00",
+    "check_in": "2026-08-11T07:55:00",
+    "check_out": "2026-08-11T20:10:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:02:00 & 16:07:00 -- 20:08:00",
-    "punches_raw": "07:59, 12:02, 16:07, 20:08"
+    "timestamp_raw": "07:55:00 -- 12:05:00 & 16:08:00 -- 20:10:00",
+    "punches_raw": "07:55, 12:05, 16:08, 20:10"
   },
   {
     "id": "att_1004_2026-08-11",
@@ -3119,11 +3119,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T07:45:00",
-    "check_out": "2026-08-11T20:08:00",
+    "check_in": "2026-08-11T07:55:00",
+    "check_out": "2026-08-11T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:02:00 & 16:09:00 -- 20:08:00",
-    "punches_raw": "07:45, 12:02, 16:09, 20:08"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-11",
@@ -3132,11 +3132,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T08:01:00",
-    "check_out": "2026-08-11T13:07:00",
+    "check_in": "2026-08-11T08:00:00",
+    "check_out": "2026-08-11T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:01:00 -- 13:07:00",
-    "punches_raw": "08:01, 13:07"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-11",
@@ -3145,11 +3145,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T08:02:00",
-    "check_out": "2026-08-11T13:07:00",
+    "check_in": "2026-08-11T08:00:00",
+    "check_out": "2026-08-11T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:02:00 -- 13:07:00",
-    "punches_raw": "08:02, 13:07"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-11",
@@ -3158,11 +3158,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T07:48:00",
-    "check_out": "2026-08-11T20:08:00",
+    "check_in": "2026-08-11T07:55:00",
+    "check_out": "2026-08-11T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:02:00 & 16:15:00 -- 20:08:00",
-    "punches_raw": "07:48, 12:02, 16:15, 20:08"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-11",
@@ -3184,11 +3184,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T07:50:00",
-    "check_out": "2026-08-11T20:08:00",
+    "check_in": "2026-08-11T07:55:00",
+    "check_out": "2026-08-11T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:02:00 & 16:19:00 -- 20:08:00",
-    "punches_raw": "07:50, 12:02, 16:19, 20:08"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-11",
@@ -3197,11 +3197,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T16:06:00",
-    "check_out": "2026-08-11T21:07:00",
+    "check_in": "2026-08-11T16:00:00",
+    "check_out": "2026-08-11T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:07:00",
-    "punches_raw": "16:06, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-11",
@@ -3210,11 +3210,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T08:07:00",
-    "check_out": "2026-08-11T13:07:00",
+    "check_in": "2026-08-11T08:00:00",
+    "check_out": "2026-08-11T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:07:00 -- 13:07:00",
-    "punches_raw": "08:07, 13:07"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-11",
@@ -3223,11 +3223,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T16:08:00",
-    "check_out": "2026-08-11T21:07:00",
+    "check_in": "2026-08-11T16:00:00",
+    "check_out": "2026-08-11T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:07:00",
-    "punches_raw": "16:08, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-11",
@@ -3236,11 +3236,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T16:09:00",
-    "check_out": "2026-08-11T21:07:00",
+    "check_in": "2026-08-11T16:00:00",
+    "check_out": "2026-08-11T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:09:00 -- 21:07:00",
-    "punches_raw": "16:09, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-11",
@@ -3249,11 +3249,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T16:10:00",
-    "check_out": "2026-08-11T21:07:00",
+    "check_in": "2026-08-11T16:00:00",
+    "check_out": "2026-08-11T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:10:00 -- 21:07:00",
-    "punches_raw": "16:10, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-11",
@@ -3262,11 +3262,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T07:56:00",
-    "check_out": "2026-08-11T20:08:00",
+    "check_in": "2026-08-11T07:55:00",
+    "check_out": "2026-08-11T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:02:00 & 16:16:00 -- 20:08:00",
-    "punches_raw": "07:56, 12:02, 16:16, 20:08"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-11",
@@ -3275,11 +3275,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T07:57:00",
-    "check_out": "2026-08-11T20:08:00",
+    "check_in": "2026-08-11T07:55:00",
+    "check_out": "2026-08-11T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:02:00 & 16:18:00 -- 20:08:00",
-    "punches_raw": "07:57, 12:02, 16:18, 20:08"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-11",
@@ -3288,11 +3288,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T07:58:00",
-    "check_out": "2026-08-11T20:08:00",
+    "check_in": "2026-08-11T07:55:00",
+    "check_out": "2026-08-11T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:02:00 & 16:05:00 -- 20:08:00",
-    "punches_raw": "07:58, 12:02, 16:05, 20:08"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-11",
@@ -3301,11 +3301,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-11",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-11T16:14:00",
-    "check_out": "2026-08-11T21:07:00",
+    "check_in": "2026-08-11T16:00:00",
+    "check_out": "2026-08-11T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:07:00",
-    "punches_raw": "16:14, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-12",
@@ -3314,11 +3314,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T08:12:00",
-    "check_out": "2026-08-12T13:09:00",
+    "check_in": "2026-08-12T08:00:00",
+    "check_out": "2026-08-12T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:12:00 -- 13:09:00",
-    "punches_raw": "08:12, 13:09"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-12",
@@ -3327,11 +3327,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T08:58:00",
-    "check_out": "2026-08-12T21:11:00",
+    "check_in": "2026-08-12T08:50:00",
+    "check_out": "2026-08-12T21:16:00",
     "status": "present",
-    "timestamp_raw": "08:58:00 -- 13:04:00 & 16:19:00 -- 21:11:00",
-    "punches_raw": "08:58, 13:04, 16:19, 21:11"
+    "timestamp_raw": "08:50:00 -- 12:56:00 & 16:53:00 -- 21:16:00",
+    "punches_raw": "08:50, 12:56, 16:53, 21:16"
   },
   {
     "id": "att_1005_2026-08-12",
@@ -3340,11 +3340,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T07:59:00",
-    "check_out": "2026-08-12T20:11:00",
+    "check_in": "2026-08-12T07:55:00",
+    "check_out": "2026-08-12T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:04:00 & 16:06:00 -- 20:11:00",
-    "punches_raw": "07:59, 12:04, 16:06, 20:11"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-12",
@@ -3353,11 +3353,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T07:45:00",
-    "check_out": "2026-08-12T20:11:00",
+    "check_in": "2026-08-12T07:53:00",
+    "check_out": "2026-08-12T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:04:00 & 16:08:00 -- 20:11:00",
-    "punches_raw": "07:45, 12:04, 16:08, 20:11"
+    "timestamp_raw": "07:53:00 -- 12:07:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:53, 12:07, 16:05, 20:15"
   },
   {
     "id": "att_1004_2026-08-12",
@@ -3366,11 +3366,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T07:46:00",
-    "check_out": "2026-08-12T20:11:00",
+    "check_in": "2026-08-12T07:55:00",
+    "check_out": "2026-08-12T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:46:00 -- 12:04:00 & 16:10:00 -- 20:11:00",
-    "punches_raw": "07:46, 12:04, 16:10, 20:11"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-12",
@@ -3379,11 +3379,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T08:02:00",
-    "check_out": "2026-08-12T13:09:00",
+    "check_in": "2026-08-12T08:00:00",
+    "check_out": "2026-08-12T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:02:00 -- 13:09:00",
-    "punches_raw": "08:02, 13:09"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-12",
@@ -3392,11 +3392,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T08:03:00",
-    "check_out": "2026-08-12T13:09:00",
+    "check_in": "2026-08-12T08:00:00",
+    "check_out": "2026-08-12T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:03:00 -- 13:09:00",
-    "punches_raw": "08:03, 13:09"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-12",
@@ -3405,11 +3405,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T07:49:00",
-    "check_out": "2026-08-12T20:11:00",
+    "check_in": "2026-08-12T07:55:00",
+    "check_out": "2026-08-12T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:04:00 & 16:16:00 -- 20:11:00",
-    "punches_raw": "07:49, 12:04, 16:16, 20:11"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-12",
@@ -3431,11 +3431,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T07:51:00",
-    "check_out": "2026-08-12T20:11:00",
+    "check_in": "2026-08-12T07:55:00",
+    "check_out": "2026-08-12T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:04:00 & 16:05:00 -- 20:11:00",
-    "punches_raw": "07:51, 12:04, 16:05, 20:11"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-12",
@@ -3444,11 +3444,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T16:07:00",
-    "check_out": "2026-08-12T21:09:00",
+    "check_in": "2026-08-12T16:00:00",
+    "check_out": "2026-08-12T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:09:00",
-    "punches_raw": "16:07, 21:09"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-12",
@@ -3457,11 +3457,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T08:08:00",
-    "check_out": "2026-08-12T13:09:00",
+    "check_in": "2026-08-12T08:00:00",
+    "check_out": "2026-08-12T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:08:00 -- 13:09:00",
-    "punches_raw": "08:08, 13:09"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-12",
@@ -3470,11 +3470,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T16:09:00",
-    "check_out": "2026-08-12T21:09:00",
+    "check_in": "2026-08-12T16:00:00",
+    "check_out": "2026-08-12T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:09:00 -- 21:09:00",
-    "punches_raw": "16:09, 21:09"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-12",
@@ -3483,11 +3483,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T16:10:00",
-    "check_out": "2026-08-12T21:09:00",
+    "check_in": "2026-08-12T16:00:00",
+    "check_out": "2026-08-12T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:10:00 -- 21:09:00",
-    "punches_raw": "16:10, 21:09"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-12",
@@ -3496,11 +3496,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T16:11:00",
-    "check_out": "2026-08-12T21:09:00",
+    "check_in": "2026-08-12T16:00:00",
+    "check_out": "2026-08-12T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:11:00 -- 21:09:00",
-    "punches_raw": "16:11, 21:09"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-12",
@@ -3509,11 +3509,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T07:57:00",
-    "check_out": "2026-08-12T20:11:00",
+    "check_in": "2026-08-12T07:55:00",
+    "check_out": "2026-08-12T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:04:00 & 16:17:00 -- 20:11:00",
-    "punches_raw": "07:57, 12:04, 16:17, 20:11"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-12",
@@ -3522,11 +3522,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T07:58:00",
-    "check_out": "2026-08-12T20:11:00",
+    "check_in": "2026-08-12T07:55:00",
+    "check_out": "2026-08-12T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:04:00 & 16:19:00 -- 20:11:00",
-    "punches_raw": "07:58, 12:04, 16:19, 20:11"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-12",
@@ -3535,11 +3535,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-12T07:59:00",
-    "check_out": "2026-08-12T20:11:00",
+    "check_in": "2026-08-12T07:55:00",
+    "check_out": "2026-08-12T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:04:00 & 16:06:00 -- 20:11:00",
-    "punches_raw": "07:59, 12:04, 16:06, 20:11"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-12",
@@ -3549,10 +3549,10 @@ export const initialData = {
     "log_date": "2026-08-12",
     "day_name": "الأربعاء",
     "check_in": "2026-08-12T16:00:00",
-    "check_out": "2026-08-12T21:09:00",
+    "check_out": "2026-08-12T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:09:00",
-    "punches_raw": "16:00, 21:09"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-13",
@@ -3561,11 +3561,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T08:13:00",
-    "check_out": "2026-08-13T13:11:00",
+    "check_in": "2026-08-13T08:00:00",
+    "check_out": "2026-08-13T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:13:00 -- 13:11:00",
-    "punches_raw": "08:13, 13:11"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-13",
@@ -3574,11 +3574,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T08:59:00",
-    "check_out": "2026-08-13T21:14:00",
+    "check_in": "2026-08-13T08:40:00",
+    "check_out": "2026-08-13T21:18:00",
     "status": "present",
-    "timestamp_raw": "08:59:00 -- 13:06:00 & 16:05:00 -- 21:14:00",
-    "punches_raw": "08:59, 13:06, 16:05, 21:14"
+    "timestamp_raw": "08:40:00 -- 13:26:00 & 16:50:00 -- 21:18:00",
+    "punches_raw": "08:40, 13:26, 16:50, 21:18"
   },
   {
     "id": "att_1005_2026-08-13",
@@ -3587,11 +3587,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T07:45:00",
-    "check_out": "2026-08-13T20:14:00",
+    "check_in": "2026-08-13T07:55:00",
+    "check_out": "2026-08-13T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:06:00 & 16:07:00 -- 20:14:00",
-    "punches_raw": "07:45, 12:06, 16:07, 20:14"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-13",
@@ -3600,11 +3600,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T07:46:00",
-    "check_out": "2026-08-13T20:14:00",
+    "check_in": "2026-08-13T07:54:00",
+    "check_out": "2026-08-13T20:12:00",
     "status": "present",
-    "timestamp_raw": "07:46:00 -- 12:06:00 & 16:09:00 -- 20:14:00",
-    "punches_raw": "07:46, 12:06, 16:09, 20:14"
+    "timestamp_raw": "07:54:00 -- 12:10:00 & 16:06:00 -- 20:12:00",
+    "punches_raw": "07:54, 12:10, 16:06, 20:12"
   },
   {
     "id": "att_1004_2026-08-13",
@@ -3613,11 +3613,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T07:47:00",
-    "check_out": "2026-08-13T20:14:00",
+    "check_in": "2026-08-13T07:55:00",
+    "check_out": "2026-08-13T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:06:00 & 16:11:00 -- 20:14:00",
-    "punches_raw": "07:47, 12:06, 16:11, 20:14"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-13",
@@ -3626,11 +3626,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T08:03:00",
-    "check_out": "2026-08-13T13:11:00",
+    "check_in": "2026-08-13T08:00:00",
+    "check_out": "2026-08-13T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:03:00 -- 13:11:00",
-    "punches_raw": "08:03, 13:11"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-13",
@@ -3639,11 +3639,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T08:04:00",
-    "check_out": "2026-08-13T13:11:00",
+    "check_in": "2026-08-13T08:00:00",
+    "check_out": "2026-08-13T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:04:00 -- 13:11:00",
-    "punches_raw": "08:04, 13:11"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-13",
@@ -3652,11 +3652,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T07:50:00",
-    "check_out": "2026-08-13T20:14:00",
+    "check_in": "2026-08-13T07:55:00",
+    "check_out": "2026-08-13T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:06:00 & 16:17:00 -- 20:14:00",
-    "punches_raw": "07:50, 12:06, 16:17, 20:14"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-13",
@@ -3678,11 +3678,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T07:52:00",
-    "check_out": "2026-08-13T20:14:00",
+    "check_in": "2026-08-13T07:55:00",
+    "check_out": "2026-08-13T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:06:00 & 16:06:00 -- 20:14:00",
-    "punches_raw": "07:52, 12:06, 16:06, 20:14"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-13",
@@ -3691,11 +3691,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T16:08:00",
-    "check_out": "2026-08-13T21:11:00",
+    "check_in": "2026-08-13T16:00:00",
+    "check_out": "2026-08-13T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:11:00",
-    "punches_raw": "16:08, 21:11"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-13",
@@ -3704,11 +3704,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T08:09:00",
-    "check_out": "2026-08-13T13:11:00",
+    "check_in": "2026-08-13T08:00:00",
+    "check_out": "2026-08-13T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:09:00 -- 13:11:00",
-    "punches_raw": "08:09, 13:11"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-13",
@@ -3717,11 +3717,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T16:10:00",
-    "check_out": "2026-08-13T21:11:00",
+    "check_in": "2026-08-13T16:00:00",
+    "check_out": "2026-08-13T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:10:00 -- 21:11:00",
-    "punches_raw": "16:10, 21:11"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-13",
@@ -3730,11 +3730,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T16:11:00",
-    "check_out": "2026-08-13T21:11:00",
+    "check_in": "2026-08-13T16:00:00",
+    "check_out": "2026-08-13T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:11:00 -- 21:11:00",
-    "punches_raw": "16:11, 21:11"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-13",
@@ -3743,11 +3743,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T16:12:00",
-    "check_out": "2026-08-13T21:11:00",
+    "check_in": "2026-08-13T16:00:00",
+    "check_out": "2026-08-13T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:12:00 -- 21:11:00",
-    "punches_raw": "16:12, 21:11"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-13",
@@ -3756,11 +3756,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T07:58:00",
-    "check_out": "2026-08-13T20:14:00",
+    "check_in": "2026-08-13T07:55:00",
+    "check_out": "2026-08-13T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:06:00 & 16:18:00 -- 20:14:00",
-    "punches_raw": "07:58, 12:06, 16:18, 20:14"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-13",
@@ -3769,11 +3769,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T07:59:00",
-    "check_out": "2026-08-13T20:14:00",
+    "check_in": "2026-08-13T07:55:00",
+    "check_out": "2026-08-13T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:06:00 & 16:05:00 -- 20:14:00",
-    "punches_raw": "07:59, 12:06, 16:05, 20:14"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-13",
@@ -3782,11 +3782,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T07:45:00",
-    "check_out": "2026-08-13T20:14:00",
+    "check_in": "2026-08-13T07:55:00",
+    "check_out": "2026-08-13T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:06:00 & 16:07:00 -- 20:14:00",
-    "punches_raw": "07:45, 12:06, 16:07, 20:14"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-13",
@@ -3795,11 +3795,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-13",
     "day_name": "الخميس",
-    "check_in": "2026-08-13T16:01:00",
-    "check_out": "2026-08-13T21:11:00",
+    "check_in": "2026-08-13T16:00:00",
+    "check_out": "2026-08-13T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:11:00",
-    "punches_raw": "16:01, 21:11"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-14",
@@ -3821,11 +3821,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:06:00",
+    "check_out": "2026-08-14T20:05:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:06:00 -- 20:05:00",
+    "punches_raw": "16:06, 20:05"
   },
   {
     "id": "att_1005_2026-08-14",
@@ -3834,11 +3834,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:07:00",
+    "check_out": "2026-08-14T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1002_2026-08-14",
@@ -3847,11 +3847,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:05:00",
+    "check_out": "2026-08-14T20:10:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:05:00 -- 20:10:00",
+    "punches_raw": "16:05, 20:10"
   },
   {
     "id": "att_1004_2026-08-14",
@@ -3860,11 +3860,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:07:00",
+    "check_out": "2026-08-14T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1008_2026-08-14",
@@ -3899,11 +3899,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:07:00",
+    "check_out": "2026-08-14T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1015_2026-08-14",
@@ -3925,11 +3925,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:07:00",
+    "check_out": "2026-08-14T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1018_2026-08-14",
@@ -4003,11 +4003,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:07:00",
+    "check_out": "2026-08-14T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1033_2026-08-14",
@@ -4016,11 +4016,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:07:00",
+    "check_out": "2026-08-14T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1034_2026-08-14",
@@ -4029,11 +4029,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:19:00",
-    "check_out": "2026-08-14T20:35:00",
+    "check_in": "2026-08-14T16:07:00",
+    "check_out": "2026-08-14T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:19:00 -- 20:35:00",
-    "punches_raw": "16:19, 20:35"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1035_2026-08-14",
@@ -4068,11 +4068,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T08:46:00",
-    "check_out": "2026-08-15T21:20:00",
+    "check_in": "2026-08-15T09:12:00",
+    "check_out": "2026-08-15T21:04:00",
     "status": "present",
-    "timestamp_raw": "08:46:00 -- 13:10:00 & 16:07:00 -- 21:20:00",
-    "punches_raw": "08:46, 13:10, 16:07, 21:20"
+    "timestamp_raw": "09:12:00 -- 13:11:00 & 16:28:00 -- 21:04:00",
+    "punches_raw": "09:12, 13:11, 16:28, 21:04"
   },
   {
     "id": "att_1005_2026-08-15",
@@ -4081,11 +4081,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T07:47:00",
-    "check_out": "2026-08-15T20:20:00",
+    "check_in": "2026-08-15T07:55:00",
+    "check_out": "2026-08-15T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:10:00 & 16:09:00 -- 20:20:00",
-    "punches_raw": "07:47, 12:10, 16:09, 20:20"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-15",
@@ -4094,11 +4094,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T07:48:00",
-    "check_out": "2026-08-15T20:20:00",
+    "check_in": "2026-08-15T07:55:00",
+    "check_out": "2026-08-15T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:10:00 & 16:11:00 -- 20:20:00",
-    "punches_raw": "07:48, 12:10, 16:11, 20:20"
+    "timestamp_raw": "07:55:00 -- 12:05:00 & 16:08:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:05, 16:08, 20:15"
   },
   {
     "id": "att_1004_2026-08-15",
@@ -4107,11 +4107,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T07:49:00",
-    "check_out": "2026-08-15T20:20:00",
+    "check_in": "2026-08-15T07:55:00",
+    "check_out": "2026-08-15T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:10:00 & 16:13:00 -- 20:20:00",
-    "punches_raw": "07:49, 12:10, 16:13, 20:20"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-15",
@@ -4120,11 +4120,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T08:05:00",
+    "check_in": "2026-08-15T08:00:00",
     "check_out": "2026-08-15T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:05:00 -- 13:00:00",
-    "punches_raw": "08:05, 13:00"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-15",
@@ -4133,11 +4133,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T08:06:00",
+    "check_in": "2026-08-15T08:00:00",
     "check_out": "2026-08-15T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:06:00 -- 13:00:00",
-    "punches_raw": "08:06, 13:00"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-15",
@@ -4146,11 +4146,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T07:52:00",
-    "check_out": "2026-08-15T20:20:00",
+    "check_in": "2026-08-15T07:55:00",
+    "check_out": "2026-08-15T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:10:00 & 16:19:00 -- 20:20:00",
-    "punches_raw": "07:52, 12:10, 16:19, 20:20"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-15",
@@ -4172,11 +4172,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T07:54:00",
-    "check_out": "2026-08-15T20:20:00",
+    "check_in": "2026-08-15T07:55:00",
+    "check_out": "2026-08-15T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:10:00 & 16:08:00 -- 20:20:00",
-    "punches_raw": "07:54, 12:10, 16:08, 20:20"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-15",
@@ -4185,11 +4185,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T16:10:00",
+    "check_in": "2026-08-15T16:00:00",
     "check_out": "2026-08-15T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:10:00 -- 21:00:00",
-    "punches_raw": "16:10, 21:00"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-15",
@@ -4198,11 +4198,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T08:11:00",
+    "check_in": "2026-08-15T08:00:00",
     "check_out": "2026-08-15T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:11:00 -- 13:00:00",
-    "punches_raw": "08:11, 13:00"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-15",
@@ -4211,11 +4211,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T16:12:00",
+    "check_in": "2026-08-15T16:00:00",
     "check_out": "2026-08-15T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:12:00 -- 21:00:00",
-    "punches_raw": "16:12, 21:00"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-15",
@@ -4224,11 +4224,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T16:13:00",
+    "check_in": "2026-08-15T16:00:00",
     "check_out": "2026-08-15T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:13:00 -- 21:00:00",
-    "punches_raw": "16:13, 21:00"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-15",
@@ -4237,11 +4237,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T16:14:00",
+    "check_in": "2026-08-15T16:00:00",
     "check_out": "2026-08-15T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:00:00",
-    "punches_raw": "16:14, 21:00"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-15",
@@ -4250,11 +4250,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T07:45:00",
-    "check_out": "2026-08-15T20:20:00",
+    "check_in": "2026-08-15T07:55:00",
+    "check_out": "2026-08-15T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:10:00 & 16:05:00 -- 20:20:00",
-    "punches_raw": "07:45, 12:10, 16:05, 20:20"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-15",
@@ -4263,11 +4263,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T07:46:00",
-    "check_out": "2026-08-15T20:20:00",
+    "check_in": "2026-08-15T07:55:00",
+    "check_out": "2026-08-15T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:46:00 -- 12:10:00 & 16:07:00 -- 20:20:00",
-    "punches_raw": "07:46, 12:10, 16:07, 20:20"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-15",
@@ -4276,11 +4276,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T07:47:00",
-    "check_out": "2026-08-15T20:20:00",
+    "check_in": "2026-08-15T07:55:00",
+    "check_out": "2026-08-15T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:10:00 & 16:09:00 -- 20:20:00",
-    "punches_raw": "07:47, 12:10, 16:09, 20:20"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-15",
@@ -4289,11 +4289,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-15",
     "day_name": "السبت",
-    "check_in": "2026-08-15T16:03:00",
+    "check_in": "2026-08-15T16:00:00",
     "check_out": "2026-08-15T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:00:00",
-    "punches_raw": "16:03, 21:00"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-16",
@@ -4302,11 +4302,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T08:01:00",
-    "check_out": "2026-08-16T13:02:00",
+    "check_in": "2026-08-16T08:00:00",
+    "check_out": "2026-08-16T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:01:00 -- 13:02:00",
-    "punches_raw": "08:01, 13:02"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-16",
@@ -4315,11 +4315,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T08:47:00",
-    "check_out": "2026-08-16T21:23:00",
+    "check_in": "2026-08-16T08:53:00",
+    "check_out": "2026-08-16T20:55:00",
     "status": "present",
-    "timestamp_raw": "08:47:00 -- 13:12:00 & 16:08:00 -- 21:23:00",
-    "punches_raw": "08:47, 13:12, 16:08, 21:23"
+    "timestamp_raw": "08:53:00 -- 13:00:00 & 16:16:00 -- 20:55:00",
+    "punches_raw": "08:53, 13:00, 16:16, 20:55"
   },
   {
     "id": "att_1005_2026-08-16",
@@ -4328,11 +4328,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T07:48:00",
-    "check_out": "2026-08-16T20:23:00",
+    "check_in": "2026-08-16T07:55:00",
+    "check_out": "2026-08-16T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:12:00 & 16:10:00 -- 20:23:00",
-    "punches_raw": "07:48, 12:12, 16:10, 20:23"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-16",
@@ -4341,11 +4341,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T07:49:00",
-    "check_out": "2026-08-16T20:23:00",
+    "check_in": "2026-08-16T07:54:00",
+    "check_out": "2026-08-16T20:12:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:12:00 & 16:12:00 -- 20:23:00",
-    "punches_raw": "07:49, 12:12, 16:12, 20:23"
+    "timestamp_raw": "07:54:00 -- 12:06:00 & 16:05:00 -- 20:12:00",
+    "punches_raw": "07:54, 12:06, 16:05, 20:12"
   },
   {
     "id": "att_1004_2026-08-16",
@@ -4354,11 +4354,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T07:50:00",
-    "check_out": "2026-08-16T20:23:00",
+    "check_in": "2026-08-16T07:55:00",
+    "check_out": "2026-08-16T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:12:00 & 16:14:00 -- 20:23:00",
-    "punches_raw": "07:50, 12:12, 16:14, 20:23"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-16",
@@ -4367,11 +4367,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T08:06:00",
-    "check_out": "2026-08-16T13:02:00",
+    "check_in": "2026-08-16T08:00:00",
+    "check_out": "2026-08-16T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:06:00 -- 13:02:00",
-    "punches_raw": "08:06, 13:02"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-16",
@@ -4380,11 +4380,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T08:07:00",
-    "check_out": "2026-08-16T13:02:00",
+    "check_in": "2026-08-16T08:00:00",
+    "check_out": "2026-08-16T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:07:00 -- 13:02:00",
-    "punches_raw": "08:07, 13:02"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-16",
@@ -4393,11 +4393,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T07:53:00",
-    "check_out": "2026-08-16T20:23:00",
+    "check_in": "2026-08-16T07:55:00",
+    "check_out": "2026-08-16T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:12:00 & 16:05:00 -- 20:23:00",
-    "punches_raw": "07:53, 12:12, 16:05, 20:23"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-16",
@@ -4406,11 +4406,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T16:09:00",
-    "check_out": "2026-08-16T21:02:00",
+    "check_in": "2026-08-16T16:00:00",
+    "check_out": "2026-08-16T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:09:00 -- 21:02:00",
-    "punches_raw": "16:09, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-16",
@@ -4420,10 +4420,10 @@ export const initialData = {
     "log_date": "2026-08-16",
     "day_name": "الأحد",
     "check_in": "2026-08-16T07:55:00",
-    "check_out": "2026-08-16T20:23:00",
+    "check_out": "2026-08-16T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:12:00 & 16:09:00 -- 20:23:00",
-    "punches_raw": "07:55, 12:12, 16:09, 20:23"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-16",
@@ -4432,11 +4432,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T16:11:00",
-    "check_out": "2026-08-16T21:02:00",
+    "check_in": "2026-08-16T16:00:00",
+    "check_out": "2026-08-16T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:11:00 -- 21:02:00",
-    "punches_raw": "16:11, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-16",
@@ -4445,11 +4445,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T08:12:00",
-    "check_out": "2026-08-16T13:02:00",
+    "check_in": "2026-08-16T08:00:00",
+    "check_out": "2026-08-16T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:12:00 -- 13:02:00",
-    "punches_raw": "08:12, 13:02"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-16",
@@ -4458,11 +4458,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T16:13:00",
-    "check_out": "2026-08-16T21:02:00",
+    "check_in": "2026-08-16T16:00:00",
+    "check_out": "2026-08-16T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:13:00 -- 21:02:00",
-    "punches_raw": "16:13, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-16",
@@ -4471,11 +4471,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T16:14:00",
-    "check_out": "2026-08-16T21:02:00",
+    "check_in": "2026-08-16T16:00:00",
+    "check_out": "2026-08-16T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:02:00",
-    "punches_raw": "16:14, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-16",
@@ -4485,10 +4485,10 @@ export const initialData = {
     "log_date": "2026-08-16",
     "day_name": "الأحد",
     "check_in": "2026-08-16T16:00:00",
-    "check_out": "2026-08-16T21:02:00",
+    "check_out": "2026-08-16T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:02:00",
-    "punches_raw": "16:00, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-16",
@@ -4497,11 +4497,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T07:46:00",
-    "check_out": "2026-08-16T20:23:00",
+    "check_in": "2026-08-16T07:55:00",
+    "check_out": "2026-08-16T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:46:00 -- 12:12:00 & 16:06:00 -- 20:23:00",
-    "punches_raw": "07:46, 12:12, 16:06, 20:23"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-16",
@@ -4510,11 +4510,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T07:47:00",
-    "check_out": "2026-08-16T20:23:00",
+    "check_in": "2026-08-16T07:55:00",
+    "check_out": "2026-08-16T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:12:00 & 16:08:00 -- 20:23:00",
-    "punches_raw": "07:47, 12:12, 16:08, 20:23"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-16",
@@ -4523,11 +4523,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T07:48:00",
-    "check_out": "2026-08-16T20:23:00",
+    "check_in": "2026-08-16T07:55:00",
+    "check_out": "2026-08-16T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:12:00 & 16:10:00 -- 20:23:00",
-    "punches_raw": "07:48, 12:12, 16:10, 20:23"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-16",
@@ -4536,11 +4536,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-16",
     "day_name": "الأحد",
-    "check_in": "2026-08-16T16:04:00",
-    "check_out": "2026-08-16T21:02:00",
+    "check_in": "2026-08-16T16:00:00",
+    "check_out": "2026-08-16T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:02:00",
-    "punches_raw": "16:04, 21:02"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-17",
@@ -4549,11 +4549,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T08:02:00",
-    "check_out": "2026-08-17T13:04:00",
+    "check_in": "2026-08-17T08:00:00",
+    "check_out": "2026-08-17T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:02:00 -- 13:04:00",
-    "punches_raw": "08:02, 13:04"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-17",
@@ -4562,11 +4562,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T08:48:00",
-    "check_out": "2026-08-17T21:01:00",
+    "check_in": "2026-08-17T08:47:00",
+    "check_out": "2026-08-17T20:57:00",
     "status": "present",
-    "timestamp_raw": "08:48:00 -- 13:14:00 & 16:09:00 -- 21:01:00",
-    "punches_raw": "08:48, 13:14, 16:09, 21:01"
+    "timestamp_raw": "08:47:00 -- 12:41:00 & 16:48:00 -- 20:57:00",
+    "punches_raw": "08:47, 12:41, 16:48, 20:57"
   },
   {
     "id": "att_1005_2026-08-17",
@@ -4575,11 +4575,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T07:49:00",
-    "check_out": "2026-08-17T20:01:00",
+    "check_in": "2026-08-17T07:55:00",
+    "check_out": "2026-08-17T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:14:00 & 16:11:00 -- 20:01:00",
-    "punches_raw": "07:49, 12:14, 16:11, 20:01"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-17",
@@ -4588,11 +4588,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T07:50:00",
-    "check_out": "2026-08-17T20:01:00",
+    "check_in": "2026-08-17T07:53:00",
+    "check_out": "2026-08-17T20:14:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:14:00 & 16:13:00 -- 20:01:00",
-    "punches_raw": "07:50, 12:14, 16:13, 20:01"
+    "timestamp_raw": "07:53:00 -- 12:08:00 & 16:06:00 -- 20:14:00",
+    "punches_raw": "07:53, 12:08, 16:06, 20:14"
   },
   {
     "id": "att_1004_2026-08-17",
@@ -4601,11 +4601,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T07:51:00",
-    "check_out": "2026-08-17T20:01:00",
+    "check_in": "2026-08-17T07:55:00",
+    "check_out": "2026-08-17T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:14:00 & 16:15:00 -- 20:01:00",
-    "punches_raw": "07:51, 12:14, 16:15, 20:01"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-17",
@@ -4614,11 +4614,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T08:07:00",
-    "check_out": "2026-08-17T13:04:00",
+    "check_in": "2026-08-17T08:00:00",
+    "check_out": "2026-08-17T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:07:00 -- 13:04:00",
-    "punches_raw": "08:07, 13:04"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-17",
@@ -4627,11 +4627,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T08:08:00",
-    "check_out": "2026-08-17T13:04:00",
+    "check_in": "2026-08-17T08:00:00",
+    "check_out": "2026-08-17T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:08:00 -- 13:04:00",
-    "punches_raw": "08:08, 13:04"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-17",
@@ -4640,11 +4640,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T07:54:00",
-    "check_out": "2026-08-17T20:01:00",
+    "check_in": "2026-08-17T07:55:00",
+    "check_out": "2026-08-17T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:14:00 & 16:06:00 -- 20:01:00",
-    "punches_raw": "07:54, 12:14, 16:06, 20:01"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-17",
@@ -4653,11 +4653,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T16:10:00",
-    "check_out": "2026-08-17T21:04:00",
+    "check_in": "2026-08-17T16:00:00",
+    "check_out": "2026-08-17T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:10:00 -- 21:04:00",
-    "punches_raw": "16:10, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-17",
@@ -4666,11 +4666,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T07:56:00",
-    "check_out": "2026-08-17T20:01:00",
+    "check_in": "2026-08-17T07:55:00",
+    "check_out": "2026-08-17T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:14:00 & 16:10:00 -- 20:01:00",
-    "punches_raw": "07:56, 12:14, 16:10, 20:01"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-17",
@@ -4679,11 +4679,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T16:12:00",
-    "check_out": "2026-08-17T21:04:00",
+    "check_in": "2026-08-17T16:00:00",
+    "check_out": "2026-08-17T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:12:00 -- 21:04:00",
-    "punches_raw": "16:12, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-17",
@@ -4692,11 +4692,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T08:13:00",
-    "check_out": "2026-08-17T13:04:00",
+    "check_in": "2026-08-17T08:00:00",
+    "check_out": "2026-08-17T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:13:00 -- 13:04:00",
-    "punches_raw": "08:13, 13:04"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-17",
@@ -4705,11 +4705,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T16:14:00",
-    "check_out": "2026-08-17T21:04:00",
+    "check_in": "2026-08-17T16:00:00",
+    "check_out": "2026-08-17T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:04:00",
-    "punches_raw": "16:14, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-17",
@@ -4719,10 +4719,10 @@ export const initialData = {
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
     "check_in": "2026-08-17T16:00:00",
-    "check_out": "2026-08-17T21:04:00",
+    "check_out": "2026-08-17T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:04:00",
-    "punches_raw": "16:00, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-17",
@@ -4731,11 +4731,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T16:01:00",
-    "check_out": "2026-08-17T21:04:00",
+    "check_in": "2026-08-17T16:00:00",
+    "check_out": "2026-08-17T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:04:00",
-    "punches_raw": "16:01, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-17",
@@ -4744,11 +4744,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T07:47:00",
-    "check_out": "2026-08-17T20:01:00",
+    "check_in": "2026-08-17T07:55:00",
+    "check_out": "2026-08-17T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:14:00 & 16:07:00 -- 20:01:00",
-    "punches_raw": "07:47, 12:14, 16:07, 20:01"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-17",
@@ -4757,11 +4757,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T07:48:00",
-    "check_out": "2026-08-17T20:01:00",
+    "check_in": "2026-08-17T07:55:00",
+    "check_out": "2026-08-17T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:14:00 & 16:09:00 -- 20:01:00",
-    "punches_raw": "07:48, 12:14, 16:09, 20:01"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-17",
@@ -4770,11 +4770,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T07:49:00",
-    "check_out": "2026-08-17T20:01:00",
+    "check_in": "2026-08-17T07:55:00",
+    "check_out": "2026-08-17T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:14:00 & 16:11:00 -- 20:01:00",
-    "punches_raw": "07:49, 12:14, 16:11, 20:01"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-17",
@@ -4783,11 +4783,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-17",
     "day_name": "الإثنين",
-    "check_in": "2026-08-17T16:05:00",
-    "check_out": "2026-08-17T21:04:00",
+    "check_in": "2026-08-17T16:00:00",
+    "check_out": "2026-08-17T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:05:00 -- 21:04:00",
-    "punches_raw": "16:05, 21:04"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-18",
@@ -4796,11 +4796,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T08:03:00",
-    "check_out": "2026-08-18T13:06:00",
+    "check_in": "2026-08-18T08:00:00",
+    "check_out": "2026-08-18T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:03:00 -- 13:06:00",
-    "punches_raw": "08:03, 13:06"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-18",
@@ -4809,11 +4809,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T08:49:00",
-    "check_out": "2026-08-18T21:04:00",
+    "check_in": "2026-08-18T16:20:00",
+    "check_out": "2026-08-18T20:59:00",
     "status": "present",
-    "timestamp_raw": "08:49:00 -- 13:16:00 & 16:10:00 -- 21:04:00",
-    "punches_raw": "08:49, 13:16, 16:10, 21:04"
+    "timestamp_raw": "16:20:00 -- 20:59:00",
+    "punches_raw": "16:20, 20:59"
   },
   {
     "id": "att_1005_2026-08-18",
@@ -4822,11 +4822,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T07:50:00",
-    "check_out": "2026-08-18T20:04:00",
+    "check_in": "2026-08-18T07:55:00",
+    "check_out": "2026-08-18T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:16:00 & 16:12:00 -- 20:04:00",
-    "punches_raw": "07:50, 12:16, 16:12, 20:04"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-18",
@@ -4835,11 +4835,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T07:51:00",
-    "check_out": "2026-08-18T20:04:00",
+    "check_in": "2026-08-18T07:56:00",
+    "check_out": "2026-08-18T20:10:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:16:00 & 16:14:00 -- 20:04:00",
-    "punches_raw": "07:51, 12:16, 16:14, 20:04"
+    "timestamp_raw": "07:56:00 -- 12:05:00 & 16:07:00 -- 20:10:00",
+    "punches_raw": "07:56, 12:05, 16:07, 20:10"
   },
   {
     "id": "att_1004_2026-08-18",
@@ -4848,11 +4848,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T07:52:00",
-    "check_out": "2026-08-18T20:04:00",
+    "check_in": "2026-08-18T07:55:00",
+    "check_out": "2026-08-18T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:16:00 & 16:16:00 -- 20:04:00",
-    "punches_raw": "07:52, 12:16, 16:16, 20:04"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-18",
@@ -4861,11 +4861,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T08:08:00",
-    "check_out": "2026-08-18T13:06:00",
+    "check_in": "2026-08-18T08:00:00",
+    "check_out": "2026-08-18T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:08:00 -- 13:06:00",
-    "punches_raw": "08:08, 13:06"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-18",
@@ -4874,11 +4874,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T08:09:00",
-    "check_out": "2026-08-18T13:06:00",
+    "check_in": "2026-08-18T08:00:00",
+    "check_out": "2026-08-18T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:09:00 -- 13:06:00",
-    "punches_raw": "08:09, 13:06"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-18",
@@ -4888,10 +4888,10 @@ export const initialData = {
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
     "check_in": "2026-08-18T07:55:00",
-    "check_out": "2026-08-18T20:04:00",
+    "check_out": "2026-08-18T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:16:00 & 16:07:00 -- 20:04:00",
-    "punches_raw": "07:55, 12:16, 16:07, 20:04"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-18",
@@ -4900,11 +4900,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T16:11:00",
-    "check_out": "2026-08-18T21:06:00",
+    "check_in": "2026-08-18T16:00:00",
+    "check_out": "2026-08-18T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:11:00 -- 21:06:00",
-    "punches_raw": "16:11, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-18",
@@ -4913,11 +4913,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T07:57:00",
-    "check_out": "2026-08-18T20:04:00",
+    "check_in": "2026-08-18T07:55:00",
+    "check_out": "2026-08-18T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:16:00 & 16:11:00 -- 20:04:00",
-    "punches_raw": "07:57, 12:16, 16:11, 20:04"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-18",
@@ -4926,11 +4926,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T16:13:00",
-    "check_out": "2026-08-18T21:06:00",
+    "check_in": "2026-08-18T16:00:00",
+    "check_out": "2026-08-18T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:13:00 -- 21:06:00",
-    "punches_raw": "16:13, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-18",
@@ -4939,11 +4939,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T08:14:00",
-    "check_out": "2026-08-18T13:06:00",
+    "check_in": "2026-08-18T08:00:00",
+    "check_out": "2026-08-18T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:14:00 -- 13:06:00",
-    "punches_raw": "08:14, 13:06"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-18",
@@ -4953,10 +4953,10 @@ export const initialData = {
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
     "check_in": "2026-08-18T16:00:00",
-    "check_out": "2026-08-18T21:06:00",
+    "check_out": "2026-08-18T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:06:00",
-    "punches_raw": "16:00, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-18",
@@ -4965,11 +4965,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T16:01:00",
-    "check_out": "2026-08-18T21:06:00",
+    "check_in": "2026-08-18T16:00:00",
+    "check_out": "2026-08-18T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:06:00",
-    "punches_raw": "16:01, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-18",
@@ -4978,11 +4978,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T16:02:00",
-    "check_out": "2026-08-18T21:06:00",
+    "check_in": "2026-08-18T16:00:00",
+    "check_out": "2026-08-18T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:02:00 -- 21:06:00",
-    "punches_raw": "16:02, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-18",
@@ -4991,11 +4991,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T07:48:00",
-    "check_out": "2026-08-18T20:04:00",
+    "check_in": "2026-08-18T07:55:00",
+    "check_out": "2026-08-18T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:16:00 & 16:08:00 -- 20:04:00",
-    "punches_raw": "07:48, 12:16, 16:08, 20:04"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-18",
@@ -5004,11 +5004,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T07:49:00",
-    "check_out": "2026-08-18T20:04:00",
+    "check_in": "2026-08-18T07:55:00",
+    "check_out": "2026-08-18T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:16:00 & 16:10:00 -- 20:04:00",
-    "punches_raw": "07:49, 12:16, 16:10, 20:04"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-18",
@@ -5017,11 +5017,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T07:50:00",
-    "check_out": "2026-08-18T20:04:00",
+    "check_in": "2026-08-18T07:55:00",
+    "check_out": "2026-08-18T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:16:00 & 16:12:00 -- 20:04:00",
-    "punches_raw": "07:50, 12:16, 16:12, 20:04"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-18",
@@ -5030,11 +5030,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-18",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-18T16:06:00",
-    "check_out": "2026-08-18T21:06:00",
+    "check_in": "2026-08-18T16:00:00",
+    "check_out": "2026-08-18T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:06:00",
-    "punches_raw": "16:06, 21:06"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-19",
@@ -5043,11 +5043,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T08:04:00",
-    "check_out": "2026-08-19T13:08:00",
+    "check_in": "2026-08-19T08:00:00",
+    "check_out": "2026-08-19T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:04:00 -- 13:08:00",
-    "punches_raw": "08:04, 13:08"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-19",
@@ -5056,11 +5056,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T08:50:00",
-    "check_out": "2026-08-19T21:07:00",
+    "check_in": "2026-08-19T08:45:00",
+    "check_out": "2026-08-19T21:08:00",
     "status": "present",
-    "timestamp_raw": "08:50:00 -- 13:18:00 & 16:11:00 -- 21:07:00",
-    "punches_raw": "08:50, 13:18, 16:11, 21:07"
+    "timestamp_raw": "08:45:00 -- 13:00:00 & 16:30:00 -- 21:08:00",
+    "punches_raw": "08:45, 13:00, 16:30, 21:08"
   },
   {
     "id": "att_1005_2026-08-19",
@@ -5069,11 +5069,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T07:51:00",
-    "check_out": "2026-08-19T20:07:00",
+    "check_in": "2026-08-19T07:55:00",
+    "check_out": "2026-08-19T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:18:00 & 16:13:00 -- 20:07:00",
-    "punches_raw": "07:51, 12:18, 16:13, 20:07"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-19",
@@ -5082,11 +5082,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T07:52:00",
-    "check_out": "2026-08-19T20:07:00",
+    "check_in": "2026-08-19T07:54:00",
+    "check_out": "2026-08-19T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:18:00 & 16:15:00 -- 20:07:00",
-    "punches_raw": "07:52, 12:18, 16:15, 20:07"
+    "timestamp_raw": "07:54:00 -- 12:07:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:54, 12:07, 16:05, 20:15"
   },
   {
     "id": "att_1004_2026-08-19",
@@ -5095,11 +5095,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T07:53:00",
-    "check_out": "2026-08-19T20:07:00",
+    "check_in": "2026-08-19T07:55:00",
+    "check_out": "2026-08-19T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:18:00 & 16:17:00 -- 20:07:00",
-    "punches_raw": "07:53, 12:18, 16:17, 20:07"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-19",
@@ -5108,11 +5108,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T08:09:00",
-    "check_out": "2026-08-19T13:08:00",
+    "check_in": "2026-08-19T08:00:00",
+    "check_out": "2026-08-19T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:09:00 -- 13:08:00",
-    "punches_raw": "08:09, 13:08"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-19",
@@ -5121,11 +5121,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T08:10:00",
-    "check_out": "2026-08-19T13:08:00",
+    "check_in": "2026-08-19T08:00:00",
+    "check_out": "2026-08-19T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:10:00 -- 13:08:00",
-    "punches_raw": "08:10, 13:08"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-19",
@@ -5134,11 +5134,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T07:56:00",
-    "check_out": "2026-08-19T20:07:00",
+    "check_in": "2026-08-19T07:55:00",
+    "check_out": "2026-08-19T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:18:00 & 16:08:00 -- 20:07:00",
-    "punches_raw": "07:56, 12:18, 16:08, 20:07"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-19",
@@ -5147,11 +5147,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T16:12:00",
-    "check_out": "2026-08-19T21:08:00",
+    "check_in": "2026-08-19T16:00:00",
+    "check_out": "2026-08-19T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:12:00 -- 21:08:00",
-    "punches_raw": "16:12, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-19",
@@ -5160,11 +5160,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T07:58:00",
-    "check_out": "2026-08-19T20:07:00",
+    "check_in": "2026-08-19T07:55:00",
+    "check_out": "2026-08-19T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:18:00 & 16:12:00 -- 20:07:00",
-    "punches_raw": "07:58, 12:18, 16:12, 20:07"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-19",
@@ -5173,11 +5173,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T16:14:00",
-    "check_out": "2026-08-19T21:08:00",
+    "check_in": "2026-08-19T16:00:00",
+    "check_out": "2026-08-19T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:08:00",
-    "punches_raw": "16:14, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-19",
@@ -5187,10 +5187,10 @@ export const initialData = {
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
     "check_in": "2026-08-19T08:00:00",
-    "check_out": "2026-08-19T13:08:00",
+    "check_out": "2026-08-19T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:00:00 -- 13:08:00",
-    "punches_raw": "08:00, 13:08"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-19",
@@ -5199,11 +5199,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T16:01:00",
-    "check_out": "2026-08-19T21:08:00",
+    "check_in": "2026-08-19T16:00:00",
+    "check_out": "2026-08-19T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:08:00",
-    "punches_raw": "16:01, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-19",
@@ -5212,11 +5212,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T16:02:00",
-    "check_out": "2026-08-19T21:08:00",
+    "check_in": "2026-08-19T16:00:00",
+    "check_out": "2026-08-19T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:02:00 -- 21:08:00",
-    "punches_raw": "16:02, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-19",
@@ -5225,11 +5225,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T16:03:00",
-    "check_out": "2026-08-19T21:08:00",
+    "check_in": "2026-08-19T16:00:00",
+    "check_out": "2026-08-19T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:08:00",
-    "punches_raw": "16:03, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-19",
@@ -5238,11 +5238,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T07:49:00",
-    "check_out": "2026-08-19T20:07:00",
+    "check_in": "2026-08-19T07:55:00",
+    "check_out": "2026-08-19T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:18:00 & 16:09:00 -- 20:07:00",
-    "punches_raw": "07:49, 12:18, 16:09, 20:07"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-19",
@@ -5251,11 +5251,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T07:50:00",
-    "check_out": "2026-08-19T20:07:00",
+    "check_in": "2026-08-19T07:55:00",
+    "check_out": "2026-08-19T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:18:00 & 16:11:00 -- 20:07:00",
-    "punches_raw": "07:50, 12:18, 16:11, 20:07"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-19",
@@ -5264,11 +5264,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T07:51:00",
-    "check_out": "2026-08-19T20:07:00",
+    "check_in": "2026-08-19T07:55:00",
+    "check_out": "2026-08-19T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:18:00 & 16:13:00 -- 20:07:00",
-    "punches_raw": "07:51, 12:18, 16:13, 20:07"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-19",
@@ -5277,11 +5277,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-19",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-19T16:07:00",
-    "check_out": "2026-08-19T21:08:00",
+    "check_in": "2026-08-19T16:00:00",
+    "check_out": "2026-08-19T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:08:00",
-    "punches_raw": "16:07, 21:08"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-20",
@@ -5290,11 +5290,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T08:05:00",
-    "check_out": "2026-08-20T13:10:00",
+    "check_in": "2026-08-20T08:00:00",
+    "check_out": "2026-08-20T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:05:00 -- 13:10:00",
-    "punches_raw": "08:05, 13:10"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-20",
@@ -5303,11 +5303,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T08:51:00",
-    "check_out": "2026-08-20T21:10:00",
-    "status": "present",
-    "timestamp_raw": "08:51:00 -- 13:00:00 & 16:12:00 -- 21:10:00",
-    "punches_raw": "08:51, 13:00, 16:12, 21:10"
+    "check_in": "2026-08-20T16:18:00",
+    "check_out": "2026-08-20T20:05:00",
+    "status": "exempt",
+    "timestamp_raw": "16:18:00 -- 20:05:00",
+    "punches_raw": "16:18, 20:05"
   },
   {
     "id": "att_1005_2026-08-20",
@@ -5316,11 +5316,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T07:52:00",
-    "check_out": "2026-08-20T20:10:00",
+    "check_in": "2026-08-20T07:55:00",
+    "check_out": "2026-08-20T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:00:00 & 16:14:00 -- 20:10:00",
-    "punches_raw": "07:52, 12:00, 16:14, 20:10"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-20",
@@ -5329,11 +5329,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T07:53:00",
-    "check_out": "2026-08-20T20:10:00",
+    "check_in": "2026-08-20T07:55:00",
+    "check_out": "2026-08-20T20:12:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:00:00 & 16:16:00 -- 20:10:00",
-    "punches_raw": "07:53, 12:00, 16:16, 20:10"
+    "timestamp_raw": "07:55:00 -- 12:06:00 & 16:08:00 -- 20:12:00",
+    "punches_raw": "07:55, 12:06, 16:08, 20:12"
   },
   {
     "id": "att_1004_2026-08-20",
@@ -5342,11 +5342,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T07:54:00",
-    "check_out": "2026-08-20T20:10:00",
+    "check_in": "2026-08-20T07:55:00",
+    "check_out": "2026-08-20T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:00:00 & 16:18:00 -- 20:10:00",
-    "punches_raw": "07:54, 12:00, 16:18, 20:10"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-20",
@@ -5355,11 +5355,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T08:10:00",
-    "check_out": "2026-08-20T13:10:00",
+    "check_in": "2026-08-20T08:00:00",
+    "check_out": "2026-08-20T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:10:00 -- 13:10:00",
-    "punches_raw": "08:10, 13:10"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-20",
@@ -5368,11 +5368,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T08:11:00",
-    "check_out": "2026-08-20T13:10:00",
+    "check_in": "2026-08-20T08:00:00",
+    "check_out": "2026-08-20T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:11:00 -- 13:10:00",
-    "punches_raw": "08:11, 13:10"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-20",
@@ -5381,11 +5381,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T07:57:00",
-    "check_out": "2026-08-20T20:10:00",
+    "check_in": "2026-08-20T07:55:00",
+    "check_out": "2026-08-20T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:00:00 & 16:09:00 -- 20:10:00",
-    "punches_raw": "07:57, 12:00, 16:09, 20:10"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-20",
@@ -5394,11 +5394,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T16:13:00",
-    "check_out": "2026-08-20T21:10:00",
+    "check_in": "2026-08-20T16:00:00",
+    "check_out": "2026-08-20T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:13:00 -- 21:10:00",
-    "punches_raw": "16:13, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-20",
@@ -5407,11 +5407,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T07:59:00",
-    "check_out": "2026-08-20T20:10:00",
+    "check_in": "2026-08-20T07:55:00",
+    "check_out": "2026-08-20T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:00:00 & 16:13:00 -- 20:10:00",
-    "punches_raw": "07:59, 12:00, 16:13, 20:10"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-20",
@@ -5421,10 +5421,10 @@ export const initialData = {
     "log_date": "2026-08-20",
     "day_name": "الخميس",
     "check_in": "2026-08-20T16:00:00",
-    "check_out": "2026-08-20T21:10:00",
+    "check_out": "2026-08-20T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:10:00",
-    "punches_raw": "16:00, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-20",
@@ -5433,11 +5433,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T08:01:00",
-    "check_out": "2026-08-20T13:10:00",
+    "check_in": "2026-08-20T08:00:00",
+    "check_out": "2026-08-20T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:01:00 -- 13:10:00",
-    "punches_raw": "08:01, 13:10"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-20",
@@ -5446,11 +5446,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T16:02:00",
-    "check_out": "2026-08-20T21:10:00",
+    "check_in": "2026-08-20T16:00:00",
+    "check_out": "2026-08-20T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:02:00 -- 21:10:00",
-    "punches_raw": "16:02, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-20",
@@ -5459,11 +5459,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T16:03:00",
-    "check_out": "2026-08-20T21:10:00",
+    "check_in": "2026-08-20T16:00:00",
+    "check_out": "2026-08-20T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:10:00",
-    "punches_raw": "16:03, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-20",
@@ -5472,11 +5472,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T16:04:00",
-    "check_out": "2026-08-20T21:10:00",
+    "check_in": "2026-08-20T16:00:00",
+    "check_out": "2026-08-20T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:10:00",
-    "punches_raw": "16:04, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-20",
@@ -5485,11 +5485,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T07:50:00",
-    "check_out": "2026-08-20T20:10:00",
+    "check_in": "2026-08-20T07:55:00",
+    "check_out": "2026-08-20T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:00:00 & 16:10:00 -- 20:10:00",
-    "punches_raw": "07:50, 12:00, 16:10, 20:10"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-20",
@@ -5498,11 +5498,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T07:51:00",
-    "check_out": "2026-08-20T20:10:00",
+    "check_in": "2026-08-20T07:55:00",
+    "check_out": "2026-08-20T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:51:00 -- 12:00:00 & 16:12:00 -- 20:10:00",
-    "punches_raw": "07:51, 12:00, 16:12, 20:10"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-20",
@@ -5511,11 +5511,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T07:52:00",
-    "check_out": "2026-08-20T20:10:00",
+    "check_in": "2026-08-20T07:55:00",
+    "check_out": "2026-08-20T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:00:00 & 16:14:00 -- 20:10:00",
-    "punches_raw": "07:52, 12:00, 16:14, 20:10"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-20",
@@ -5524,11 +5524,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-20",
     "day_name": "الخميس",
-    "check_in": "2026-08-20T16:08:00",
-    "check_out": "2026-08-20T21:10:00",
+    "check_in": "2026-08-20T16:00:00",
+    "check_out": "2026-08-20T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:10:00",
-    "punches_raw": "16:08, 21:10"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-21",
@@ -5563,11 +5563,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:10:00",
-    "check_out": "2026-08-21T20:20:00",
+    "check_in": "2026-08-21T16:07:00",
+    "check_out": "2026-08-21T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:10:00 -- 20:20:00",
-    "punches_raw": "16:10, 20:20"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1002_2026-08-21",
@@ -5576,11 +5576,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:10:00",
-    "check_out": "2026-08-21T20:20:00",
+    "check_in": "2026-08-21T16:08:00",
+    "check_out": "2026-08-21T20:12:00",
     "status": "weekend",
-    "timestamp_raw": "16:10:00 -- 20:20:00",
-    "punches_raw": "16:10, 20:20"
+    "timestamp_raw": "16:08:00 -- 20:12:00",
+    "punches_raw": "16:08, 20:12"
   },
   {
     "id": "att_1004_2026-08-21",
@@ -5589,11 +5589,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:10:00",
-    "check_out": "2026-08-21T20:20:00",
+    "check_in": "2026-08-21T16:07:00",
+    "check_out": "2026-08-21T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:10:00 -- 20:20:00",
-    "punches_raw": "16:10, 20:20"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1008_2026-08-21",
@@ -5628,11 +5628,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:10:00",
-    "check_out": "2026-08-21T20:20:00",
+    "check_in": "2026-08-21T16:07:00",
+    "check_out": "2026-08-21T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:10:00 -- 20:20:00",
-    "punches_raw": "16:10, 20:20"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1015_2026-08-21",
@@ -5654,11 +5654,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:10:00",
-    "check_out": "2026-08-21T20:20:00",
+    "check_in": "2026-08-21T16:07:00",
+    "check_out": "2026-08-21T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:10:00 -- 20:20:00",
-    "punches_raw": "16:10, 20:20"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1018_2026-08-21",
@@ -5732,11 +5732,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:10:00",
-    "check_out": "2026-08-21T20:20:00",
+    "check_in": "2026-08-21T16:07:00",
+    "check_out": "2026-08-21T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:10:00 -- 20:20:00",
-    "punches_raw": "16:10, 20:20"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1033_2026-08-21",
@@ -5745,11 +5745,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:10:00",
-    "check_out": "2026-08-21T20:20:00",
+    "check_in": "2026-08-21T16:07:00",
+    "check_out": "2026-08-21T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:10:00 -- 20:20:00",
-    "punches_raw": "16:10, 20:20"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1034_2026-08-21",
@@ -5758,11 +5758,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:10:00",
-    "check_out": "2026-08-21T20:20:00",
+    "check_in": "2026-08-21T16:07:00",
+    "check_out": "2026-08-21T20:15:00",
     "status": "weekend",
-    "timestamp_raw": "16:10:00 -- 20:20:00",
-    "punches_raw": "16:10, 20:20"
+    "timestamp_raw": "16:07:00 -- 20:15:00",
+    "punches_raw": "16:07, 20:15"
   },
   {
     "id": "att_1035_2026-08-21",
@@ -5784,11 +5784,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T08:07:00",
-    "check_out": "2026-08-22T13:14:00",
+    "check_in": "2026-08-22T08:00:00",
+    "check_out": "2026-08-22T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:07:00 -- 13:14:00",
-    "punches_raw": "08:07, 13:14"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-22",
@@ -5797,11 +5797,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T08:53:00",
-    "check_out": "2026-08-22T21:16:00",
+    "check_in": "2026-08-22T08:49:00",
+    "check_out": "2026-08-22T21:10:00",
     "status": "present",
-    "timestamp_raw": "08:53:00 -- 13:04:00 & 16:14:00 -- 21:16:00",
-    "punches_raw": "08:53, 13:04, 16:14, 21:16"
+    "timestamp_raw": "08:49:00 -- 13:00:00 & 16:20:00 -- 21:10:00",
+    "punches_raw": "08:49, 13:00, 16:20, 21:10"
   },
   {
     "id": "att_1005_2026-08-22",
@@ -5810,11 +5810,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T07:54:00",
-    "check_out": "2026-08-22T20:16:00",
+    "check_in": "2026-08-22T07:55:00",
+    "check_out": "2026-08-22T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:04:00 & 16:16:00 -- 20:16:00",
-    "punches_raw": "07:54, 12:04, 16:16, 20:16"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-22",
@@ -5823,11 +5823,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T07:55:00",
-    "check_out": "2026-08-22T20:16:00",
+    "check_in": "2026-08-22T07:53:00",
+    "check_out": "2026-08-22T20:14:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:04:00 & 16:18:00 -- 20:16:00",
-    "punches_raw": "07:55, 12:04, 16:18, 20:16"
+    "timestamp_raw": "07:53:00 -- 12:05:00 & 16:06:00 -- 20:14:00",
+    "punches_raw": "07:53, 12:05, 16:06, 20:14"
   },
   {
     "id": "att_1004_2026-08-22",
@@ -5836,11 +5836,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T07:56:00",
-    "check_out": "2026-08-22T20:16:00",
+    "check_in": "2026-08-22T07:55:00",
+    "check_out": "2026-08-22T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:04:00 & 16:05:00 -- 20:16:00",
-    "punches_raw": "07:56, 12:04, 16:05, 20:16"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-22",
@@ -5849,11 +5849,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T08:12:00",
-    "check_out": "2026-08-22T13:14:00",
+    "check_in": "2026-08-22T08:00:00",
+    "check_out": "2026-08-22T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:12:00 -- 13:14:00",
-    "punches_raw": "08:12, 13:14"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-22",
@@ -5862,11 +5862,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T08:13:00",
-    "check_out": "2026-08-22T13:14:00",
+    "check_in": "2026-08-22T08:00:00",
+    "check_out": "2026-08-22T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:13:00 -- 13:14:00",
-    "punches_raw": "08:13, 13:14"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-22",
@@ -5875,11 +5875,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T07:59:00",
-    "check_out": "2026-08-22T20:16:00",
+    "check_in": "2026-08-22T07:55:00",
+    "check_out": "2026-08-22T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:04:00 & 16:11:00 -- 20:16:00",
-    "punches_raw": "07:59, 12:04, 16:11, 20:16"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-22",
@@ -5889,10 +5889,10 @@ export const initialData = {
     "log_date": "2026-08-22",
     "day_name": "السبت",
     "check_in": "2026-08-22T16:00:00",
-    "check_out": "2026-08-22T21:14:00",
+    "check_out": "2026-08-22T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:00:00 -- 21:14:00",
-    "punches_raw": "16:00, 21:14"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-22",
@@ -5901,11 +5901,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T07:46:00",
-    "check_out": "2026-08-22T20:16:00",
+    "check_in": "2026-08-22T07:55:00",
+    "check_out": "2026-08-22T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:46:00 -- 12:04:00 & 16:15:00 -- 20:16:00",
-    "punches_raw": "07:46, 12:04, 16:15, 20:16"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-22",
@@ -5914,11 +5914,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T16:02:00",
-    "check_out": "2026-08-22T21:14:00",
+    "check_in": "2026-08-22T16:00:00",
+    "check_out": "2026-08-22T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:02:00 -- 21:14:00",
-    "punches_raw": "16:02, 21:14"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-22",
@@ -5927,11 +5927,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T08:03:00",
-    "check_out": "2026-08-22T13:14:00",
+    "check_in": "2026-08-22T08:00:00",
+    "check_out": "2026-08-22T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:03:00 -- 13:14:00",
-    "punches_raw": "08:03, 13:14"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-22",
@@ -5940,11 +5940,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T16:04:00",
-    "check_out": "2026-08-22T21:14:00",
+    "check_in": "2026-08-22T16:00:00",
+    "check_out": "2026-08-22T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:14:00",
-    "punches_raw": "16:04, 21:14"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-22",
@@ -5953,11 +5953,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T16:05:00",
-    "check_out": "2026-08-22T21:14:00",
+    "check_in": "2026-08-22T16:00:00",
+    "check_out": "2026-08-22T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:05:00 -- 21:14:00",
-    "punches_raw": "16:05, 21:14"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-22",
@@ -5966,11 +5966,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T16:06:00",
-    "check_out": "2026-08-22T21:14:00",
+    "check_in": "2026-08-22T16:00:00",
+    "check_out": "2026-08-22T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:14:00",
-    "punches_raw": "16:06, 21:14"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-22",
@@ -5979,11 +5979,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T07:52:00",
-    "check_out": "2026-08-22T20:16:00",
+    "check_in": "2026-08-22T07:55:00",
+    "check_out": "2026-08-22T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:52:00 -- 12:04:00 & 16:12:00 -- 20:16:00",
-    "punches_raw": "07:52, 12:04, 16:12, 20:16"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-22",
@@ -5992,11 +5992,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T07:53:00",
-    "check_out": "2026-08-22T20:16:00",
+    "check_in": "2026-08-22T07:55:00",
+    "check_out": "2026-08-22T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:04:00 & 16:14:00 -- 20:16:00",
-    "punches_raw": "07:53, 12:04, 16:14, 20:16"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-22",
@@ -6005,11 +6005,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T07:54:00",
-    "check_out": "2026-08-22T20:16:00",
+    "check_in": "2026-08-22T07:55:00",
+    "check_out": "2026-08-22T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:04:00 & 16:16:00 -- 20:16:00",
-    "punches_raw": "07:54, 12:04, 16:16, 20:16"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-22",
@@ -6018,11 +6018,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-22",
     "day_name": "السبت",
-    "check_in": "2026-08-22T16:10:00",
-    "check_out": "2026-08-22T21:14:00",
+    "check_in": "2026-08-22T16:00:00",
+    "check_out": "2026-08-22T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:10:00 -- 21:14:00",
-    "punches_raw": "16:10, 21:14"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-23",
@@ -6031,11 +6031,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T08:08:00",
-    "check_out": "2026-08-23T13:01:00",
+    "check_in": "2026-08-23T08:00:00",
+    "check_out": "2026-08-23T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:08:00 -- 13:01:00",
-    "punches_raw": "08:08, 13:01"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-23",
@@ -6044,11 +6044,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T08:54:00",
-    "check_out": "2026-08-23T21:19:00",
+    "check_in": "2026-08-23T09:08:00",
+    "check_out": "2026-08-23T21:11:00",
     "status": "present",
-    "timestamp_raw": "08:54:00 -- 13:06:00 & 16:15:00 -- 21:19:00",
-    "punches_raw": "08:54, 13:06, 16:15, 21:19"
+    "timestamp_raw": "09:08:00 -- 13:00:00 & 16:25:00 -- 21:11:00",
+    "punches_raw": "09:08, 13:00, 16:25, 21:11"
   },
   {
     "id": "att_1005_2026-08-23",
@@ -6058,10 +6058,10 @@ export const initialData = {
     "log_date": "2026-08-23",
     "day_name": "الأحد",
     "check_in": "2026-08-23T07:55:00",
-    "check_out": "2026-08-23T20:19:00",
+    "check_out": "2026-08-23T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:06:00 & 16:17:00 -- 20:19:00",
-    "punches_raw": "07:55, 12:06, 16:17, 20:19"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-23",
@@ -6070,11 +6070,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T07:56:00",
-    "check_out": "2026-08-23T20:19:00",
+    "check_in": "2026-08-23T07:55:00",
+    "check_out": "2026-08-23T20:10:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:06:00 & 16:19:00 -- 20:19:00",
-    "punches_raw": "07:56, 12:06, 16:19, 20:19"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:07:00 -- 20:10:00",
+    "punches_raw": "07:55, 12:08, 16:07, 20:10"
   },
   {
     "id": "att_1004_2026-08-23",
@@ -6083,11 +6083,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T07:57:00",
-    "check_out": "2026-08-23T20:19:00",
+    "check_in": "2026-08-23T07:55:00",
+    "check_out": "2026-08-23T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:06:00 & 16:06:00 -- 20:19:00",
-    "punches_raw": "07:57, 12:06, 16:06, 20:19"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-23",
@@ -6096,11 +6096,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T08:13:00",
-    "check_out": "2026-08-23T13:01:00",
+    "check_in": "2026-08-23T08:00:00",
+    "check_out": "2026-08-23T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:13:00 -- 13:01:00",
-    "punches_raw": "08:13, 13:01"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-23",
@@ -6109,11 +6109,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T08:14:00",
-    "check_out": "2026-08-23T13:01:00",
+    "check_in": "2026-08-23T08:00:00",
+    "check_out": "2026-08-23T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:14:00 -- 13:01:00",
-    "punches_raw": "08:14, 13:01"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-23",
@@ -6122,11 +6122,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T07:45:00",
-    "check_out": "2026-08-23T20:19:00",
+    "check_in": "2026-08-23T07:55:00",
+    "check_out": "2026-08-23T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:06:00 & 16:12:00 -- 20:19:00",
-    "punches_raw": "07:45, 12:06, 16:12, 20:19"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-23",
@@ -6135,11 +6135,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T16:01:00",
-    "check_out": "2026-08-23T21:01:00",
+    "check_in": "2026-08-23T16:00:00",
+    "check_out": "2026-08-23T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:01:00 -- 21:01:00",
-    "punches_raw": "16:01, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-23",
@@ -6148,11 +6148,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T07:47:00",
-    "check_out": "2026-08-23T20:19:00",
+    "check_in": "2026-08-23T07:55:00",
+    "check_out": "2026-08-23T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:06:00 & 16:16:00 -- 20:19:00",
-    "punches_raw": "07:47, 12:06, 16:16, 20:19"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-23",
@@ -6161,11 +6161,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T16:03:00",
-    "check_out": "2026-08-23T21:01:00",
+    "check_in": "2026-08-23T16:00:00",
+    "check_out": "2026-08-23T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:01:00",
-    "punches_raw": "16:03, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-23",
@@ -6174,11 +6174,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T08:04:00",
-    "check_out": "2026-08-23T13:01:00",
+    "check_in": "2026-08-23T08:00:00",
+    "check_out": "2026-08-23T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:04:00 -- 13:01:00",
-    "punches_raw": "08:04, 13:01"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-23",
@@ -6187,11 +6187,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T16:05:00",
-    "check_out": "2026-08-23T21:01:00",
+    "check_in": "2026-08-23T16:00:00",
+    "check_out": "2026-08-23T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:05:00 -- 21:01:00",
-    "punches_raw": "16:05, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-23",
@@ -6200,11 +6200,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T16:06:00",
-    "check_out": "2026-08-23T21:01:00",
+    "check_in": "2026-08-23T16:00:00",
+    "check_out": "2026-08-23T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:01:00",
-    "punches_raw": "16:06, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-23",
@@ -6213,11 +6213,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T16:07:00",
-    "check_out": "2026-08-23T21:01:00",
+    "check_in": "2026-08-23T16:00:00",
+    "check_out": "2026-08-23T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:01:00",
-    "punches_raw": "16:07, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-23",
@@ -6226,11 +6226,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T07:53:00",
-    "check_out": "2026-08-23T20:19:00",
+    "check_in": "2026-08-23T07:55:00",
+    "check_out": "2026-08-23T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:53:00 -- 12:06:00 & 16:13:00 -- 20:19:00",
-    "punches_raw": "07:53, 12:06, 16:13, 20:19"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-23",
@@ -6239,11 +6239,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T07:54:00",
-    "check_out": "2026-08-23T20:19:00",
+    "check_in": "2026-08-23T07:55:00",
+    "check_out": "2026-08-23T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:06:00 & 16:15:00 -- 20:19:00",
-    "punches_raw": "07:54, 12:06, 16:15, 20:19"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-23",
@@ -6253,10 +6253,10 @@ export const initialData = {
     "log_date": "2026-08-23",
     "day_name": "الأحد",
     "check_in": "2026-08-23T07:55:00",
-    "check_out": "2026-08-23T20:19:00",
+    "check_out": "2026-08-23T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:06:00 & 16:17:00 -- 20:19:00",
-    "punches_raw": "07:55, 12:06, 16:17, 20:19"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-23",
@@ -6265,11 +6265,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-23",
     "day_name": "الأحد",
-    "check_in": "2026-08-23T16:11:00",
-    "check_out": "2026-08-23T21:01:00",
+    "check_in": "2026-08-23T16:00:00",
+    "check_out": "2026-08-23T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:11:00 -- 21:01:00",
-    "punches_raw": "16:11, 21:01"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-24",
@@ -6278,11 +6278,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T08:09:00",
-    "check_out": "2026-08-24T13:03:00",
+    "check_in": "2026-08-24T08:00:00",
+    "check_out": "2026-08-24T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:09:00 -- 13:03:00",
-    "punches_raw": "08:09, 13:03"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-24",
@@ -6292,10 +6292,10 @@ export const initialData = {
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
     "check_in": "2026-08-24T08:55:00",
-    "check_out": "2026-08-24T21:22:00",
+    "check_out": "2026-08-24T21:10:00",
     "status": "present",
-    "timestamp_raw": "08:55:00 -- 13:08:00 & 16:16:00 -- 21:22:00",
-    "punches_raw": "08:55, 13:08, 16:16, 21:22"
+    "timestamp_raw": "08:55:00 -- 13:00:00 & 16:30:00 -- 21:10:00",
+    "punches_raw": "08:55, 13:00, 16:30, 21:10"
   },
   {
     "id": "att_1005_2026-08-24",
@@ -6304,11 +6304,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T07:56:00",
-    "check_out": "2026-08-24T20:22:00",
+    "check_in": "2026-08-24T07:55:00",
+    "check_out": "2026-08-24T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:08:00 & 16:18:00 -- 20:22:00",
-    "punches_raw": "07:56, 12:08, 16:18, 20:22"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-24",
@@ -6317,11 +6317,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T07:57:00",
-    "check_out": "2026-08-24T20:22:00",
+    "check_in": "2026-08-24T07:54:00",
+    "check_out": "2026-08-24T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:08:00 & 16:05:00 -- 20:22:00",
-    "punches_raw": "07:57, 12:08, 16:05, 20:22"
+    "timestamp_raw": "07:54:00 -- 12:06:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:54, 12:06, 16:05, 20:15"
   },
   {
     "id": "att_1004_2026-08-24",
@@ -6330,11 +6330,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T07:58:00",
-    "check_out": "2026-08-24T20:22:00",
+    "check_in": "2026-08-24T07:55:00",
+    "check_out": "2026-08-24T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:08:00 & 16:07:00 -- 20:22:00",
-    "punches_raw": "07:58, 12:08, 16:07, 20:22"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-24",
@@ -6343,11 +6343,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T08:14:00",
-    "check_out": "2026-08-24T13:03:00",
+    "check_in": "2026-08-24T08:00:00",
+    "check_out": "2026-08-24T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:14:00 -- 13:03:00",
-    "punches_raw": "08:14, 13:03"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-24",
@@ -6357,10 +6357,10 @@ export const initialData = {
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
     "check_in": "2026-08-24T08:00:00",
-    "check_out": "2026-08-24T13:03:00",
+    "check_out": "2026-08-24T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:00:00 -- 13:03:00",
-    "punches_raw": "08:00, 13:03"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-24",
@@ -6369,11 +6369,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T07:46:00",
-    "check_out": "2026-08-24T20:22:00",
+    "check_in": "2026-08-24T07:55:00",
+    "check_out": "2026-08-24T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:46:00 -- 12:08:00 & 16:13:00 -- 20:22:00",
-    "punches_raw": "07:46, 12:08, 16:13, 20:22"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-24",
@@ -6382,11 +6382,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T16:02:00",
-    "check_out": "2026-08-24T21:03:00",
+    "check_in": "2026-08-24T16:00:00",
+    "check_out": "2026-08-24T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:02:00 -- 21:03:00",
-    "punches_raw": "16:02, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-24",
@@ -6395,11 +6395,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T07:48:00",
-    "check_out": "2026-08-24T20:22:00",
+    "check_in": "2026-08-24T07:55:00",
+    "check_out": "2026-08-24T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:08:00 & 16:17:00 -- 20:22:00",
-    "punches_raw": "07:48, 12:08, 16:17, 20:22"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-24",
@@ -6408,11 +6408,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T16:04:00",
-    "check_out": "2026-08-24T21:03:00",
+    "check_in": "2026-08-24T16:00:00",
+    "check_out": "2026-08-24T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:03:00",
-    "punches_raw": "16:04, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-24",
@@ -6421,11 +6421,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T08:05:00",
-    "check_out": "2026-08-24T13:03:00",
+    "check_in": "2026-08-24T08:00:00",
+    "check_out": "2026-08-24T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:05:00 -- 13:03:00",
-    "punches_raw": "08:05, 13:03"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-24",
@@ -6434,11 +6434,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T16:06:00",
-    "check_out": "2026-08-24T21:03:00",
+    "check_in": "2026-08-24T16:00:00",
+    "check_out": "2026-08-24T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:03:00",
-    "punches_raw": "16:06, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-24",
@@ -6447,11 +6447,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T16:07:00",
-    "check_out": "2026-08-24T21:03:00",
+    "check_in": "2026-08-24T16:00:00",
+    "check_out": "2026-08-24T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:03:00",
-    "punches_raw": "16:07, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-24",
@@ -6460,11 +6460,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T16:08:00",
-    "check_out": "2026-08-24T21:03:00",
+    "check_in": "2026-08-24T16:00:00",
+    "check_out": "2026-08-24T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:03:00",
-    "punches_raw": "16:08, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-24",
@@ -6473,11 +6473,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T07:54:00",
-    "check_out": "2026-08-24T20:22:00",
+    "check_in": "2026-08-24T07:55:00",
+    "check_out": "2026-08-24T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:54:00 -- 12:08:00 & 16:14:00 -- 20:22:00",
-    "punches_raw": "07:54, 12:08, 16:14, 20:22"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-24",
@@ -6487,10 +6487,10 @@ export const initialData = {
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
     "check_in": "2026-08-24T07:55:00",
-    "check_out": "2026-08-24T20:22:00",
+    "check_out": "2026-08-24T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:16:00 -- 20:22:00",
-    "punches_raw": "07:55, 12:08, 16:16, 20:22"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-24",
@@ -6499,11 +6499,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T07:56:00",
-    "check_out": "2026-08-24T20:22:00",
+    "check_in": "2026-08-24T07:55:00",
+    "check_out": "2026-08-24T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:08:00 & 16:18:00 -- 20:22:00",
-    "punches_raw": "07:56, 12:08, 16:18, 20:22"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-24",
@@ -6512,11 +6512,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-24",
     "day_name": "الإثنين",
-    "check_in": "2026-08-24T16:12:00",
-    "check_out": "2026-08-24T21:03:00",
+    "check_in": "2026-08-24T16:00:00",
+    "check_out": "2026-08-24T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:12:00 -- 21:03:00",
-    "punches_raw": "16:12, 21:03"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-25",
@@ -6525,11 +6525,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T08:10:00",
-    "check_out": "2026-08-25T13:05:00",
+    "check_in": "2026-08-25T08:00:00",
+    "check_out": "2026-08-25T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:10:00 -- 13:05:00",
-    "punches_raw": "08:10, 13:05"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-25",
@@ -6538,11 +6538,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T08:56:00",
-    "check_out": "2026-08-25T21:00:00",
+    "check_in": "2026-08-25T08:47:00",
+    "check_out": "2026-08-25T20:55:00",
     "status": "present",
-    "timestamp_raw": "08:56:00 -- 13:10:00 & 16:17:00 -- 21:00:00",
-    "punches_raw": "08:56, 13:10, 16:17, 21:00"
+    "timestamp_raw": "08:47:00 -- 12:45:00 & 16:25:00 -- 20:55:00",
+    "punches_raw": "08:47, 12:45, 16:25, 20:55"
   },
   {
     "id": "att_1005_2026-08-25",
@@ -6551,11 +6551,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T07:57:00",
-    "check_out": "2026-08-25T20:00:00",
+    "check_in": "2026-08-25T07:55:00",
+    "check_out": "2026-08-25T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:10:00 & 16:19:00 -- 20:00:00",
-    "punches_raw": "07:57, 12:10, 16:19, 20:00"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-25",
@@ -6564,11 +6564,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T07:58:00",
-    "check_out": "2026-08-25T20:00:00",
+    "check_in": "2026-08-25T07:56:00",
+    "check_out": "2026-08-25T20:12:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:10:00 & 16:06:00 -- 20:00:00",
-    "punches_raw": "07:58, 12:10, 16:06, 20:00"
+    "timestamp_raw": "07:56:00 -- 12:07:00 & 16:08:00 -- 20:12:00",
+    "punches_raw": "07:56, 12:07, 16:08, 20:12"
   },
   {
     "id": "att_1004_2026-08-25",
@@ -6577,11 +6577,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T07:59:00",
-    "check_out": "2026-08-25T20:00:00",
+    "check_in": "2026-08-25T07:55:00",
+    "check_out": "2026-08-25T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:10:00 & 16:08:00 -- 20:00:00",
-    "punches_raw": "07:59, 12:10, 16:08, 20:00"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-25",
@@ -6591,10 +6591,10 @@ export const initialData = {
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
     "check_in": "2026-08-25T08:00:00",
-    "check_out": "2026-08-25T13:05:00",
+    "check_out": "2026-08-25T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:00:00 -- 13:05:00",
-    "punches_raw": "08:00, 13:05"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-25",
@@ -6603,11 +6603,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T08:01:00",
-    "check_out": "2026-08-25T13:05:00",
+    "check_in": "2026-08-25T08:00:00",
+    "check_out": "2026-08-25T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:01:00 -- 13:05:00",
-    "punches_raw": "08:01, 13:05"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-25",
@@ -6616,11 +6616,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T07:47:00",
-    "check_out": "2026-08-25T20:00:00",
+    "check_in": "2026-08-25T07:55:00",
+    "check_out": "2026-08-25T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:47:00 -- 12:10:00 & 16:14:00 -- 20:00:00",
-    "punches_raw": "07:47, 12:10, 16:14, 20:00"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-25",
@@ -6629,11 +6629,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T16:03:00",
-    "check_out": "2026-08-25T21:05:00",
+    "check_in": "2026-08-25T16:00:00",
+    "check_out": "2026-08-25T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:03:00 -- 21:05:00",
-    "punches_raw": "16:03, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-25",
@@ -6642,11 +6642,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T07:49:00",
-    "check_out": "2026-08-25T20:00:00",
+    "check_in": "2026-08-25T07:55:00",
+    "check_out": "2026-08-25T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:49:00 -- 12:10:00 & 16:18:00 -- 20:00:00",
-    "punches_raw": "07:49, 12:10, 16:18, 20:00"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-25",
@@ -6655,11 +6655,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T16:05:00",
-    "check_out": "2026-08-25T21:05:00",
+    "check_in": "2026-08-25T16:00:00",
+    "check_out": "2026-08-25T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:05:00 -- 21:05:00",
-    "punches_raw": "16:05, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-25",
@@ -6668,11 +6668,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T08:06:00",
-    "check_out": "2026-08-25T13:05:00",
+    "check_in": "2026-08-25T08:00:00",
+    "check_out": "2026-08-25T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:06:00 -- 13:05:00",
-    "punches_raw": "08:06, 13:05"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-25",
@@ -6681,11 +6681,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T16:07:00",
-    "check_out": "2026-08-25T21:05:00",
+    "check_in": "2026-08-25T16:00:00",
+    "check_out": "2026-08-25T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:07:00 -- 21:05:00",
-    "punches_raw": "16:07, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-25",
@@ -6694,11 +6694,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T16:08:00",
-    "check_out": "2026-08-25T21:05:00",
+    "check_in": "2026-08-25T16:00:00",
+    "check_out": "2026-08-25T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:05:00",
-    "punches_raw": "16:08, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-25",
@@ -6707,11 +6707,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T16:09:00",
-    "check_out": "2026-08-25T21:05:00",
+    "check_in": "2026-08-25T16:00:00",
+    "check_out": "2026-08-25T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:09:00 -- 21:05:00",
-    "punches_raw": "16:09, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-25",
@@ -6721,10 +6721,10 @@ export const initialData = {
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
     "check_in": "2026-08-25T07:55:00",
-    "check_out": "2026-08-25T20:00:00",
+    "check_out": "2026-08-25T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:10:00 & 16:15:00 -- 20:00:00",
-    "punches_raw": "07:55, 12:10, 16:15, 20:00"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-25",
@@ -6733,11 +6733,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T07:56:00",
-    "check_out": "2026-08-25T20:00:00",
+    "check_in": "2026-08-25T07:55:00",
+    "check_out": "2026-08-25T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:10:00 & 16:17:00 -- 20:00:00",
-    "punches_raw": "07:56, 12:10, 16:17, 20:00"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-25",
@@ -6746,11 +6746,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T07:57:00",
-    "check_out": "2026-08-25T20:00:00",
+    "check_in": "2026-08-25T07:55:00",
+    "check_out": "2026-08-25T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:10:00 & 16:19:00 -- 20:00:00",
-    "punches_raw": "07:57, 12:10, 16:19, 20:00"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-25",
@@ -6759,11 +6759,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-25",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-25T16:13:00",
-    "check_out": "2026-08-25T21:05:00",
+    "check_in": "2026-08-25T16:00:00",
+    "check_out": "2026-08-25T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:13:00 -- 21:05:00",
-    "punches_raw": "16:13, 21:05"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1001_2026-08-26",
@@ -6772,11 +6772,11 @@ export const initialData = {
     "employee_name": "فهد ناصر محمد الجوعي",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T08:11:00",
-    "check_out": "2026-08-26T13:07:00",
+    "check_in": "2026-08-26T08:00:00",
+    "check_out": "2026-08-26T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:11:00 -- 13:07:00",
-    "punches_raw": "08:11, 13:07"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1022_2026-08-26",
@@ -6785,11 +6785,11 @@ export const initialData = {
     "employee_name": "يحيي محمد عبدالغفار باشا",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T08:57:00",
-    "check_out": "2026-08-26T21:03:00",
+    "check_in": "2026-08-26T08:50:00",
+    "check_out": "2026-08-26T21:00:00",
     "status": "present",
-    "timestamp_raw": "08:57:00 -- 13:12:00 & 16:18:00 -- 21:03:00",
-    "punches_raw": "08:57, 13:12, 16:18, 21:03"
+    "timestamp_raw": "08:50:00 -- 12:50:00 & 16:30:00 -- 21:00:00",
+    "punches_raw": "08:50, 12:50, 16:30, 21:00"
   },
   {
     "id": "att_1005_2026-08-26",
@@ -6798,11 +6798,11 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T07:58:00",
-    "check_out": "2026-08-26T20:03:00",
+    "check_in": "2026-08-26T07:55:00",
+    "check_out": "2026-08-26T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:12:00 & 16:05:00 -- 20:03:00",
-    "punches_raw": "07:58, 12:12, 16:05, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1002_2026-08-26",
@@ -6811,11 +6811,11 @@ export const initialData = {
     "employee_name": "محمود طه المحيميد",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T07:59:00",
-    "check_out": "2026-08-26T20:03:00",
+    "check_in": "2026-08-26T07:55:00",
+    "check_out": "2026-08-26T20:10:00",
     "status": "present",
-    "timestamp_raw": "07:59:00 -- 12:12:00 & 16:07:00 -- 20:03:00",
-    "punches_raw": "07:59, 12:12, 16:07, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:05:00 & 16:06:00 -- 20:10:00",
+    "punches_raw": "07:55, 12:05, 16:06, 20:10"
   },
   {
     "id": "att_1004_2026-08-26",
@@ -6824,11 +6824,11 @@ export const initialData = {
     "employee_name": "صالح علي المحيميد",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T07:45:00",
-    "check_out": "2026-08-26T20:03:00",
+    "check_in": "2026-08-26T07:55:00",
+    "check_out": "2026-08-26T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:45:00 -- 12:12:00 & 16:09:00 -- 20:03:00",
-    "punches_raw": "07:45, 12:12, 16:09, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1008_2026-08-26",
@@ -6837,11 +6837,11 @@ export const initialData = {
     "employee_name": "خالد ناصر محمد الجوعي",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T08:01:00",
-    "check_out": "2026-08-26T13:07:00",
+    "check_in": "2026-08-26T08:00:00",
+    "check_out": "2026-08-26T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:01:00 -- 13:07:00",
-    "punches_raw": "08:01, 13:07"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1011_2026-08-26",
@@ -6850,11 +6850,11 @@ export const initialData = {
     "employee_name": "عبد العزيز ناصر محمد الجوعي",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T08:02:00",
-    "check_out": "2026-08-26T13:07:00",
+    "check_in": "2026-08-26T08:00:00",
+    "check_out": "2026-08-26T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:02:00 -- 13:07:00",
-    "punches_raw": "08:02, 13:07"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1013_2026-08-26",
@@ -6863,11 +6863,11 @@ export const initialData = {
     "employee_name": "وضاح صالح سالم أحمد العولقي",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T07:48:00",
-    "check_out": "2026-08-26T20:03:00",
+    "check_in": "2026-08-26T07:55:00",
+    "check_out": "2026-08-26T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:48:00 -- 12:12:00 & 16:15:00 -- 20:03:00",
-    "punches_raw": "07:48, 12:12, 16:15, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1015_2026-08-26",
@@ -6876,11 +6876,11 @@ export const initialData = {
     "employee_name": "عزام علي السعوي",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T16:04:00",
-    "check_out": "2026-08-26T21:07:00",
+    "check_in": "2026-08-26T16:00:00",
+    "check_out": "2026-08-26T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:04:00 -- 21:07:00",
-    "punches_raw": "16:04, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1017_2026-08-26",
@@ -6889,11 +6889,11 @@ export const initialData = {
     "employee_name": "محمد سالم صالح أحمد المردم",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T07:50:00",
-    "check_out": "2026-08-26T20:03:00",
+    "check_in": "2026-08-26T07:55:00",
+    "check_out": "2026-08-26T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:50:00 -- 12:12:00 & 16:19:00 -- 20:03:00",
-    "punches_raw": "07:50, 12:12, 16:19, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1018_2026-08-26",
@@ -6902,11 +6902,11 @@ export const initialData = {
     "employee_name": "عاصم ابراهيم الرياعي",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T16:06:00",
-    "check_out": "2026-08-26T21:07:00",
+    "check_in": "2026-08-26T16:00:00",
+    "check_out": "2026-08-26T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:06:00 -- 21:07:00",
-    "punches_raw": "16:06, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1020_2026-08-26",
@@ -6915,11 +6915,11 @@ export const initialData = {
     "employee_name": "عبد الله يحيى إبراهيم التويجري",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T08:07:00",
-    "check_out": "2026-08-26T13:07:00",
+    "check_in": "2026-08-26T08:00:00",
+    "check_out": "2026-08-26T13:00:00",
     "status": "present",
-    "timestamp_raw": "08:07:00 -- 13:07:00",
-    "punches_raw": "08:07, 13:07"
+    "timestamp_raw": "08:00:00 -- 13:00:00",
+    "punches_raw": "08:00, 13:00"
   },
   {
     "id": "att_1021_2026-08-26",
@@ -6928,11 +6928,11 @@ export const initialData = {
     "employee_name": "إبراهيم عبد العزيز التويجري",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T16:08:00",
-    "check_out": "2026-08-26T21:07:00",
+    "check_in": "2026-08-26T16:00:00",
+    "check_out": "2026-08-26T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:08:00 -- 21:07:00",
-    "punches_raw": "16:08, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1024_2026-08-26",
@@ -6941,11 +6941,11 @@ export const initialData = {
     "employee_name": "سفيان عبد الرحمن الضالع",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T16:09:00",
-    "check_out": "2026-08-26T21:07:00",
+    "check_in": "2026-08-26T16:00:00",
+    "check_out": "2026-08-26T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:09:00 -- 21:07:00",
-    "punches_raw": "16:09, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1027_2026-08-26",
@@ -6954,11 +6954,11 @@ export const initialData = {
     "employee_name": "محمد صالح محمد السعوي",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T16:10:00",
-    "check_out": "2026-08-26T21:07:00",
+    "check_in": "2026-08-26T16:00:00",
+    "check_out": "2026-08-26T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:10:00 -- 21:07:00",
-    "punches_raw": "16:10, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   },
   {
     "id": "att_1032_2026-08-26",
@@ -6967,11 +6967,11 @@ export const initialData = {
     "employee_name": "محمد عادل احمد نعمان",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T07:56:00",
-    "check_out": "2026-08-26T20:03:00",
+    "check_in": "2026-08-26T07:55:00",
+    "check_out": "2026-08-26T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:56:00 -- 12:12:00 & 16:16:00 -- 20:03:00",
-    "punches_raw": "07:56, 12:12, 16:16, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1033_2026-08-26",
@@ -6980,11 +6980,11 @@ export const initialData = {
     "employee_name": "عبد الله ناصر عبد الله محمد عمر",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T07:57:00",
-    "check_out": "2026-08-26T20:03:00",
+    "check_in": "2026-08-26T07:55:00",
+    "check_out": "2026-08-26T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:57:00 -- 12:12:00 & 16:18:00 -- 20:03:00",
-    "punches_raw": "07:57, 12:12, 16:18, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1034_2026-08-26",
@@ -6993,11 +6993,11 @@ export const initialData = {
     "employee_name": "طه محمود المحيميد",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T07:58:00",
-    "check_out": "2026-08-26T20:03:00",
+    "check_in": "2026-08-26T07:55:00",
+    "check_out": "2026-08-26T20:15:00",
     "status": "present",
-    "timestamp_raw": "07:58:00 -- 12:12:00 & 16:05:00 -- 20:03:00",
-    "punches_raw": "07:58, 12:12, 16:05, 20:03"
+    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
+    "punches_raw": "07:55, 12:08, 16:05, 20:15"
   },
   {
     "id": "att_1035_2026-08-26",
@@ -7006,11 +7006,11 @@ export const initialData = {
     "employee_name": "محمدعبد محمد البليهي",
     "log_date": "2026-08-26",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-26T16:14:00",
-    "check_out": "2026-08-26T21:07:00",
+    "check_in": "2026-08-26T16:00:00",
+    "check_out": "2026-08-26T21:00:00",
     "status": "present",
-    "timestamp_raw": "16:14:00 -- 21:07:00",
-    "punches_raw": "16:14, 21:07"
+    "timestamp_raw": "16:00:00 -- 21:00:00",
+    "punches_raw": "16:00, 21:00"
   }
 ],
   LeaveRequest: []
