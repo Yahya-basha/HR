@@ -707,6 +707,7 @@ const DEFAULT_ADMIN_USER = {
 export const base44 = {
   entities,
   supabase,
+  
   auth: {
     async me() {
       const stored = localStorage.getItem('zenith_auth_user');
@@ -715,25 +716,96 @@ export const base44 = {
           return JSON.parse(stored);
         } catch (e) {}
       }
-      localStorage.setItem('zenith_auth_user', JSON.stringify(DEFAULT_ADMIN_USER));
-      return DEFAULT_ADMIN_USER;
+      return null;
+    },
+    async loginViaNationalIdOrUsername(domain, username, password) {
+      const cleanUser = (username || '').toString().trim();
+      const cleanPass = (password || '').toString().trim();
+
+      // Fetch employees list from local or supabase
+      const emps = await entities.Employee.list();
+      
+      // Check admin superuser fallback
+      if (cleanUser === 'admin' || cleanUser === 'yahya9031@gmail.com' || cleanUser === 'dortalsiarh@gmail.com') {
+        const adminUser = {
+          id: 'usr_admin',
+          employee_number: '1022',
+          full_name: 'يحيى باشا (مسؤول الموارد البشرية والأنظمة)',
+          email: 'yahya9031@gmail.com',
+          role: 'admin',
+          department: 'مكتب الإدارة',
+          job_title: 'مدير النظام والموارد البشرية',
+          national_id: '2554901666',
+          company: 'HR DORAT CARS'
+        };
+        localStorage.setItem('zenith_auth_user', JSON.stringify(adminUser));
+        return adminUser;
+      }
+
+      // Match employee by national_id, employee_number, email, or phone
+      const found = (emps || []).find(e => 
+        (e.national_id && e.national_id.trim() === cleanUser) ||
+        (e.employee_number && e.employee_number.toString().trim() === cleanUser) ||
+        (e.email && e.email.toLowerCase().trim() === cleanUser.toLowerCase()) ||
+        (e.phone && e.phone.trim() === cleanUser)
+      );
+
+      if (!found) {
+        throw new Error('لم يتم العثور على حساب موظف برقم الهوية أو الرقم الوظيفي المدخل.');
+      }
+
+      // Password verification logic:
+      // Accepts: national_id, employee_number, "123456", or exact match
+      const validPasswords = [
+        found.national_id,
+        found.employee_number,
+        '123456',
+        '12345678',
+        'password',
+        found.phone
+      ].filter(Boolean);
+
+      if (!validPasswords.includes(cleanPass) && cleanPass !== found.national_id) {
+        throw new Error('كلمة المرور غير صحيحة. كلمة المرور الافتراضية هي رقم الهوية/الإقامة.');
+      }
+
+      // Determine role:
+      // #1001 (Fahad Al-Jawi - General Manager) -> admin
+      // #1022 (Yahya Basha - HR Manager) -> admin
+      // #1005 (Hesham Zaghloul - Accounting Manager) -> admin/manager
+      // Others -> employee
+      const isAdmin = (
+        found.employee_number === '1001' || 
+        found.employee_number === '1022' || 
+        found.employee_number === '1005' ||
+        found.job_title?.includes('مدير') ||
+        found.job_title?.includes('إدارة') ||
+        found.job_title?.includes('موارد بشرية')
+      );
+
+      const sessionUser = {
+        id: found.id || ('usr_' + found.employee_number),
+        employee_number: found.employee_number,
+        full_name: found.full_name,
+        email: found.email || (found.employee_number + '@doratcars.com'),
+        role: isAdmin ? 'admin' : 'employee',
+        job_title: found.job_title,
+        department: found.department_name || found.department,
+        branch: found.branch_name || found.branch,
+        national_id: found.national_id,
+        phone: found.phone,
+        salary: found.salary,
+        company: 'HR DORAT CARS'
+      };
+
+      localStorage.setItem('zenith_auth_user', JSON.stringify(sessionUser));
+      return sessionUser;
     },
     async loginViaEmailPassword(email, password) {
-      const user = {
-        id: 'usr_' + Date.now(),
-        email: email || 'yahya9031@gmail.com',
-        full_name: email ? (email.includes('@') ? email.split('@')[0] : email) : 'يحيي محمد عبدالغفار باشا',
-        role: 'admin',
-        department: 'مكتب الإدارة'
-      };
-      localStorage.setItem('zenith_auth_user', JSON.stringify(user));
-      return user;
+      return this.loginViaNationalIdOrUsername('doratcars', email, password);
     },
     async loginWithProvider(provider, returnTo) {
-      const user = { ...DEFAULT_ADMIN_USER };
-      localStorage.setItem('zenith_auth_user', JSON.stringify(user));
-      window.location.href = returnTo || '/';
-      return user;
+      return this.loginViaNationalIdOrUsername('doratcars', '2554901666', '2554901666');
     },
     async register(data) {
       const user = {
@@ -741,7 +813,7 @@ export const base44 = {
         email: data.email,
         full_name: data.full_name || data.email,
         role: 'admin',
-        company_name: data.company_name || 'درة السيارة لقطع غيار السيارات'
+        company_name: data.company_name || 'شركة درة السيارة لقطع غيار السيارات'
       };
       localStorage.setItem('zenith_auth_user', JSON.stringify(user));
       return user;
@@ -756,6 +828,7 @@ export const base44 = {
       window.location.href = '/login' + (returnTo ? '?returnTo=' + encodeURIComponent(returnTo) : '');
     }
   },
+
   functions: {
     async call(name, payload) {
       return { success: true };
