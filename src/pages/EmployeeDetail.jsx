@@ -145,7 +145,7 @@ export default function EmployeeDetail() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">رقم الجوال:</span>
-              <span className="font-mono font-bold text-foreground dir-ltr">{emp.phone}</span>
+              <span className="font-mono font-bold text-foreground dir-ltr"><span className="ltr-nums" dir="ltr" style={{direction: "ltr", unicodeBidi: "embed"}}>{emp.phone}</span></span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">البريد الإلكتروني:</span>

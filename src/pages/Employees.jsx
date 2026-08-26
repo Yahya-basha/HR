@@ -172,7 +172,7 @@ export default function Employees() {
                         <Link to={`/employees/${emp.id}`} className="font-bold text-sm text-foreground hover:text-primary transition-colors block">
                           {emp.full_name}
                         </Link>
-                        <span className="text-xs text-muted-foreground font-mono dir-ltr block">{emp.phone || emp.email}</span>
+                        <span className="text-xs text-muted-foreground font-mono ltr-nums block" dir="ltr" style={{direction: "ltr", unicodeBidi: "embed"}}>{emp.phone || emp.email}</span>
                       </div>
                     </div>
                   </TableCell>

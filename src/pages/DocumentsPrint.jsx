@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Printer, FileText, Calendar, Building2, User, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Printer, FileText } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +9,38 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 export default function DocumentsPrint() {
   const [employees, setEmployees] = useState([]);
-  const [selectedEmpId, setSelectedEmpId] = useState('emp_1001');
+  const [selectedEmpId, setSelectedEmpId] = useState('');
   const [docType, setDocType] = useState('loan');
+
+  // Company profile (with logo) from localStorage
+  const [companyProfile, setCompanyProfile] = useState(() => {
+    const saved = localStorage.getItem('hr_flow_company_profile');
+    return saved ? JSON.parse(saved) : {
+      name: 'HR DORAT CARS',
+      legal_name: 'شركة درة السيارة لقطع غيار السيارات',
+      cr_number: '7016475555',
+      tax_number: '311861381500003',
+      phone: '+966541697999',
+      address: 'المملكة العربية السعودية - بريدة - القصيم',
+      logo_url: ''
+    };
+  });
+
+  // Listen for logo/profile updates from Settings page
+  useEffect(() => {
+    const handler = () => {
+      const saved = localStorage.getItem('hr_flow_company_profile');
+      if (saved) setCompanyProfile(JSON.parse(saved));
+    };
+    window.addEventListener('company_profile_updated', handler);
+    return () => window.removeEventListener('company_profile_updated', handler);
+  }, []);
 
   // Loan Fields
   const [loanAmount, setLoanAmount] = useState('3000');
   const [loanInstallments, setLoanInstallments] = useState('6');
   const [deductionStart, setDeductionStart] = useState('2026-09-01');
-  const [loanReason, setLoanReason] = useState('ظروف عائلية وشخصية طارئة');
+  const [loanReason, setLoanReason] = useState('سلفة شخصية');
 
   // Leave Clearance Fields
   const [leaveType, setLeaveType] = useState('سنوية');
@@ -27,9 +51,7 @@ export default function DocumentsPrint() {
   useEffect(() => {
     base44.entities.Employee.list().then((list) => {
       setEmployees(list || []);
-      if (list && list.length > 0) {
-        setSelectedEmpId(list[0].id);
-      }
+      if (list && list.length > 0) setSelectedEmpId(list[0].id);
     }).catch(() => {});
   }, []);
 
@@ -37,7 +59,7 @@ export default function DocumentsPrint() {
   const numInstallments = Math.max(1, Math.min(24, Number(loanInstallments) || 1));
   const monthlyDeduction = (Number(loanAmount) || 0) / numInstallments;
 
-  // Generate dynamic installment table rows
+  // Generate installment rows
   const installmentRows = [];
   if (loanAmount && numInstallments > 0) {
     const startDate = new Date(deductionStart || '2026-09-01');
@@ -53,115 +75,98 @@ export default function DocumentsPrint() {
   }
 
   const docTitles = {
-    loan: 'طلب وموافقة سلفة مالية للموظف',
-    leave_clearance: 'مخالصة وتصفية مستحقات إجازة',
-    overtime: 'نموذج تكليف واعتماد عمل إضافي',
-    comp_leave: 'إشعار منح إجازة تعويضية',
-    salary_cert: 'شهادة تعريف بالراتب ومفردات المرتب',
-    end_service: 'مخالصة وتسوية مكافأة نهاية الخدمة'
+    loan: 'طلب سلفة مالية',
+    leave_clearance: 'إخلاء طرف إجازة سنوية',
+    salary_cert: 'شهادة تعريف بالراتب والوظيفة',
+    end_service: 'إخلاء طرف نهاية خدمة'
   };
 
-  const handlePrint = () => {
-    window.print();
+  // Format phone — always LTR so digits are never reversed in RTL context
+  const formatPhone = (phone) => {
+    if (!phone) return '';
+    const digits = phone.replace(/[^0-9]/g, '');
+    if (digits.startsWith('966') && digits.length >= 12) {
+      return '+' + digits.slice(0, 3) + ' ' + digits.slice(3, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
+    }
+    if (digits.startsWith('05') && digits.length === 10) {
+      return '+966 ' + digits.slice(1, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6);
+    }
+    return phone;
   };
+
+  const handlePrint = () => window.print();
+
+  const todayAr = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+  const todayEn = new Date().toLocaleDateString('en-GB');
+
+  // LTR style for all numbers/phones/dates — prevents RTL reversal
+  const ltrStyle = { direction: 'ltr', unicodeBidi: 'embed' };
+
+  const printCSS = `
+    @media print {
+      @page { size: A4 portrait; margin: 10mm 8mm; }
+      html, body {
+        background: #fff !important; margin: 0 !important; padding: 0 !important;
+        height: auto !important; overflow: visible !important;
+        -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+      }
+      header, aside, nav, .no-print, .print-controls {
+        display: none !important; height: 0 !important; overflow: hidden !important;
+      }
+      .lg\\:ps-64 { padding-inline-start: 0 !important; }
+      main, main > div { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+      .executive-sheet {
+        border: 2px solid #0B1F3A !important; border-radius: 4px !important;
+        padding: 20px !important; background: #fff !important; box-shadow: none !important;
+        width: 100% !important; min-height: auto !important;
+        page-break-inside: avoid !important; page-break-before: avoid !important; break-inside: avoid !important;
+      }
+      .sheet-header-bg { background-color: #0B1F3A !important; color: #fff !important; }
+      .sheet-box-bg { background-color: #F8FAFC !important; border: 1px solid #CBD5E1 !important; }
+      .sheet-table-header { background-color: #0B1F3A !important; color: #fff !important; }
+      .print-logo img { max-width: 60px !important; max-height: 60px !important; }
+      .ltr-nums { direction: ltr !important; unicode-bidi: embed !important; }
+    }
+  `;
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Executive Print Stylesheet */}
-      <style>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 8mm;
-          }
-          body, html {
-            background: #ffffff !important;
-            color: #0B1F3A !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            font-family: 'Segoe UI', Tahoma, Arial, sans-serif !important;
-          }
-          header, aside, nav, .no-print, .print-controls {
-            display: none !important;
-          }
-          .lg\\:ps-64 {
-            padding-inline-start: 0 !important;
-          }
-          main {
-            padding: 0 !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-          }
-          .executive-sheet {
-            border: 2px solid #0B1F3A !important;
-            border-radius: 4px !important;
-            padding: 24px !important;
-            background: #ffffff !important;
-            box-shadow: none !important;
-            width: 100% !important;
-            min-height: 275mm !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-            page-break-inside: avoid !important;
-          }
-          .sheet-header-bg {
-            background-color: #0B1F3A !important;
-            color: #ffffff !important;
-          }
-          .sheet-box-bg {
-            background-color: #F8FAFC !important;
-            border: 1px solid #CBD5E1 !important;
-          }
-          .sheet-table-header {
-            background-color: #0B1F3A !important;
-            color: #ffffff !important;
-          }
-          .stamp-circle {
-            border: 2px dashed #94A3B8 !important;
-          }
-        }
-      `}</style>
+      {/* PRINT STYLESHEET */}
+      <style dangerouslySetInnerHTML={{ __html: printCSS }} />
 
-      {/* Screen Controls Header (Hidden on Print) */}
+      {/* SCREEN-ONLY CONTROLS */}
       <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-[#0B1F3A] text-white flex items-center justify-center font-bold shadow-md">
             <Printer className="w-6 h-6 text-[#D4AF37]" />
           </div>
           <div>
-            <h1 className="text-2xl font-heading font-bold text-foreground">طابعة المستندات والخطابات الرسمية</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">توليد وطباعة خطابات ونماذج الشركة الرسمية المعتمدة بمقاس A4 فاخر</p>
+            <h1 className="text-2xl font-heading font-bold text-foreground">نماذج الطباعة والمستندات الرسمية</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">إنشاء وطباعة المستندات الرسمية على ورقة A4 احترافية</p>
           </div>
         </div>
-
         <Button onClick={handlePrint} className="bg-[#0B1F3A] hover:bg-[#152e54] text-white font-bold px-6 py-2.5 rounded-xl shadow-lg border border-[#D4AF37]/40 gap-2">
-          <Printer className="w-4 h-4 text-[#D4AF37]" /> طباعة / حفظ PDF الفاخر
+          <Printer className="w-4 h-4 text-[#D4AF37]" /> طباعة / حفظ PDF
         </Button>
       </div>
 
-      {/* Input Options (Hidden on Print) */}
+      {/* INPUT FORM (Hidden on Print) */}
       <Card className="no-print p-6 border-border/60 shadow-sm rounded-2xl bg-white space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">نوع المستند الرسمي</Label>
+            <Label className="text-xs font-semibold">نوع المستند</Label>
             <Select value={docType} onValueChange={setDocType}>
               <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="loan">طلب سلفة مالية</SelectItem>
-                <SelectItem value="leave_clearance">مخالصة وتصفية إجازة</SelectItem>
-                <SelectItem value="overtime">طلب وتكليف عمل إضافي</SelectItem>
-                <SelectItem value="comp_leave">إجازة تعويضية</SelectItem>
+                <SelectItem value="loan">طلب سلفة</SelectItem>
+                <SelectItem value="leave_clearance">إخلاء طرف إجازة</SelectItem>
                 <SelectItem value="salary_cert">شهادة تعريف بالراتب</SelectItem>
-                <SelectItem value="end_service">تسوية ومكافأة نهاية الخدمة</SelectItem>
+                <SelectItem value="end_service">إخلاء طرف نهاية خدمة</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">الموظف المعني</Label>
+            <Label className="text-xs font-semibold">الموظف</Label>
             <Select value={selectedEmpId} onValueChange={setSelectedEmpId}>
               <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder="اختر الموظف" /></SelectTrigger>
               <SelectContent>
@@ -175,26 +180,22 @@ export default function DocumentsPrint() {
           </div>
         </div>
 
-        {/* Dynamic Fields */}
         {docType === 'loan' && (
           <div className="pt-2 grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">قيمة السلفة (ريال)</Label>
+              <Label className="text-xs font-semibold">مبلغ السلفة (ر.س)</Label>
               <Input type="number" value={loanAmount} onChange={(e) => setLoanAmount(e.target.value)} className="rounded-xl h-11 font-mono" />
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">عدد الأقساط الشهرية</Label>
+              <Label className="text-xs font-semibold">عدد الأقساط</Label>
               <Input type="number" value={loanInstallments} onChange={(e) => setLoanInstallments(e.target.value)} className="rounded-xl h-11 font-mono" />
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">تاريخ أول قسط</Label>
+              <Label className="text-xs font-semibold">بداية الخصم</Label>
               <Input type="date" value={deductionStart} onChange={(e) => setDeductionStart(e.target.value)} className="rounded-xl h-11 font-mono" />
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">سبب طلب السلفة</Label>
+              <Label className="text-xs font-semibold">سبب السلفة</Label>
               <Input value={loanReason} onChange={(e) => setLoanReason(e.target.value)} className="rounded-xl h-11" />
             </div>
           </div>
@@ -206,260 +207,279 @@ export default function DocumentsPrint() {
               <Label className="text-xs font-semibold">نوع الإجازة</Label>
               <Input value={leaveType} onChange={(e) => setLeaveType(e.target.value)} className="rounded-xl h-11" />
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">بدل الإجازة (ريال)</Label>
+              <Label className="text-xs font-semibold">بدل الإجازة (ر.س)</Label>
               <Input type="number" value={leaveAllowance} onChange={(e) => setLeaveAllowance(e.target.value)} className="rounded-xl h-11 font-mono" />
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">تاريخ بداية الإجازة</Label>
+              <Label className="text-xs font-semibold">بداية الإجازة</Label>
               <Input type="date" value={leaveStart} onChange={(e) => setLeaveStart(e.target.value)} className="rounded-xl h-11 font-mono" />
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">تاريخ نهاية الإجازة</Label>
+              <Label className="text-xs font-semibold">نهاية الإجازة</Label>
               <Input type="date" value={leaveEnd} onChange={(e) => setLeaveEnd(e.target.value)} className="rounded-xl h-11 font-mono" />
             </div>
           </div>
         )}
       </Card>
 
-      {/* EXECUTIVE CORPORATE A4 PRINTABLE SHEET */}
+      {/* A4 PRINTABLE SHEET */}
       {currentEmp && (
-        <div className="executive-sheet bg-white rounded-xl border-2 border-[#0B1F3A] shadow-2xl p-8 sm:p-10 text-[#0B1F3A] font-sans">
-          
-          {/* 1. OFFICIAL ROYAL HEADER */}
-          <div>
-            <div className="flex items-start justify-between pb-5 border-b-2 border-[#0B1F3A]">
-              
-              {/* Right: Arabic Official Header */}
-              <div className="text-right space-y-1">
-                <h2 className="font-heading font-extrabold text-base text-[#0B1F3A]">المملكة العربية السعودية</h2>
-                <h3 className="font-heading font-black text-lg text-[#0B1F3A]">شركة درة السيارة للتجارة</h3>
-                <p className="text-xs font-semibold text-slate-700">إدارة الموارد البشرية والشؤون الإدارية</p>
-                <p className="text-[11px] font-mono text-slate-600">س.ت: 7016475555 | ر.ض: 311861381500003</p>
-              </div>
+        <div className="executive-sheet bg-white rounded-xl border-2 border-[#0B1F3A] shadow-2xl p-8 sm:p-10 text-[#0B1F3A] font-sans" dir="rtl">
 
-              {/* Center: Luxury Emblem & Doc Title Box */}
-              <div className="text-center space-y-3">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border-2 border-[#D4AF37] bg-gradient-to-tr from-[#0B1F3A] to-[#1E3A8A] text-white shadow-md mx-auto">
+          {/* 1. OFFICIAL HEADER WITH COMPANY LOGO */}
+          <div className="flex items-start justify-between pb-4 border-b-2 border-[#0B1F3A]">
+            {/* Right: Arabic Header */}
+            <div className="text-right space-y-0.5" style={{flex: '1 1 30%'}}>
+              <h2 className="font-heading font-extrabold text-sm text-[#0B1F3A]">المملكة العربية السعودية</h2>
+              <h3 className="font-heading font-black text-base text-[#0B1F3A]">{companyProfile.legal_name || 'شركة درة السيارة لقطع غيار السيارات'}</h3>
+              <p className="text-[11px] font-semibold text-slate-700">إدارة الموارد البشرية والشؤون الإدارية</p>
+              <p className="text-[10px] font-mono text-slate-600 ltr-nums" dir="ltr" style={ltrStyle}>
+                س.ت: {companyProfile.cr_number || '7016475555'} | ض.ق: {companyProfile.tax_number || '311861381500003'}
+              </p>
+            </div>
+
+            {/* Center: Logo + Doc Title */}
+            <div className="text-center space-y-2 print-logo" style={{flex: '1 1 40%'}}>
+              <div className="mx-auto w-16 h-16 rounded-full border-2 border-[#D4AF37] bg-gradient-to-tr from-[#0B1F3A] to-[#1E3A8A] flex items-center justify-center shadow-md overflow-hidden">
+                {companyProfile.logo_url ? (
+                  <img src={companyProfile.logo_url} alt="شعار الشركة" className="w-14 h-14 object-contain p-1" />
+                ) : (
                   <span className="font-serif font-black text-xl tracking-wider text-[#D4AF37]">DC</span>
-                </div>
-                <div className="px-6 py-2 rounded-xl bg-[#0B1F3A] text-white font-bold text-sm tracking-wide shadow border border-[#D4AF37]">
-                  {docTitles[docType] || 'مستند رسمي معتمد'}
-                </div>
+                )}
               </div>
-
-              {/* Left: English Official Header & Meta */}
-              <div className="text-left space-y-1">
-                <h2 className="font-heading font-bold text-xs text-[#0B1F3A]">KINGDOM OF SAUDI ARABIA</h2>
-                <h3 className="font-heading font-extrabold text-sm text-[#0B1F3A]">DORAT AL-SAYARAH CO.</h3>
-                <p className="text-[11px] text-slate-600">Human Resources Department</p>
-                <div className="pt-1 text-[11px] font-mono text-slate-800 space-y-0.5">
-                  <p>Ref: <span className="font-bold">LN-{currentEmp.employee_number}-{new Date().getFullYear()}</span></p>
-                  <p>Date: <span className="font-bold">{new Date().toLocaleDateString('ar-SA')}</span></p>
-                </div>
+              <div className="inline-block px-5 py-1.5 rounded-lg bg-[#0B1F3A] text-white font-bold text-sm tracking-wide shadow border border-[#D4AF37]">
+                {docTitles[docType] || 'نموذج رسمي'}
               </div>
             </div>
 
-            {/* 2. STRUCTURED EMPLOYEE INFORMATION GRID */}
-            <div className="mt-5 sheet-box-bg rounded-xl border border-slate-300 p-4 bg-slate-50/70">
-              <div className="text-xs font-bold text-[#0B1F3A] pb-2 mb-2 border-b border-slate-200 flex items-center justify-between">
-                <span>بيانات الموظف الأساسية:</span>
-                <span className="font-mono text-slate-500">Employee Master Details</span>
+            {/* Left: English Header + Ref/Date */}
+            <div className="text-left space-y-0.5" style={{flex: '1 1 30%'}}>
+              <h2 className="font-heading font-bold text-[11px] text-[#0B1F3A]">KINGDOM OF SAUDI ARABIA</h2>
+              <h3 className="font-heading font-extrabold text-xs text-[#0B1F3A]">DORAT AL-SAYARAH CO.</h3>
+              <p className="text-[10px] text-slate-600">Human Resources Department</p>
+              <div className="pt-0.5 text-[10px] font-mono text-slate-800 space-y-0.5 ltr-nums" dir="ltr" style={ltrStyle}>
+                <p>Ref: <span className="font-bold">HR-{currentEmp.employee_number}-{new Date().getFullYear()}</span></p>
+                <p>Date: <span className="font-bold">{todayEn}</span></p>
               </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-4 text-xs">
-                <div>
-                  <span className="text-slate-500 block text-[11px]">اسم الموظف الرباعي:</span>
-                  <span className="font-bold text-sm text-slate-900">{currentEmp.full_name}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[11px]">الرقم الوظيفي:</span>
-                  <span className="font-mono font-bold text-sm text-[#0B1F3A]">#{currentEmp.employee_number}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[11px]">رقم الهوية / الإقامة:</span>
-                  <span className="font-mono font-bold text-slate-900">{currentEmp.national_id || '2554901666'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[11px]">الجنسية:</span>
-                  <span className="font-bold text-slate-900">{currentEmp.nationality || 'سعودي'}</span>
-                </div>
-
-                <div>
-                  <span className="text-slate-500 block text-[11px]">الفرع التابع له:</span>
-                  <span className="font-semibold text-slate-800">{currentEmp.branch_name || 'الفرع الرئيسي'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[11px]">المسمى الوظيفي:</span>
-                  <span className="font-semibold text-slate-800">{currentEmp.job_title}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[11px]">تاريخ مباشرة العمل:</span>
-                  <span className="font-mono text-slate-800">{currentEmp.join_date || '2022-11-01'}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[11px]">الراتب الأساسي المعتمد:</span>
-                  <span className="font-mono font-bold text-slate-900">{Number(currentEmp.salary || 0).toLocaleString()} ر.س</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. DYNAMIC CONTENT & DATA TABLES */}
-            <div className="mt-5 space-y-4">
-              
-              {/* Case A: LOAN (طلب سلفة وجدول أقساط حقيقي) */}
-              {docType === 'loan' && (
-                <>
-                  <div className="sheet-box-bg rounded-xl border border-slate-300 p-4 bg-slate-50/70">
-                    <div className="text-xs font-bold text-[#0B1F3A] pb-2 mb-2 border-b border-slate-200">
-                      تفاصيل وبيانات طلب السلفة المالية:
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                      <div>
-                        <span className="text-slate-500 block">المبلغ المطلوب:</span>
-                        <span className="text-base font-bold font-mono text-[#0B1F3A]">{Number(loanAmount || 0).toLocaleString()} ريال</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block">عدد الأقساط:</span>
-                        <span className="text-base font-bold font-mono text-slate-800">{numInstallments} قسط شهري</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block">قيمة القسط الشهري:</span>
-                        <span className="text-base font-bold font-mono text-emerald-700">{Math.round(monthlyDeduction).toLocaleString()} ريال/شهر</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block">تاريخ بدء الاستقطاع:</span>
-                        <span className="text-sm font-bold font-mono text-slate-800">{deductionStart}</span>
-                      </div>
-                    </div>
-                    <div className="mt-2.5 pt-2.5 border-t border-slate-200 text-xs">
-                      <span className="text-slate-500">سبب طلب السلفة: </span>
-                      <span className="font-medium text-slate-900">{loanReason}</span>
-                    </div>
-                  </div>
-
-                  {/* Generated Installment Schedule Table */}
-                  <div>
-                    <p className="text-xs font-bold text-[#0B1F3A] mb-2">جدول استقطاع الأقساط الشهرية المعتمد:</p>
-                    <div className="border border-[#0B1F3A] rounded-lg overflow-hidden text-xs">
-                      <div className="grid grid-cols-4 sheet-table-header bg-[#0B1F3A] text-white font-bold py-2 px-3 text-center">
-                        <div>رقم القسط</div>
-                        <div>مبلغ القسط (ريال)</div>
-                        <div>تاريخ الاستحقاق</div>
-                        <div>حالة السداد</div>
-                      </div>
-                      <div className="divide-y divide-slate-200">
-                        {installmentRows.map((row) => (
-                          <div key={row.index} className="grid grid-cols-4 py-2 px-3 text-center text-xs hover:bg-slate-50 font-mono font-medium">
-                            <div className="font-bold text-slate-800">القسط #{row.index}</div>
-                            <div className="font-bold text-[#0B1F3A]">{row.amount.toLocaleString()} ر.س</div>
-                            <div>{row.date}</div>
-                            <div className="text-slate-600 font-sans font-medium text-[11px]">مجدول بالحسم الشهري</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Case B: LEAVE CLEARANCE */}
-              {docType === 'leave_clearance' && (
-                <div className="sheet-box-bg rounded-xl border border-slate-300 p-5 bg-slate-50/70 space-y-3 text-xs">
-                  <h4 className="font-bold text-sm text-[#0B1F3A] border-b pb-2">بيانات تصفية الإجازة والمستحقات:</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                    <div>
-                      <span className="text-slate-500 block">نوع الإجازة:</span>
-                      <span className="font-bold text-sm">{leaveType}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">تاريخ بداية الإجازة:</span>
-                      <span className="font-bold font-mono text-sm">{leaveStart}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">تاريخ العودة ومباشرة العمل:</span>
-                      <span className="font-bold font-mono text-sm">{leaveEnd}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">مستحقات بدل الإجازة:</span>
-                      <span className="font-bold font-mono text-base text-emerald-700">{Number(leaveAllowance || 0).toLocaleString()} ر.س</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Case C: SALARY CERTIFICATE */}
-              {docType === 'salary_cert' && (
-                <div className="sheet-box-bg rounded-xl border border-slate-300 p-6 bg-slate-50/70 space-y-4 text-sm leading-relaxed">
-                  <h4 className="font-bold text-base text-[#0B1F3A] text-center border-b pb-2">إلى من يهمه الأمر / الجهات المصرفية والرسمية</h4>
-                  <p className="text-justify">
-                    تشهد إدارة <span className="font-bold text-[#0B1F3A]">شركة درة السيارة للتجارة (س.ت: 7016475555)</span> بأن الموظف الموضحة بياناته أعلاه يعمل لدينا بموجب عقد عمل ساري المفعول، ويتقاضى راتباً شهرياً إجمالياً وقدره (<span className="font-bold font-mono text-base text-[#0B1F3A]">{Number(currentEmp.salary || 0).toLocaleString()} ريال سعودي</span>).
-                  </p>
-                  <p className="text-justify">
-                    وقد أُعطي هذا الخطاب بناءً على طلبه لتقديمه للجهة الطالبة دون أدنى مسؤولية مالية أو قانونية على الشركة تجاه حقوق والتزامات الغير.
-                  </p>
-                </div>
-              )}
-
-              {/* Employee Declaration Box */}
-              <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg text-[11px] text-amber-900 leading-relaxed">
-                <span className="font-bold">إقرار وتعهد: </span>
-                أقر أنا الموظف الموقع أدناه بصحة كافة البيانات المذكورة أعلاه، وأفوض إدارة الشركة بحسم الأقساط/المستحقات المقررة نظاماً من مسير رواتبي الشهري حتى السداد الكامل.
-              </div>
-
             </div>
           </div>
 
-          {/* 4. EXECUTIVE SIGNATURES & OFFICIAL STAMP */}
-          <div className="mt-8 pt-5 border-t-2 border-[#0B1F3A]">
+          {/* Arabic date */}
+          <div className="text-left text-[11px] text-slate-600 mt-2">
+            <span>التاريخ: <span className="font-bold">{todayAr}</span></span>
+          </div>
+
+          {/* 2. EMPLOYEE INFO GRID */}
+          <div className="mt-4 sheet-box-bg rounded-lg border border-slate-300 p-4 bg-slate-50/70">
+            <div className="text-xs font-bold text-[#0B1F3A] pb-2 mb-2 border-b border-slate-200 flex items-center justify-between">
+              <span>بيانات الموظف الأساسية:</span>
+              <span className="font-mono text-slate-500 text-[10px]">Employee Master Details</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-4 text-xs">
+              <div>
+                <span className="text-slate-500 block text-[10px]">الاسم الكامل:</span>
+                <span className="font-bold text-sm text-slate-900">{currentEmp.full_name}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">الرقم الوظيفي:</span>
+                <span className="font-mono font-bold text-sm text-[#0B1F3A] ltr-nums" dir="ltr" style={ltrStyle}>#{currentEmp.employee_number}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">رقم الهوية / الإقامة:</span>
+                <span className="font-mono font-bold text-slate-900 ltr-nums" dir="ltr" style={ltrStyle}>{currentEmp.national_id || '—'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">الجنسية:</span>
+                <span className="font-bold text-slate-900">{currentEmp.nationality || 'سعودي'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">الفرع / القسم:</span>
+                <span className="font-semibold text-slate-800">{currentEmp.branch_name || currentEmp.branch || 'مكتب الإدارة'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">المسمى الوظيفي:</span>
+                <span className="font-semibold text-slate-800">{currentEmp.job_title}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">تاريخ المباشرة:</span>
+                <span className="font-mono text-slate-800 ltr-nums" dir="ltr" style={ltrStyle}>{currentEmp.join_date || currentEmp.hire_date || '—'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">الراتب الأساسي:</span>
+                <span className="font-mono font-bold text-slate-900 ltr-nums" dir="ltr" style={ltrStyle}>{Number(currentEmp.salary || 0).toLocaleString()} ر.س</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">رقم الجوال:</span>
+                <span className="font-mono font-bold text-slate-900 ltr-nums" dir="ltr" style={ltrStyle}>{formatPhone(currentEmp.phone)}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">البريد الإلكتروني:</span>
+                <span className="font-mono text-slate-800 text-[10px] ltr-nums" dir="ltr" style={ltrStyle}>{currentEmp.email || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. DYNAMIC CONTENT */}
+          <div className="mt-4 space-y-3">
+            {/* Case A: LOAN */}
+            {docType === 'loan' && (
+              <>
+                <div className="sheet-box-bg rounded-lg border border-slate-300 p-4 bg-slate-50/70">
+                  <div className="text-xs font-bold text-[#0B1F3A] pb-2 mb-2 border-b border-slate-200">تفاصيل بيانات طلب السلفة:</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-500 block">مبلغ السلفة:</span>
+                      <span className="text-base font-bold font-mono text-[#0B1F3A] ltr-nums" dir="ltr" style={ltrStyle}>{Number(loanAmount || 0).toLocaleString()} ر.س</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">عدد الأقساط:</span>
+                      <span className="text-base font-bold font-mono text-slate-800 ltr-nums" dir="ltr" style={ltrStyle}>{numInstallments} قسط</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">القسط الشهري:</span>
+                      <span className="text-base font-bold font-mono text-emerald-700 ltr-nums" dir="ltr" style={ltrStyle}>{Math.round(monthlyDeduction).toLocaleString()} ر.س/شهر</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">بداية الخصم:</span>
+                      <span className="text-sm font-bold font-mono text-slate-800 ltr-nums" dir="ltr" style={ltrStyle}>{deductionStart}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-slate-200 text-xs">
+                    <span className="text-slate-500">سبب السلفة: </span>
+                    <span className="font-medium text-slate-900">{loanReason}</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#0B1F3A] mb-2">جدول سداد الأقساط الشهرية:</p>
+                  <div className="border border-[#0B1F3A] rounded-lg overflow-hidden text-xs">
+                    <div className="grid grid-cols-4 sheet-table-header bg-[#0B1F3A] text-white font-bold py-2 px-3 text-center">
+                      <div>القسط</div>
+                      <div>المبلغ (ر.س)</div>
+                      <div>تاريخ الخصم</div>
+                      <div>الحالة</div>
+                    </div>
+                    <div className="divide-y divide-slate-200">
+                      {installmentRows.map((row) => (
+                        <div key={row.index} className="grid grid-cols-4 py-1.5 px-3 text-center text-xs font-mono font-medium">
+                          <div className="font-bold text-slate-800">قسط #{row.index}</div>
+                          <div className="font-bold text-[#0B1F3A] ltr-nums" dir="ltr" style={ltrStyle}>{row.amount.toLocaleString()} ر.س</div>
+                          <div className="ltr-nums" dir="ltr" style={ltrStyle}>{row.date}</div>
+                          <div className="text-slate-600 font-sans font-medium text-[11px]">بانتظار الخصم</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Case B: LEAVE CLEARANCE */}
+            {docType === 'leave_clearance' && (
+              <div className="sheet-box-bg rounded-lg border border-slate-300 p-5 bg-slate-50/70 space-y-3 text-xs">
+                <h4 className="font-bold text-sm text-[#0B1F3A] border-b pb-2">بيانات طلب الإجازة والإخلاء:</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <span className="text-slate-500 block">نوع الإجازة:</span>
+                    <span className="font-bold text-sm">{leaveType}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">تاريخ بداية الإجازة:</span>
+                    <span className="font-bold font-mono text-sm ltr-nums" dir="ltr" style={ltrStyle}>{leaveStart}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">تاريخ المباشرة المتوقع:</span>
+                    <span className="font-bold font-mono text-sm ltr-nums" dir="ltr" style={ltrStyle}>{leaveEnd}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">مستحقات بدل الإجازة:</span>
+                    <span className="font-bold font-mono text-base text-emerald-700 ltr-nums" dir="ltr" style={ltrStyle}>{Number(leaveAllowance || 0).toLocaleString()} ر.س</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Case C: SALARY CERTIFICATE */}
+            {docType === 'salary_cert' && (
+              <div className="sheet-box-bg rounded-lg border border-slate-300 p-5 bg-slate-50/70 space-y-3 text-sm leading-relaxed">
+                <h4 className="font-bold text-base text-[#0B1F3A] text-center border-b pb-2">إلى من يهمه الأمر / شهادة تعريف بالراتب والوظيفة</h4>
+                <p className="text-justify">
+                  تشهد شركة <span className="font-bold text-[#0B1F3A]">{companyProfile.legal_name || 'شركة درة السيارة لقطع غيار السيارات'} (س.ت: {companyProfile.cr_number || '7016475555'})</span> بأن الموظف المذكور أعلاه يعمل لديها بوظيفة <span className="font-bold">{currentEmp.job_title}</span> ويتقاضى راتباً شهرياً إجمالياً قدره (<span className="font-bold font-mono text-base text-[#0B1F3A] ltr-nums" dir="ltr" style={ltrStyle}>{Number(currentEmp.salary || 0).toLocaleString()} ريال سعودي</span>).
+                </p>
+                <p className="text-justify">
+                  أعطي هذا الخطاب بناءً على طلب الموظف دون أي مسؤولية مالية أو قانونية على الشركة، ولا يعتبر هذا الخطاب ضماناً أو التزاماً بأي شكل من الأشكال.
+                </p>
+              </div>
+            )}
+
+            {/* Case D: END OF SERVICE */}
+            {docType === 'end_service' && (
+              <div className="sheet-box-bg rounded-lg border border-slate-300 p-5 bg-slate-50/70 space-y-3 text-sm leading-relaxed">
+                <h4 className="font-bold text-base text-[#0B1F3A] text-center border-b pb-2">نموذج إخلاء طرف نهاية خدمة</h4>
+                <p className="text-justify">
+                  يشهد هذا الخطاب بأن الموظف <span className="font-bold text-[#0B1F3A]">{currentEmp.full_name}</span> الذي يحمل الرقم الوظيفي <span className="font-bold font-mono ltr-nums" dir="ltr" style={ltrStyle}>#{currentEmp.employee_number}</span> قد أنهى خدمته لدى الشركة وتم تسوية كافة مستحقاته المالية والإدارية.
+                </p>
+                <div className="grid grid-cols-2 gap-4 text-xs mt-3">
+                  <div>
+                    <span className="text-slate-500 block">آخر يوم عمل:</span>
+                    <span className="font-bold font-mono ltr-nums" dir="ltr" style={ltrStyle}>{todayEn}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">حالة المخالصة:</span>
+                    <span className="font-bold text-emerald-700">تمت التسوية</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Employee Declaration */}
+            <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg text-[11px] text-amber-900 leading-relaxed">
+              <span className="font-bold">إقرار الموظف: </span>
+              أقر أنا الموظف الموقع أدناه بصحة البيانات الواردة أعلاه وموافقتي على شروط وأحكام السلفة/الإخلاء المذكورة وأتحمل المسؤولية الكاملة في حال مخالفة أي من الشروط المنصوص عليها.
+            </div>
+          </div>
+
+          {/* 4. SIGNATURES */}
+          <div className="mt-6 pt-4 border-t-2 border-[#0B1F3A]">
             <div className="grid grid-cols-4 gap-3 text-center text-xs">
-              
-              <div className="p-2 border border-slate-200 rounded-lg bg-slate-50 flex flex-col justify-between h-28">
+              <div className="p-2 border border-slate-200 rounded-lg bg-slate-50 flex flex-col justify-between h-24">
                 <p className="font-bold text-slate-800">مقدم الطلب (الموظف)</p>
-                <div className="text-[11px] text-slate-500 font-serif">
-                  <p>{currentEmp.full_name.split(' ')[0]}</p>
+                <div className="text-[11px] text-slate-500">
+                  <p>{currentEmp.full_name?.split(' ').slice(0, 2).join(' ')}</p>
                   <p className="border-t border-dashed border-slate-400 mt-1 pt-0.5">التوقيع</p>
                 </div>
               </div>
-
-              <div className="p-2 border border-slate-200 rounded-lg bg-slate-50 flex flex-col justify-between h-28">
+              <div className="p-2 border border-slate-200 rounded-lg bg-slate-50 flex flex-col justify-between h-24">
                 <p className="font-bold text-slate-800">المحاسب المالي</p>
-                <div className="text-[11px] text-slate-500 font-serif">
+                <div className="text-[11px] text-slate-500">
                   <p>هشام زغلول</p>
-                  <p className="border-t border-dashed border-slate-400 mt-1 pt-0.5">التوقيع والتدقيق</p>
+                  <p className="border-t border-dashed border-slate-400 mt-1 pt-0.5">التوقيع والختم</p>
                 </div>
               </div>
-
-              <div className="p-2 border border-slate-200 rounded-lg bg-slate-50 flex flex-col justify-between h-28">
-                <p className="font-bold text-slate-800">مدير الموارد البشرية</p>
-                <div className="text-[11px] text-slate-500 font-serif">
+              <div className="p-2 border border-slate-200 rounded-lg bg-slate-50 flex flex-col justify-between h-24">
+                <p className="font-bold text-slate-800">إدارة الموارد البشرية</p>
+                <div className="text-[11px] text-slate-500">
                   <p>يحيى باشا</p>
-                  <p className="border-t border-dashed border-slate-400 mt-1 pt-0.5">المطابقة والاعتماد</p>
+                  <p className="border-t border-dashed border-slate-400 mt-1 pt-0.5">التوقيع والموافقة</p>
                 </div>
               </div>
-
-              <div className="p-2 border border-slate-200 rounded-lg bg-slate-50 flex flex-col justify-between h-28 relative">
+              <div className="p-2 border border-slate-200 rounded-lg bg-slate-50 flex flex-col justify-between h-24 relative">
                 <p className="font-bold text-slate-800">المدير العام / الختم</p>
-                <div className="stamp-circle w-14 h-14 rounded-full border-2 border-dashed border-slate-300 mx-auto flex items-center justify-center text-[9px] text-slate-400">
-                  محل الختم
+                <div className="w-12 h-12 rounded-full border-2 border-dashed border-slate-300 mx-auto flex items-center justify-center text-[9px] text-slate-400">
+                  مكان الختم
                 </div>
               </div>
-
             </div>
 
-            {/* 5. OFFICIAL FOOTER WITH BARCODE & CONTACT */}
+            {/* 5. FOOTER */}
             <div className="mt-4 pt-3 border-t border-slate-300 flex items-center justify-between text-[10px] text-slate-600">
               <div>
-                <p className="font-bold text-slate-800">شركة درة السيارة للتجارة — المملكة العربية السعودية - بريدة - القصيم</p>
-                <p className="font-mono">هاتف: +966 54 169 7999 | البريد: info@doracars.com</p>
+                <p className="font-bold text-slate-800">{companyProfile.legal_name || 'شركة درة السيارة لقطع غيار السيارات'} — {companyProfile.address || 'بريدة - القصيم'}</p>
+                <p className="font-mono ltr-nums" dir="ltr" style={ltrStyle}>Tel: {formatPhone(companyProfile.phone)} | Email: info@doracars.com</p>
               </div>
-
               <div className="text-left font-mono space-y-0.5">
                 <p className="tracking-widest text-[9px] text-slate-400">||| |||| || |||||| ||||| || ||||||||||||| |||</p>
-                <p className="text-[9px] text-slate-500">مستند رسمي صادر إلكترونياً</p>
+                <p className="text-[9px] text-slate-500">نسخة رسمية مختومة إلكترونياً</p>
               </div>
             </div>
           </div>

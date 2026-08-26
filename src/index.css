@@ -95,3 +95,26 @@
     text-wrap: balance;
   }
 }
+/* Force LTR direction for phone numbers, dates, and numeric fields */
+.ltr-nums {
+  direction: ltr !important;
+  unicode-bidi: embed !important;
+  text-align: left;
+}
+.dir-ltr {
+  direction: ltr !important;
+  unicode-bidi: embed !important;
+}
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .space-y-6 > .no-print {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+}
