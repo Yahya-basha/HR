@@ -32,35 +32,56 @@ export default function Payroll() {
   useEffect(() => {
     Promise.all([
       base44.entities.Employee.list(),
-      base44.entities.AttendanceLog.list('-log_date', 500)
+      base44.entities.AttendanceLog.list('-log_date', 800)
     ]).then(([emps, logs]) => {
       setEmployees(emps || []);
       setAttendanceLogs(logs || []);
     }).catch(console.error);
   }, []);
 
-  // Calculate Friday Attendance & Overtime for each employee
+  // Strict Calculation of Friday Attendance & Overtime for each employee
   const payrollData = useMemo(() => {
-    return employees.map((emp) => {
-      // Find logs for this employee in the month
-      const empLogs = attendanceLogs.filter(l => 
-        (l.user_id === emp.id || l.employee_number === emp.employee_number || l.employee_name === emp.full_name) &&
-        (!month || (l.log_date && l.log_date.startsWith(month.substring(0, 7))))
-      );
+    const selectedMonthPrefix = month.substring(0, 7); // e.g. '2026-08'
 
-      // Count attended Fridays (where day is Friday and has punches / attendance)
-      const attendedFridays = empLogs.filter(l => {
+    return employees.map((emp) => {
+      // 1. Filter logs strictly for this employee AND strictly for the selected month
+      const empLogs = attendanceLogs.filter(l => {
+        const isThisEmp = l.user_id === emp.id || 
+                          (l.employee_number && l.employee_number.toString() === emp.employee_number?.toString()) || 
+                          (l.employee_name && l.employee_name.trim() === emp.full_name?.trim());
+        const isInMonth = l.log_date && l.log_date.startsWith(selectedMonthPrefix);
+        return isThisEmp && isInMonth;
+      });
+
+      // Deduplicate by date (keep only one record per day)
+      const dateMap = {};
+      empLogs.forEach(l => {
+        if (!dateMap[l.log_date]) dateMap[l.log_date] = l;
+      });
+      const uniqueDays = Object.values(dateMap);
+
+      // 2. Count ONLY Fridays where the employee actually had punches / attendance
+      const attendedFridays = uniqueDays.filter(l => {
         if (!l.log_date) return false;
         const d = new Date(l.log_date);
         const isFriday = d.getDay() === 5 || l.day_name === 'الجمعة';
-        const hasAttended = l.check_in || l.status === 'present' || l.status === 'exempt';
-        return isFriday && hasAttended;
+        
+        // Strict check: Must have real punches or check_in (NOT absent or not started)
+        const hasRealPunches = (l.check_in && l.check_in !== '—') || 
+                               (l.timestamp_raw && l.timestamp_raw.length > 3) || 
+                               (l.punches_raw && l.punches_raw.length > 3);
+        
+        const isNotAbsent = l.status !== 'absent' && l.status !== 'not_started' && l.status !== 'غائب' && l.status !== 'لم يباشر';
+
+        return isFriday && hasRealPunches && isNotAbsent;
       });
 
-      // Default to 4 Fridays for active employees with records if mock logs are sparse
-      const fridayCount = attendedFridays.length > 0 ? attendedFridays.length : 4;
+      // Strict Friday Count (0 if didn't attend any Friday!)
+      const fridayCount = attendedFridays.length;
       const fridayAllowance = fridayCount * 50;
-      const fridayNote = `${fridayAllowance} ريال عن إضافي حضور ${fridayCount} أيام جمعة`;
+      const fridayNote = fridayCount > 0 
+        ? `${fridayAllowance} ريال عن إضافي حضور ${fridayCount} أيام جمعة`
+        : 'لا يوجد حضور في أيام الجمعة لهذا الشهر';
 
       const basicSalary = Number(emp.salary) || 4000;
       const housing = Number(emp.housing_allowance) || 0;
@@ -68,7 +89,7 @@ export default function Payroll() {
       
       // Daily Overtime for 9-hour split shifts (100 SAR daily)
       const isOvertimeShift = emp.shift?.includes('9') || emp.shift?.includes('إضافي') || emp.job_title?.includes('موارد') || emp.employee_number === '1022';
-      const monthlyOvertime = isOvertimeShift ? 2600 : 0; // 26 working days * 100 SAR
+      const monthlyOvertime = isOvertimeShift ? 2600 : 0;
 
       // GOSI Calculation (9.75% for Saudis, 2% for Non-Saudis)
       const isSaudi = (emp.nationality || '').includes('سعودي');
@@ -100,13 +121,11 @@ export default function Payroll() {
   const totalGOSI = payrollData.reduce((sum, e) => sum + e.gosiDeduction, 0);
   const totalNet = payrollData.reduce((sum, e) => sum + e.netSalary, 0);
 
-  // View Detailed Payslip
   const handleViewPayslip = (row) => {
     setSelectedPayslip(row);
     setPayslipOpen(true);
   };
 
-  // Export WPS File (CSV compatible with Mudad / Saudi Banks)
   const handleExportWPS = () => {
     const headers = 'Employee_ID,Employee_Name,National_ID,Basic_Salary,Housing_Allowance,Transport_Allowance,Friday_Overtime,GOSI_Deduction,Net_Salary,Bank_IBAN';
     const rows = payrollData.map(e => {
@@ -135,7 +154,7 @@ export default function Payroll() {
           <div>
             <h1 className="text-2xl font-heading font-extrabold text-foreground">مسير الرواتب والبدلات وإضافي الجمعة</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              احتساب الرواتب مع تجميع أيام الجمعة (+50 ريال/جمعة) وبدل العمل الإضافي وحماية الأجور (مدد)
+              احتساب الرواتب الفعلية مع تجميع أيام الجمعة (+50 ريال/جمعة) للموظفين الذين حضروا فقط
             </p>
           </div>
         </div>
@@ -160,7 +179,7 @@ export default function Payroll() {
 
         <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">إجمالي إضافي أيام الجمعة</p>
+            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">إجمالي إضافي الجمعة الفعلي</p>
             <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">50 ر.س / جمعة</Badge>
           </div>
           <p className="text-2xl font-heading font-black text-emerald-600 mt-1">{totalFridayAllowances.toLocaleString()} ر.س</p>
@@ -181,7 +200,7 @@ export default function Payroll() {
       <Card className="border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
         <div className="p-5 pb-3 border-b border-border/40 flex items-center justify-between bg-secondary/20">
           <h2 className="font-heading font-bold text-base text-foreground">
-            كشف مسير رواتب منسوبي المنشأة (شامل إضافي الجمعة)
+            كشف مسير رواتب منسوبي المنشأة (شهر {month})
           </h2>
           <Badge variant="outline" className="font-mono text-xs">
             {payrollData.length} موظفاً معتمداً
@@ -195,7 +214,7 @@ export default function Payroll() {
                 <TableHead>الموظف</TableHead>
                 <TableHead>الرقم الوظيفي</TableHead>
                 <TableHead>الراتب الأساسي</TableHead>
-                <TableHead className="text-emerald-700 font-extrabold">إضافي حضور الجمعة (+50 ر.س/يوم)</TableHead>
+                <TableHead className="text-emerald-700 font-extrabold">إضافي حضور الجمعة الفعلي (+50 ر.س)</TableHead>
                 <TableHead>البدلات والإضافي</TableHead>
                 <TableHead className="text-amber-700">خصم التأمينات (GOSI)</TableHead>
                 <TableHead className="text-primary font-black">صافي الراتب المستحق</TableHead>
@@ -227,16 +246,20 @@ export default function Payroll() {
                     {emp.basicSalary.toLocaleString()} ر.س
                   </TableCell>
 
-                  {/* Friday Allowance */}
+                  {/* Friday Allowance (STRICT) */}
                   <TableCell>
-                    <div className="space-y-0.5">
-                      <span className="font-mono font-black text-xs text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-                        +{emp.fridayAllowance} ر.س
-                      </span>
-                      <p className="text-[10px] text-muted-foreground font-semibold">
-                        ({emp.fridayCount} أيام جمعة × 50)
-                      </p>
-                    </div>
+                    {emp.fridayCount > 0 ? (
+                      <div className="space-y-0.5">
+                        <span className="font-mono font-black text-xs text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                          +{emp.fridayAllowance} ر.س
+                        </span>
+                        <p className="text-[10px] text-emerald-700 font-semibold">
+                          ({emp.fridayCount} أيام جمعة × 50)
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground font-mono text-[11px]">0 ر.س (لم يحضر جمعة)</span>
+                    )}
                   </TableCell>
 
                   {/* Allowances & OT */}
@@ -313,13 +336,17 @@ export default function Payroll() {
                   <span className="font-mono font-bold">{selectedPayslip.basicSalary.toLocaleString()} ر.س</span>
                 </div>
 
-                <div className="flex justify-between py-1 border-b border-dashed border-border/40 text-emerald-800 dark:text-emerald-300 font-bold bg-emerald-50/60 p-1.5 rounded-lg">
-                  <span>إضافي حضور أيام الجمعة:</span>
-                  <span className="font-mono">+{selectedPayslip.fridayAllowance} ر.س</span>
-                </div>
-                <p className="text-[10px] text-emerald-700 font-semibold px-1">
-                  📌 {selectedPayslip.fridayNote}
-                </p>
+                {selectedPayslip.fridayAllowance > 0 && (
+                  <>
+                    <div className="flex justify-between py-1 border-b border-dashed border-border/40 text-emerald-800 dark:text-emerald-300 font-bold bg-emerald-50/60 p-1.5 rounded-lg">
+                      <span>إضافي حضور أيام الجمعة:</span>
+                      <span className="font-mono">+{selectedPayslip.fridayAllowance} ر.س</span>
+                    </div>
+                    <p className="text-[10px] text-emerald-700 font-semibold px-1">
+                      📌 {selectedPayslip.fridayNote}
+                    </p>
+                  </>
+                )}
 
                 {selectedPayslip.monthlyOvertime > 0 && (
                   <div className="flex justify-between py-1 border-b border-dashed border-border/40 text-amber-800 dark:text-amber-300 font-bold">
@@ -352,7 +379,7 @@ export default function Payroll() {
             </div>
 
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setPayslipOpen(false)} className="text-xs font-bold">إغلاق</Button>
+              <Button variant="outline" onClick={() => setPayslipOpen(false)} className="text-xs font-bold">إلغاء</Button>
               <Button onClick={() => window.print()} className="bg-emerald-600 text-white font-bold text-xs gap-1.5 shadow-md">
                 <Printer className="w-3.5 h-3.5" />
                 <span>طباعة القسيمة</span>

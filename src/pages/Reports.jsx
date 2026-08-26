@@ -5,17 +5,13 @@ import { useI18n } from '@/lib/i18n';
 import { CheckCircle2, Clock, XCircle, TrendingUp, Award, UserSearch, BarChart3, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import EmployeeReportCard from '@/components/EmployeeReportCard';
 
 export default function Reports() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
-  const isAdmin = user?.role === 'admin';
   const [logs, setLogs] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,15 +32,14 @@ export default function Reports() {
         setEmployees(emps || []);
         setShifts(shfs || []);
 
-        // Default to first employee (e.g. 1002 محمود طه or 1001)
         if (emps && emps.length > 0) {
           const defaultEmp = emps.find(e => e.employee_number === '1002') || emps[0];
           setTrackEmp(defaultEmp.id);
         }
       } catch (e) {
-        console.error(e);
+        console.error('Reports load error:', e);
       } finally {
-        setLoadingEmployees(false);
+        setLoading(false);
       }
     })();
   }, []);
@@ -54,7 +49,10 @@ export default function Reports() {
   if (loading) {
     return (
       <div className="space-y-6" dir="rtl">
-        {[...Array(3)].map((_, i) => <div key={i} className="h-28 rounded-2xl bg-secondary animate-pulse" />)}
+        <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-border/60 shadow-sm space-y-3">
+          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-sm font-bold text-muted-foreground">جاري تحميل تقارير الحضور وسجلات الدوام...</p>
+        </div>
       </div>
     );
   }
