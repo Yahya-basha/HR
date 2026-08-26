@@ -22,7 +22,8 @@ import {
   ChevronDown,
   Layers,
   Timer,
-  Info,
+  LogIn,
+  LogOut,
   CalendarCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -105,13 +106,13 @@ export default function ImportData() {
       return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
     }
     const str = val.toString().trim();
-    // Match M/D/YYYY or D/M/YYYY
+    // Match M/D/YYYY, D/M/YYYY, or YYYY-MM-DD
     const slashParts = str.split('/');
     if (slashParts.length === 3) {
       const p1 = slashParts[0].padStart(2, '0');
       const p2 = slashParts[1].padStart(2, '0');
-      const p3 = slashParts[2].length === 2 ? '20' + slashParts[2] : slashParts[2];
-      // Format as YYYY-MM-DD
+      let p3 = slashParts[2].trim();
+      if (p3.length === 2) p3 = '20' + p3;
       return `${p3}-${p1}-${p2}`;
     }
     if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(str)) {
@@ -120,6 +121,23 @@ export default function ImportData() {
     }
     const parsed = new Date(str);
     return isNaN(parsed.getTime()) ? str : parsed.toISOString().split('T')[0];
+  };
+
+  // Helper to extract all time values from a text string (e.g. "07:55:00 -- 12:08:00 & 16:04:00 -- 20:18:00" or "07:55, 12:08")
+  const extractTimes = (text) => {
+    if (!text) return [];
+    const str = text.toString().trim();
+    const matches = str.match(/\b\d{1,2}[:.]\d{2}(?:[:.]\d{2})?\b/g);
+    if (!matches) return [];
+    return matches.map(t => {
+      // Normalize dot separators to colons (e.g. 07.55 -> 07:55)
+      const clean = t.replace(/\./g, ':');
+      const parts = clean.split(':');
+      const hh = parts[0].padStart(2, '0');
+      const mm = (parts[1] || '00').padStart(2, '0');
+      const ss = (parts[2] || '00').padStart(2, '0');
+      return `${hh}:${mm}:${ss}`;
+    });
   };
 
   const handleFileChange = (e) => {
@@ -150,7 +168,7 @@ export default function ImportData() {
         const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
         if (rows.length < 2) {
-          toast({ title: 'الملف فارغ أو لا يحتوي على صفوف بيانات كافية', variant: 'destructive' });
+          toast({ title: 'الملف فارغ أو لا يحتوي على صفوف كافية', variant: 'destructive' });
           return;
         }
 
@@ -164,9 +182,9 @@ export default function ImportData() {
     reader.readAsArrayBuffer(f);
   };
 
-  // 1. Detect Real Header Row & Map Specific Ektefa Columns
+  // 1. Detect Real Header Row & Map Exact Ektefa Columns
   const detectAndProcess = (rows) => {
-    let bestHeaderRowIndex = 3; // Typically row 4 in Ektefa (index 3)
+    let bestHeaderRowIndex = 0;
     let maxScore = -1;
 
     for (let r = 0; r < Math.min(8, rows.length); r++) {
@@ -176,7 +194,8 @@ export default function ImportData() {
         const text = (cell || '').toString().toLowerCase();
         if (text.includes('الرقم الوظيفي') || text.includes('رقم الموظف')) score += 5;
         if (text.includes('اسم الموظف') || text.includes('الاسم')) score += 5;
-        if (text.includes('الطابع الزمني') || text.includes('البصمات')) score += 5;
+        if (text.includes('الطابع الزمني')) score += 6;
+        if (text.includes('البصمات')) score += 5;
         if (text.includes('التاريخ') || text.includes('الفترة') || text.includes('وقت الفترة')) score += 4;
         if (text.includes('الحالة') || text.includes('يوم')) score += 2;
       });
@@ -234,19 +253,23 @@ export default function ImportData() {
       }
     });
 
-    // Fallbacks if exact keywords not matched
+    // Exact index fallback matching user's Excel sheet:
+    // Col 0: #, Col 1: الرقم الوظيفي, Col 2: اسم الموظف, Col 3: التاريخ, Col 4: يوم, Col 5: الفترة, Col 6: وقت الفترة, Col 7: الطابع الزمني, Col 8: الحالة, Col 9: البصمات خلال اليوم
     if (detected.empNum === -1) detected.empNum = 1;
     if (detected.name === -1) detected.name = 2;
     if (detected.date === -1) detected.date = 3;
-    if (detected.timestamp === -1) detected.timestamp = 7;
+    if (detected.dayName === -1) detected.dayName = 4;
+    if (detected.shiftName === -1) detected.shiftName = 5;
     if (detected.shiftTime === -1) detected.shiftTime = 6;
+    if (detected.timestamp === -1) detected.timestamp = 7;
+    if (detected.status === -1) detected.status = 8;
     if (detected.rawPunches === -1) detected.rawPunches = 9;
 
     setColMap(detected);
     executeParseWithMapping(rows, bestHeaderRowIndex, detected);
   };
 
-  // 2. Parse & Extract All Shift, Timestamp, and Raw Punch Data
+  // 2. Parse & Extract Check-In, Check-Out, Shift, and Raw Punches
   const executeParseWithMapping = (rows, hIdx, mapping) => {
     const list = [];
     let matched = 0;
@@ -268,30 +291,33 @@ export default function ImportData() {
 
       if (!rawEmpNum && !rawName) continue;
 
-      // Extract Check-In and Check-Out from Timestamp (Primary Source)
-      // Example: "07:55:00 -- 12:08:00 & 16:04:00 -- 20:18:00" or "08:01:00 -- 13:00:00"
+      // Extract all timestamps from Column 7 (الطابع الزمني)
+      const timestampTimes = extractTimes(timestampStr);
+
+      // Extract all timestamps from Column 9 (البصمات خلال اليوم)
+      const rawPunchesTimes = extractTimes(rawPunchesStr);
+
+      // Determine Check-In & Check-Out:
+      // Priority 1: From structured Timestamp (الطابع الزمني)
+      // Priority 2: From Raw Punches (البصمات خلال اليوم)
       let checkIn = '';
       let checkOut = '';
-      let shiftPunches = [];
 
-      if (timestampStr) {
-        // Extract all time patterns (HH:mm:ss or HH:mm)
-        const times = timestampStr.match(/\d{1,2}:\d{2}(:\d{2})?/g) || [];
-        if (times.length > 0) {
-          checkIn = times[0];
-          checkOut = times.length > 1 ? times[times.length - 1] : '';
-          shiftPunches = times;
+      if (timestampTimes.length > 0) {
+        checkIn = timestampTimes[0];
+        if (timestampTimes.length > 1) {
+          checkOut = timestampTimes[timestampTimes.length - 1];
         }
       }
 
-      // Secondary Fallback: Use "البصمات خلال اليوم" if timestamp was empty
-      let rawPunchesList = [];
-      if (rawPunchesStr) {
-        rawPunchesList = rawPunchesStr.split(/[,،;]+/).map(p => p.trim()).filter(Boolean);
-        if (!checkIn && rawPunchesList.length > 0) {
-          checkIn = rawPunchesList[0];
-          checkOut = rawPunchesList.length > 1 ? rawPunchesList[rawPunchesList.length - 1] : '';
-        }
+      // If Check-Out was not found in Timestamp, check Raw Punches
+      if (!checkOut && rawPunchesTimes.length > 1) {
+        checkOut = rawPunchesTimes[rawPunchesTimes.length - 1];
+      }
+
+      // If Check-In was still empty, use first raw punch
+      if (!checkIn && rawPunchesTimes.length > 0) {
+        checkIn = rawPunchesTimes[0];
       }
 
       // Match employee from system
@@ -320,8 +346,10 @@ export default function ImportData() {
         computedStatus = 'on_leave';
       } else if (statusText === 'معفى') {
         computedStatus = 'exempt';
+      } else if (statusText === 'لم يباشر') {
+        computedStatus = 'not_started';
       } else if (checkIn) {
-        // Compare with Shift Time if available (e.g. 08:00)
+        // Compare with Shift start time
         const shiftStartHour = parseInt((shiftTime.split('--')[0] || shiftTime.split('-')[0] || '08').trim().split(':')[0], 10) || 8;
         const inHour = parseInt(checkIn.split(':')[0], 10) || 8;
         const inMin = parseInt(checkIn.split(':')[1], 10) || 0;
@@ -341,9 +369,9 @@ export default function ImportData() {
         shiftTime: shiftTime || '08:00 -- 17:00',
         timestampStr,
         rawPunchesStr,
-        rawPunchesList,
         checkIn: checkIn || (computedStatus === 'present' ? '08:00:00' : '—'),
         checkOut: checkOut || '—',
+        punchCount: Math.max(timestampTimes.length, rawPunchesTimes.length, (checkIn ? 1 : 0)),
         status: computedStatus,
         statusLabel: statusText || (computedStatus === 'late' ? 'متأخر' : 'حاضر في الموعد')
       });
@@ -360,7 +388,7 @@ export default function ImportData() {
     setColMap(updated);
     if (rawSheetRows.length > 0) {
       executeParseWithMapping(rawSheetRows, headerIndex, updated);
-      toast({ title: 'تم تحديث مطابقة الأعمدة وإعادة استخراج الطابع الزمني' });
+      toast({ title: 'تم تحديث مطابقة الأعمدة واستخراج أوقات الانصراف' });
     }
   };
 
@@ -405,7 +433,7 @@ export default function ImportData() {
 
       setImportedSuccess(true);
       toast({
-        title: `🎉 تم استيراد ${savedCount} سجل دوام وبصمات معتمدة بنجاح!`
+        title: `🎉 تم استيراد ${savedCount} سجل دوام وبصمات معتمدة (حضور + انصراف) بنجاح!`
       });
 
     } catch (err) {
@@ -436,7 +464,7 @@ export default function ImportData() {
           <div>
             <h1 className="text-2xl font-heading font-extrabold text-foreground">استيراد ومطابقة كشوفات البصمة والطابع الزمني</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              استخراج أوقات الدخول والخروج من الطابع الزمني ومقارنتها بوردية الموظف والبصمات الإضافية خلال اليوم
+              استخراج أوقات الحضور والانصراف بدقة من عمود الطابع الزمني وبصمات اليوم
             </p>
           </div>
         </div>
@@ -480,16 +508,16 @@ export default function ImportData() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 text-xs text-muted-foreground border-t border-border/40 max-w-2xl mx-auto text-right">
             <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
-              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>اعتماد الطابع الزمني للدخول والخروج</span>
+              <LogIn className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>استخراج وقت الحضور الفعلي (Check-In)</span>
             </div>
             <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
-              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>مطابقة وقت الفترة والوردية المثبتة</span>
+              <LogOut className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>استخراج وقت الانصراف الفعلي (Check-Out)</span>
             </div>
             <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
-              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>رصد بصمات اليوم وحالات التأخير</span>
+              <Timer className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>تثبيت ساعات الوردية وبصمات اليوم</span>
             </div>
           </div>
         </Card>
@@ -596,8 +624,8 @@ export default function ImportData() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-700">عمود وقت الفترة (الوردية الرسمية)</label>
-                    <Select value={colMap.shiftTime.toString()} onValueChange={(v) => handleMappingChange('shiftTime', v)}>
+                    <label className="font-bold text-slate-700">عمود البصمات خلال اليوم</label>
+                    <Select value={colMap.rawPunches.toString()} onValueChange={(v) => handleMappingChange('rawPunches', v)}>
                       <SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h} (عمود {i + 1})</SelectItem>)}
@@ -621,16 +649,16 @@ export default function ImportData() {
                 <p className="text-xl font-heading font-black text-emerald-700 mt-0.5">{matchedCount}</p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-center">
-                <p className="text-[11px] text-amber-800 font-bold">حالات الحضور والتأخير</p>
-                <p className="text-xl font-heading font-black text-amber-700 mt-0.5">
-                  {parsedRecords.filter(r => r.status === 'present' || r.status === 'late').length}
+              <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
+                <p className="text-[11px] text-blue-800 font-bold">سجلات بحركات انصراف مكتملة</p>
+                <p className="text-xl font-heading font-black text-blue-700 mt-0.5">
+                  {parsedRecords.filter(r => r.checkOut && r.checkOut !== '—').length}
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
-                <p className="text-[11px] text-blue-800 font-bold">حالة الاعتماد</p>
-                <p className="text-sm font-heading font-bold text-blue-700 mt-1.5">
+              <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-center">
+                <p className="text-[11px] text-purple-800 font-bold">حالة الاعتماد</p>
+                <p className="text-sm font-heading font-bold text-purple-700 mt-1.5">
                   {importedSuccess ? '✅ معتمد في الحضور' : '⏳ جاهز للاعتماد'}
                 </p>
               </div>
@@ -669,7 +697,7 @@ export default function ImportData() {
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-emerald-600" />
                 <h3 className="font-heading font-bold text-sm text-foreground">
-                  معاينة الطابع الزمني والدخول والخروج والبصمات خلال اليوم
+                  معاينة الطابع الزمني والدخول والخروج المعتمد
                 </h3>
               </div>
               <Badge variant="outline" className="font-mono text-xs">
@@ -684,9 +712,9 @@ export default function ImportData() {
                     <TableHead>الموظف المطابق</TableHead>
                     <TableHead>الرقم</TableHead>
                     <TableHead>التاريخ واليوم</TableHead>
-                    <TableHead>الوردية (وقت الفترة)</TableHead>
-                    <TableHead>الدخول المعتمد</TableHead>
-                    <TableHead>الخروج المعتمد</TableHead>
+                    <TableHead>الوردية الرسمية (وقت الفترة)</TableHead>
+                    <TableHead className="text-emerald-700 font-extrabold">وقت الحضور (Check-In)</TableHead>
+                    <TableHead className="text-blue-700 font-extrabold">وقت الانصراف (Check-Out)</TableHead>
                     <TableHead>الطابع الزمني المنظم</TableHead>
                     <TableHead>البصمات خلال اليوم</TableHead>
                     <TableHead>الحالة</TableHead>
@@ -700,7 +728,7 @@ export default function ImportData() {
                       <TableCell>
                         {rec.employee ? (
                           <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                             <div>
                               <p className="font-bold text-xs text-foreground">{rec.employee.full_name}</p>
                               <p className="text-[10px] text-muted-foreground">{rec.employee.branch_name || 'الفرع'}</p>
@@ -734,25 +762,31 @@ export default function ImportData() {
                       </TableCell>
 
                       {/* Check-In */}
-                      <TableCell className="font-mono font-black text-emerald-700 bg-emerald-50/50 px-2 py-1 rounded">
-                        {rec.checkIn}
+                      <TableCell className="font-mono font-black text-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center gap-1">
+                          <LogIn className="w-3 h-3 text-emerald-600" />
+                          <span>{rec.checkIn}</span>
+                        </div>
                       </TableCell>
 
                       {/* Check-Out */}
-                      <TableCell className="font-mono font-black text-blue-700 bg-blue-50/50 px-2 py-1 rounded">
-                        {rec.checkOut}
+                      <TableCell className="font-mono font-black text-blue-800 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-1">
+                          <LogOut className="w-3 h-3 text-blue-600" />
+                          <span>{rec.checkOut}</span>
+                        </div>
                       </TableCell>
 
                       {/* Structured Timestamp */}
                       <TableCell className="max-w-[200px]">
-                        <span className="text-[10px] font-mono text-slate-700 dark:text-slate-300 block truncate" title={rec.timestampStr} dir="ltr">
+                        <span className="text-[10px] font-mono text-slate-700 dark:text-slate-300 block truncate font-medium bg-slate-50 dark:bg-slate-800 px-1.5 py-1 rounded" title={rec.timestampStr} dir="ltr">
                           {rec.timestampStr || '—'}
                         </span>
                       </TableCell>
 
                       {/* All Raw Punches */}
                       <TableCell className="max-w-[160px]">
-                        <span className="text-[10px] font-mono text-slate-500 block truncate" title={rec.rawPunchesStr} dir="ltr">
+                        <span className="text-[10px] font-mono text-slate-500 block truncate font-medium" title={rec.rawPunchesStr} dir="ltr">
                           {rec.rawPunchesStr || '—'}
                         </span>
                       </TableCell>
