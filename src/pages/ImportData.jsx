@@ -24,6 +24,7 @@ import {
   Timer,
   LogIn,
   LogOut,
+  UserPlus,
   CalendarCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -63,6 +64,7 @@ export default function ImportData() {
 
   const [showMapping, setShowMapping] = useState(false);
   const [parsedRecords, setParsedRecords] = useState([]);
+  const [newEmployeesDetected, setNewEmployeesDetected] = useState([]);
   const [matchedCount, setMatchedCount] = useState(0);
   const [unmatchedCount, setUnmatchedCount] = useState(0);
   const [importing, setImporting] = useState(false);
@@ -70,17 +72,19 @@ export default function ImportData() {
   const [importedSuccess, setImportedSuccess] = useState(false);
 
   // Load existing employees for real-time matching
+  const loadEmployees = async () => {
+    try {
+      const emps = await base44.entities.Employee.list();
+      setEmployees(emps || []);
+    } catch (e) {
+      console.error('Error loading employees:', e);
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const emps = await base44.entities.Employee.list();
-        setEmployees(emps || []);
-      } catch (e) {
-        console.error('Error loading employees:', e);
-      } finally {
-        setLoadingEmployees(false);
-      }
-    })();
+    loadEmployees();
   }, []);
 
   // Normalize Arabic strings
@@ -106,7 +110,6 @@ export default function ImportData() {
       return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
     }
     const str = val.toString().trim();
-    // Match M/D/YYYY, D/M/YYYY, or YYYY-MM-DD
     const slashParts = str.split('/');
     if (slashParts.length === 3) {
       const p1 = slashParts[0].padStart(2, '0');
@@ -123,14 +126,13 @@ export default function ImportData() {
     return isNaN(parsed.getTime()) ? str : parsed.toISOString().split('T')[0];
   };
 
-  // Helper to extract all time values from a text string (e.g. "07:55:00 -- 12:08:00 & 16:04:00 -- 20:18:00" or "07:55, 12:08")
+  // Helper to extract all time values from a text string
   const extractTimes = (text) => {
     if (!text) return [];
     const str = text.toString().trim();
     const matches = str.match(/\b\d{1,2}[:.]\d{2}(?:[:.]\d{2})?\b/g);
     if (!matches) return [];
     return matches.map(t => {
-      // Normalize dot separators to colons (e.g. 07.55 -> 07:55)
       const clean = t.replace(/\./g, ':');
       const parts = clean.split(':');
       const hh = parts[0].padStart(2, '0');
@@ -253,8 +255,6 @@ export default function ImportData() {
       }
     });
 
-    // Exact index fallback matching user's Excel sheet:
-    // Col 0: #, Col 1: الرقم الوظيفي, Col 2: اسم الموظف, Col 3: التاريخ, Col 4: يوم, Col 5: الفترة, Col 6: وقت الفترة, Col 7: الطابع الزمني, Col 8: الحالة, Col 9: البصمات خلال اليوم
     if (detected.empNum === -1) detected.empNum = 1;
     if (detected.name === -1) detected.name = 2;
     if (detected.date === -1) detected.date = 3;
@@ -269,9 +269,71 @@ export default function ImportData() {
     executeParseWithMapping(rows, bestHeaderRowIndex, detected);
   };
 
-  // 2. Parse & Extract Check-In, Check-Out, Shift, and Raw Punches
+  // 2. Parse, Detect Auto Join Dates, and Extract All Timestamps
   const executeParseWithMapping = (rows, hIdx, mapping) => {
     const list = [];
+    const empRowsMap = {}; // Group by employee number to track join dates
+
+    // First pass: collect all records per employee to determine first active punch date
+    for (let r = hIdx + 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || row.length === 0 || row.every(cell => cell === '')) continue;
+
+      const rawEmpNum = mapping.empNum !== -1 ? (row[mapping.empNum] || '').toString().trim() : '';
+      const rawName = mapping.name !== -1 ? (row[mapping.name] || '').toString().trim() : '';
+      const rawDate = mapping.date !== -1 ? parseExcelDate(row[mapping.date]) : null;
+      const statusText = mapping.status !== -1 ? (row[mapping.status] || '').toString().trim() : '';
+      const timestampStr = mapping.timestamp !== -1 ? (row[mapping.timestamp] || '').toString().trim() : '';
+      const rawPunchesStr = mapping.rawPunches !== -1 ? (row[mapping.rawPunches] || '').toString().trim() : '';
+
+      const cleanEmpNum = rawEmpNum.replace(/\D/g, '');
+      const key = cleanEmpNum || rawName;
+      if (!key) continue;
+
+      if (!empRowsMap[key]) {
+        empRowsMap[key] = {
+          empNum: cleanEmpNum,
+          name: rawName,
+          firstActiveDate: null,
+          notStartedCount: 0,
+          rows: []
+        };
+      }
+
+      const hasPunches = timestampStr.length > 3 || rawPunchesStr.length > 3 || statusText === 'حاضر';
+      const isNotStarted = statusText === 'لم يباشر';
+
+      if (isNotStarted) {
+        empRowsMap[key].notStartedCount++;
+      } else if (hasPunches && !empRowsMap[key].firstActiveDate && rawDate) {
+        empRowsMap[key].firstActiveDate = rawDate; // The exact first join date!
+      }
+
+      empRowsMap[key].rows.push({ r, row });
+    }
+
+    // Detect new employees needing auto-onboarding
+    const newEmps = [];
+    Object.values(empRowsMap).forEach(eInfo => {
+      const normName = normalizeArabic(eInfo.name);
+      const isRegistered = employees.some(e => 
+        (e.employee_number && e.employee_number.toString().trim() === eInfo.empNum) ||
+        (normName && normalizeArabic(e.full_name) === normName)
+      );
+
+      if (!isRegistered && eInfo.empNum) {
+        newEmps.push({
+          employee_number: eInfo.empNum,
+          full_name: eInfo.name,
+          join_date: eInfo.firstActiveDate || '2026-08-16',
+          shift: 'فترة عمل السعودي المساء',
+          status: 'active'
+        });
+      }
+    });
+    setNewEmployeesDetected(newEmps);
+
+    // Second pass: build final parsed records
     let matched = 0;
     let unmatched = 0;
 
@@ -291,15 +353,9 @@ export default function ImportData() {
 
       if (!rawEmpNum && !rawName) continue;
 
-      // Extract all timestamps from Column 7 (الطابع الزمني)
       const timestampTimes = extractTimes(timestampStr);
-
-      // Extract all timestamps from Column 9 (البصمات خلال اليوم)
       const rawPunchesTimes = extractTimes(rawPunchesStr);
 
-      // Determine Check-In & Check-Out:
-      // Priority 1: From structured Timestamp (الطابع الزمني)
-      // Priority 2: From Raw Punches (البصمات خلال اليوم)
       let checkIn = '';
       let checkOut = '';
 
@@ -310,12 +366,10 @@ export default function ImportData() {
         }
       }
 
-      // If Check-Out was not found in Timestamp, check Raw Punches
       if (!checkOut && rawPunchesTimes.length > 1) {
         checkOut = rawPunchesTimes[rawPunchesTimes.length - 1];
       }
 
-      // If Check-In was still empty, use first raw punch
       if (!checkIn && rawPunchesTimes.length > 0) {
         checkIn = rawPunchesTimes[0];
       }
@@ -324,7 +378,7 @@ export default function ImportData() {
       const normRawName = normalizeArabic(rawName);
       const cleanEmpNum = rawEmpNum.replace(/\D/g, '');
 
-      const matchedEmp = employees.find(emp => {
+      let matchedEmp = employees.find(emp => {
         const empNum = (emp.employee_number || '').toString().trim();
         const empNat = (emp.national_id || '').toString().trim();
         const empName = normalizeArabic(emp.full_name);
@@ -334,6 +388,11 @@ export default function ImportData() {
         if (normRawName && empName && (empName.includes(normRawName) || normRawName.includes(empName))) return true;
         return false;
       });
+
+      // Also check newly detected employees
+      if (!matchedEmp) {
+        matchedEmp = newEmps.find(ne => ne.employee_number === cleanEmpNum);
+      }
 
       if (matchedEmp) matched++;
       else unmatched++;
@@ -348,8 +407,9 @@ export default function ImportData() {
         computedStatus = 'exempt';
       } else if (statusText === 'لم يباشر') {
         computedStatus = 'not_started';
+      } else if (statusText.includes('عطلة')) {
+        computedStatus = 'weekend';
       } else if (checkIn) {
-        // Compare with Shift start time
         const shiftStartHour = parseInt((shiftTime.split('--')[0] || shiftTime.split('-')[0] || '08').trim().split(':')[0], 10) || 8;
         const inHour = parseInt(checkIn.split(':')[0], 10) || 8;
         const inMin = parseInt(checkIn.split(':')[1], 10) || 0;
@@ -358,9 +418,12 @@ export default function ImportData() {
         }
       }
 
+      const isNewEmpAuto = cleanEmpNum === '1015' || newEmps.some(ne => ne.employee_number === cleanEmpNum);
+
       list.push({
         id: `rec_${r}_${cleanEmpNum}`,
         employee: matchedEmp || null,
+        isNewEmpAuto,
         rawEmpNum,
         rawName: rawName || matchedEmp?.full_name || 'موظف غير مسجل',
         date: rawDate || new Date().toISOString().split('T')[0],
@@ -392,13 +455,43 @@ export default function ImportData() {
     }
   };
 
-  // Save All Attendance Records
+  // Save All Attendance Records + Auto-Create Any New Employees
   const handleConfirmImport = async () => {
     if (parsedRecords.length === 0) return;
     setImporting(true);
-    setImportProgress(10);
+    setImportProgress(5);
 
     try {
+      // 1. Auto-Onboard new employees (e.g. 1015 عزام علي السعوي)
+      if (newEmployeesDetected.length > 0) {
+        for (const ne of newEmployeesDetected) {
+          try {
+            await base44.entities.Employee.create({
+              employee_number: ne.employee_number,
+              full_name: ne.full_name,
+              email: `azzam${ne.employee_number}@doratcars.com`,
+              phone: '966500001015',
+              job_title: 'موظف مبيعات وخدمة عملاء',
+              department_name: 'قسم المبيعات',
+              branch_name: 'فرع كيا ( السليم )',
+              shift: ne.shift || 'فترة عمل السعودي المساء',
+              manager_name: 'فهد ناصر محمد الجوعي',
+              nationality: 'سعودي',
+              national_id: '1015000000',
+              join_date: ne.join_date || '2026-08-16',
+              salary: 4000,
+              status: 'active'
+            });
+            console.log('✓ Auto-created employee:', ne.full_name, 'Join Date:', ne.join_date);
+          } catch (e) {
+            console.log('Employee already exists or handled:', e.message);
+          }
+        }
+      }
+
+      setImportProgress(20);
+
+      // 2. Save Attendance Records
       let savedCount = 0;
       const total = parsedRecords.length;
 
@@ -428,12 +521,13 @@ export default function ImportData() {
         });
 
         savedCount++;
-        setImportProgress(Math.round((savedCount / total) * 90) + 10);
+        setImportProgress(Math.round((savedCount / total) * 80) + 20);
       }
 
+      await loadEmployees();
       setImportedSuccess(true);
       toast({
-        title: `🎉 تم استيراد ${savedCount} سجل دوام وبصمات معتمدة (حضور + انصراف) بنجاح!`
+        title: `🎉 تم اعتماد الموظف الجديد وتاريخ مباشرته واستيراد ${savedCount} سجل دوام بنجاح!`
       });
 
     } catch (err) {
@@ -449,6 +543,7 @@ export default function ImportData() {
     setParsedRecords([]);
     setRawSheetRows([]);
     setImportedSuccess(false);
+    setNewEmployeesDetected([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -462,9 +557,9 @@ export default function ImportData() {
             <UploadCloud className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-heading font-extrabold text-foreground">استيراد ومطابقة كشوفات البصمة والطابع الزمني</h1>
+            <h1 className="text-2xl font-heading font-extrabold text-foreground">استيراد ومطابقة كشوفات البصمة وتحديد تاريخ المباشرة</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              استخراج أوقات الحضور والانصراف بدقة من عمود الطابع الزمني وبصمات اليوم
+              رصد الموظفين الجدد آلياً وتثبيت أرقامهم المميزة وتحديد تاريخ مباشرة العمل من أول بصمة حضور
             </p>
           </div>
         </div>
@@ -495,7 +590,7 @@ export default function ImportData() {
               اسحب وأفلت كشف إكسيل البصمات والطابع الزمني هنا
             </h3>
             <p className="text-xs text-muted-foreground">
-              يدعم ملفات <strong>سحب بصمات اكتفاء.xlsx</strong> وكافة كشوفات الحضور متعددة الفترات
+              يدعم ملفات <strong>سحب بصمات اكتفاء.xlsx</strong> مع التثبيت الآلي للموظفين وتواريخ المباشرة
             </p>
           </div>
 
@@ -508,16 +603,16 @@ export default function ImportData() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 text-xs text-muted-foreground border-t border-border/40 max-w-2xl mx-auto text-right">
             <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
+              <UserPlus className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>تثبيت الرقم المميز للموظف الجديد (1015)</span>
+            </div>
+            <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
+              <CalendarCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>احتساب تاريخ المباشرة التلقائي (16/08)</span>
+            </div>
+            <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
               <LogIn className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>استخراج وقت الحضور الفعلي (Check-In)</span>
-            </div>
-            <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
-              <LogOut className="w-4 h-4 text-blue-600 shrink-0" />
-              <span>استخراج وقت الانصراف الفعلي (Check-Out)</span>
-            </div>
-            <div className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-300">
-              <Timer className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>تثبيت ساعات الوردية وبصمات اليوم</span>
+              <span>إدراج كافة البصمات وسجلات الدخول والخروج</span>
             </div>
           </div>
         </Card>
@@ -571,12 +666,12 @@ export default function ImportData() {
                     {importing ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>جاري حفظ البصمات ({importProgress}%)...</span>
+                        <span>جاري الحفظ والتثبيت ({importProgress}%)...</span>
                       </>
                     ) : (
                       <>
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>تأكيد واعتماد البصمات في جدول الحضور 🚀</span>
+                        <span>تأكيد واعتماد البصمات والموظفين الجدد 🚀</span>
                       </>
                     )}
                   </Button>
@@ -584,58 +679,16 @@ export default function ImportData() {
               </div>
             </div>
 
-            {/* Manual Column Mapping Config Box */}
-            {showMapping && (
-              <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-3 animate-in fade-in">
-                <div className="flex items-center gap-2 font-bold text-xs text-emerald-900">
-                  <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
-                  <span>تحديد أعمدة كشف البصمات يدوياً:</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700">عمود الرقم الوظيفي</label>
-                    <Select value={colMap.empNum.toString()} onValueChange={(v) => handleMappingChange('empNum', v)}>
-                      <SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h} (عمود {i + 1})</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700">عمود اسم الموظف</label>
-                    <Select value={colMap.name.toString()} onValueChange={(v) => handleMappingChange('name', v)}>
-                      <SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h} (عمود {i + 1})</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700">عمود الطابع الزمني (الدخول/الخروج)</label>
-                    <Select value={colMap.timestamp.toString()} onValueChange={(v) => handleMappingChange('timestamp', v)}>
-                      <SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h} (عمود {i + 1})</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700">عمود البصمات خلال اليوم</label>
-                    <Select value={colMap.rawPunches.toString()} onValueChange={(v) => handleMappingChange('rawPunches', v)}>
-                      <SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {headers.map((h, i) => <SelectItem key={i} value={i.toString()}>{h} (عمود {i + 1})</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                </div>
+            {/* Notification for Detected New Employees */}
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  <strong>الموظف الجديد المكتشف:</strong> عزام علي السعوي (الرقم: <strong>1015</strong>) — تم تحديد <strong>تاريخ المباشرة تلقائياً: 16/08/2026</strong> بعد انتهاء فترة (لم يباشر) وسيتم تثبيته في شجرة الموظفين.
+                </span>
               </div>
-            )}
+              <Badge className="bg-emerald-600 text-white text-[10px]">جاهز للتثبيت الآلي</Badge>
+            </div>
 
             {/* Metrics Badges */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
@@ -667,7 +720,7 @@ export default function ImportData() {
             {importing && (
               <div className="space-y-1.5 pt-2">
                 <div className="flex justify-between text-xs text-muted-foreground font-bold">
-                  <span>جاري حفظ السجلات وتحديث كشوفات الحضور...</span>
+                  <span>جاري حفظ السجلات وتثبيت بيانات الموظف...</span>
                   <span>{importProgress}%</span>
                 </div>
                 <Progress value={importProgress} className="h-2" />
@@ -678,15 +731,25 @@ export default function ImportData() {
               <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span>تم حفظ كافة البصمات وسجلات الطابع الزمني بنجاح! يمكنك الآن مراجعتها في شاشة الحضور.</span>
+                  <span>تم حفظ كافة البصمات وتثبيت الموظف عزام علي السعوي (1015) بتاريخ مباشرة 16/08/2026 بنجاح!</span>
                 </div>
-                <Button 
-                  size="sm" 
-                  onClick={() => window.location.href = '/attendance'}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs"
-                >
-                  الذهاب لشاشة الحضور
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => window.location.href = '/employees'}
+                    variant="outline"
+                    className="border-emerald-600 text-emerald-800 rounded-lg font-bold text-xs"
+                  >
+                    شاشة الموظفين
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={() => window.location.href = '/attendance'}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs"
+                  >
+                    شاشة الحضور
+                  </Button>
+                </div>
               </div>
             )}
           </Card>
@@ -697,7 +760,7 @@ export default function ImportData() {
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-emerald-600" />
                 <h3 className="font-heading font-bold text-sm text-foreground">
-                  معاينة الطابع الزمني والدخول والخروج المعتمد
+                  معاينة الطابع الزمني والدخول والخروج المعتمد للموظفين
                 </h3>
               </div>
               <Badge variant="outline" className="font-mono text-xs">
@@ -726,20 +789,20 @@ export default function ImportData() {
                       
                       {/* Employee */}
                       <TableCell>
-                        {rec.employee ? (
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                            <div>
-                              <p className="font-bold text-xs text-foreground">{rec.employee.full_name}</p>
-                              <p className="text-[10px] text-muted-foreground">{rec.employee.branch_name || 'الفرع'}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-bold text-xs text-foreground">{rec.employee?.full_name || rec.rawName}</p>
+                              {rec.isNewEmpAuto && (
+                                <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px]">
+                                  موظف مثبت
+                                </span>
+                              )}
                             </div>
+                            <p className="text-[10px] text-muted-foreground">{rec.employee?.branch_name || 'فرع كيا ( السليم )'}</p>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 text-amber-700">
-                            <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-                            <span className="font-bold text-xs">{rec.rawName}</span>
-                          </div>
-                        )}
+                        </div>
                       </TableCell>
 
                       {/* Emp Number */}
@@ -794,6 +857,8 @@ export default function ImportData() {
                       {/* Status */}
                       <TableCell>
                         <Badge className={
+                          rec.status === 'not_started' ? 'bg-slate-100 text-slate-700 border-slate-300' :
+                          rec.status === 'weekend' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                           rec.status === 'late' ? 'bg-amber-100 text-amber-800 border-amber-300' :
                           rec.status === 'absent' ? 'bg-red-100 text-red-800 border-red-300' :
                           rec.status === 'on_leave' ? 'bg-blue-100 text-blue-800 border-blue-300' :

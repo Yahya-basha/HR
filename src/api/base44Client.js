@@ -367,6 +367,29 @@ export const initialData = {
       status: 'active'
     },
     {
+      id: 'emp_1015',
+      employee_number: '1015',
+      full_name: 'عزام علي السعوي',
+      email: 'azzam1015@doratcars.com',
+      phone: '966500001015',
+      job_title: 'موظف مبيعات وخدمة عملاء',
+      department_name: 'قسم المبيعات',
+      branch_name: 'فرع كيا ( السليم )',
+      shift: 'فترة عمل السعودي المساء',
+      manager_name: 'فهد ناصر محمد الجوعي',
+      nationality: 'سعودي',
+      national_id: '1015000000',
+      id_expiry_date: '1455-01-01',
+      birth_date: '1998-05-15',
+      join_date: '2026-08-16',
+      salary: 4000,
+      housing_allowance: 0,
+      transport_allowance: 0,
+      leave_policy: 'الاجازة السنوية',
+      status: 'active'
+    },
+
+    {
       id: 'emp_1017',
       employee_number: '1017',
       full_name: 'محمد سالم صالح أحمد المردم',
