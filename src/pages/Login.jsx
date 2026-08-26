@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,10 @@ import {
   ShieldCheck, 
   TrendingUp, 
   Sparkles,
-  ArrowUpRight,
+  Server,
+  Layers,
+  Database,
+  HelpCircle,
   Fingerprint,
   Users,
   CalendarCheck
@@ -21,7 +24,15 @@ import {
 import { safeReturnTo } from "@/lib/authReturnTo";
 
 export default function Login() {
-  const [domain, setDomain] = useState("green-arrow");
+  // Read domain from URL param or saved storage or fallback to doratcars
+  const [domain, setDomain] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlDomain = urlParams.get("domain") || urlParams.get("tenant") || urlParams.get("company");
+    if (urlDomain) return urlDomain;
+    const saved = localStorage.getItem("green_arrow_last_domain");
+    return saved || "doratcars";
+  });
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +44,11 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!domain.trim()) {
+      setError("يرجى إدخال نطاق الشركة المشتركة (مثال: doratcars).");
+      return;
+    }
 
     if (!username.trim()) {
       setError("يرجى إدخال رقم الهوية الوطنية أو الإقامة أو الرقم الوظيفي.");
@@ -55,7 +71,7 @@ export default function Login() {
         window.location.href = returnTo || '/';
       }
     } catch (err) {
-      setError(err.message || "فشل تسجيل الدخول. يرجى التحقق من صحة رقم الهوية وكلمة المرور.");
+      setError(err.message || "فشل تسجيل الدخول. يرجى التحقق من صحة نطاق الشركة ورقم الهوية وكلمة المرور.");
     } finally {
       setLoading(false);
     }
@@ -65,16 +81,16 @@ export default function Login() {
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F8FAFC] text-slate-900 font-sans selection:bg-[#10B981] selection:text-white" dir="rtl">
       
       {/* ========================================================================= */}
-      {/* 1. LEFT HERO BRANDING BANNER (GREEN ARROW LUXURY SIGNATURE) */}
+      {/* 1. LEFT HERO BRANDING BANNER (GREEN ARROW SAAS CLOUD PLATFORM) */}
       {/* ========================================================================= */}
       <div className="relative hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#020C08] via-[#06241B] to-[#010805] text-white overflow-hidden flex-col justify-between p-12 border-e border-emerald-500/20 shadow-2xl">
         
-        {/* Background Atmospheric Green Lighting */}
+        {/* Background Atmospheric Lighting */}
         <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[#10B981]/15 rounded-full blur-[100px] -translate-y-1/3 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#059669]/20 rounded-full blur-[120px] translate-y-1/3 -translate-x-1/3 pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top Header Tag with White Glass GA Logo */}
+        {/* Top Header: Green Arrow Software Brand */}
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-white/95 backdrop-blur-md border-2 border-white shadow-[0_12px_35px_rgba(0,0,0,0.5)] ring-2 ring-emerald-400/40 flex items-center justify-center p-2 shrink-0 transition-transform hover:scale-105 duration-300">
@@ -83,15 +99,15 @@ export default function Login() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-heading font-black text-2xl text-white tracking-tight">GREEN ARROW</h2>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-mono font-bold">HR CLOUD</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-mono font-bold">SAAS CLOUD</span>
               </div>
-              <p className="text-xs text-emerald-300/80 font-medium mt-0.5">PERFORMANCE ADS & GROWTH • المنظومة الإدارية المتكاملة</p>
+              <p className="text-xs text-emerald-300/80 font-medium mt-0.5">منصة أنظمة الموارد البشرية السحابية للشركات والمؤسسات</p>
             </div>
           </div>
         </div>
 
-        {/* Center Hero Slogan & Interactive UI Glass Showcase */}
-        <div className="relative z-10 my-auto text-center space-y-7">
+        {/* Center Hero Slogan & SaaS Multi-Tenant Showcase */}
+        <div className="relative z-10 my-auto text-center space-y-6">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold backdrop-blur-md shadow-inner">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
@@ -102,42 +118,33 @@ export default function Login() {
               سهل ... متكامل ... سحابي ...
             </h1>
             <p className="text-sm xl:text-base font-medium text-emerald-200/80 tracking-wide font-sans dir-ltr">
-              Green Arrow Enterprise Human Resources & Self-Service
+              Green Arrow Enterprise Human Resources Multi-Tenant Platform
             </p>
           </div>
 
-          {/* Interactive UI Card Mockup */}
+          {/* Multi-Tenant Database Isolation Info Card */}
           <div className="relative mx-auto max-w-md rounded-2xl bg-white/10 backdrop-blur-xl p-5 shadow-2xl border border-white/20 transition-all hover:scale-[1.02] duration-300 text-right">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="text-xs font-bold text-white">إدارة الحضور والانصراف والبصمة الذكية</span>
+                <Database className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold text-white">عزل قواعد البيانات وحماية الخصوصية</span>
               </div>
               <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-400/40">
-                سحابي مباشر 100%
+                MULTI-TENANT 🔒
               </span>
             </div>
 
             <div className="mt-3.5 space-y-2 text-xs">
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 text-emerald-100">
-                <div className="flex items-center gap-2">
-                  <Fingerprint className="w-4 h-4 text-emerald-400" />
-                  <span>تسجيل الدخول بالهوية الوطنية / الإقامة</span>
-                </div>
+                <span>توجيه تلقائي لقاعدة بيانات شركتك عبر النطاق</span>
                 <span className="font-bold text-emerald-400">✅ مفعّل</span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 text-emerald-100">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-emerald-400" />
-                  <span>بوابة الموظف وطلبات الإجازات الذاتية</span>
-                </div>
+                <span>فصل وحماية سجلات ورواتب كل منشأة</span>
                 <span className="font-bold text-emerald-400">✅ مفعّل</span>
               </div>
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 text-emerald-100">
-                <div className="flex items-center gap-2">
-                  <CalendarCheck className="w-4 h-4 text-emerald-400" />
-                  <span>ربط أجهزة البصمة والفروع والورديات</span>
-                </div>
+                <span>ربط فوري لأجهزة البصمة والخدمة الذاتية</span>
                 <span className="font-bold text-emerald-400">✅ مفعّل</span>
               </div>
             </div>
@@ -154,16 +161,16 @@ export default function Login() {
         <div className="relative z-10 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-xs shadow-sm">
           <div className="flex items-center gap-2 font-bold text-white mb-1">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>بوابة الخدمة الذاتية المعتمدة - منظومة السهم الأخضر</span>
+            <span>بوابة الخدمة الذاتية السحابية - تطوير السهم الأخضر</span>
           </div>
           <p className="text-emerald-100/80 leading-relaxed text-[11px]">
-            يرجى إدخال رقم الهوية الوطنية / الإقامة أو الرقم الوظيفي للوصول الآمن لسجلاتك الإدارية وطلبات الخدمة الذاتية.
+            منظومة برمجية متطورة تتيح لكل شركة إدارة موظفيها وفروعها وبصماتها بشكل مستقل وآمن 100%.
           </p>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. RIGHT LOGIN FORM PANEL (CLEAN & SECURE) */}
+      {/* 2. RIGHT LOGIN FORM PANEL (CLEAR TENANT WORKSPACE INPUT) */}
       {/* ========================================================================= */}
       <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 lg:p-16 bg-white overflow-y-auto">
         
@@ -178,13 +185,13 @@ export default function Login() {
                 <span>Green Arrow HR</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               </h2>
-              <p className="text-xs text-emerald-700 font-bold">بوابة السهم الأخضر للموارد البشرية</p>
+              <p className="text-xs text-emerald-700 font-bold">بوابة تسجيل الدخول لمنسوبي المنشآت</p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>اتصال مشفر وآمن</span>
+            <span>اتصال سحابي آمن ومحمي</span>
           </div>
         </div>
 
@@ -193,7 +200,7 @@ export default function Login() {
           
           <div className="space-y-1">
             <h1 className="text-2xl font-heading font-extrabold text-slate-900">تسجيل الدخول للنظام</h1>
-            <p className="text-xs text-slate-500 font-medium dir-ltr text-right">Sign in with your National ID or Employee ID.</p>
+            <p className="text-xs text-slate-500 font-medium dir-ltr text-right">Enter your Company Domain and credentials to access your workspace.</p>
           </div>
 
           {error && (
@@ -205,11 +212,16 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             
-            {/* Field 1: Company Domain */}
+            {/* Field 1: Company Domain (Workspace Identifier) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span>نطاق المنظومة</span>
-                <span className="text-[11px] font-normal text-slate-400">Company Domain</span>
+                <span className="flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>نطاق الشركة المشتركة (Company Workspace) *</span>
+                </span>
+                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  معرّف قاعدة البيانات
+                </span>
               </div>
               <div className="relative">
                 <Building2 className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
@@ -217,17 +229,21 @@ export default function Login() {
                   type="text"
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
-                  className="ps-10 h-12 rounded-xl bg-slate-50/80 border-slate-200 text-sm font-mono font-medium focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="green-arrow"
+                  className="ps-10 h-12 rounded-xl bg-slate-50/80 border-slate-200 text-sm font-mono font-bold text-emerald-950 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  placeholder="مثال: doratcars"
                   required
                 />
               </div>
+              <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
+                <span>🏢</span>
+                <span>النطاق يحدد قاعدة بيانات الشركة المستفيدة (مثال: <strong>doratcars</strong> للوصول لمنشأة درة السيارة).</span>
+              </p>
             </div>
 
-            {/* Field 2: Username (National ID / Employee Number) - BLANK BY DEFAULT */}
+            {/* Field 2: Username (National ID / Employee Number) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span>رقم الهوية الوطنية / الإقامة / الرقم الوظيفي</span>
+                <span>رقم الهوية الوطنية / الإقامة / الرقم الوظيفي *</span>
                 <span className="text-[11px] font-normal text-slate-400">Username / National ID</span>
               </div>
               <div className="relative">
@@ -244,10 +260,10 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Field 3: Password - BLANK BY DEFAULT */}
+            {/* Field 3: Password */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span>كلمة المرور</span>
+                <span>كلمة المرور *</span>
                 <span className="text-[11px] font-normal text-slate-400">Password</span>
               </div>
               <div className="relative">
@@ -271,7 +287,7 @@ export default function Login() {
                 </button>
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                💡 للدخول للمرة الأولى استخدم <strong>رقم الهوية الوطنية / الإقامة</strong> أو كلمة المرور المسلمة لك من إدارة الموارد البشرية.
+                💡 للدخول للمرة الأولى استخدم <strong>رقم الهوية الوطنية / الإقامة</strong> أو كلمة المرور الخاصة بك.
               </p>
             </div>
 
@@ -279,7 +295,7 @@ export default function Login() {
             <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 text-emerald-800 font-bold">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>تم التحقق من الأمان وتشفير الجلسة</span>
+                <span>عزل وتشفير آمن للبيانات السحابية</span>
               </div>
               <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-mono font-bold">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -299,7 +315,7 @@ export default function Login() {
               className="w-full h-12 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-600/20 transition-all text-base flex items-center justify-center gap-2"
             >
               {loading ? (
-                <span>جاري تسجيل الدخول...</span>
+                <span>جاري التحقق من النطاق والدخول...</span>
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
@@ -311,7 +327,7 @@ export default function Login() {
             {/* Support link */}
             <div className="text-center pt-2">
               <a href="mailto:support@greenarrow.sa?subject=طلب مساعدة - نظام Green Arrow HR" className="text-xs text-slate-500 hover:text-emerald-700 font-medium transition-colors">
-                هل تحتاج مساعدة في تسجيل الدخول؟ | Contact Support
+                هل تحتاج مساعدة في تسجيل الدخول أو معرفة نطاق شركتك؟ | Contact Support
               </a>
             </div>
 
@@ -328,7 +344,7 @@ export default function Login() {
           </div>
 
           <div className="text-left font-mono text-[10px] text-slate-400">
-            © {new Date().getFullYear()} GREEN ARROW HR. All rights reserved.
+            © {new Date().getFullYear()} Green Arrow Software. All rights reserved.
           </div>
         </div>
 
