@@ -27,7 +27,33 @@ const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Versioned key to ensure instant hydration in browser
-const STORAGE_PREFIX = 'hr_flow_v6_dora_';
+
+// ============================================================================
+// AUTO DATABASE SYNC & PURGE (Forces all browsers to load 100% exact live data)
+// ============================================================================
+const CURRENT_DB_VERSION = 'v7_exact_live_aligned';
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const savedVersion = localStorage.getItem('hr_flow_version');
+    if (savedVersion !== CURRENT_DB_VERSION) {
+      // Clear old cached logs
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('hr_flow_') || k.startsWith('nexus_')) {
+          localStorage.removeItem(k);
+        }
+      });
+      localStorage.setItem('hr_flow_version', CURRENT_DB_VERSION);
+      // Pre-seed clean attendance logs
+      localStorage.setItem('hr_flow_v7_dora_AttendanceLog', JSON.stringify(initialData.AttendanceLog));
+      localStorage.setItem('hr_flow_v7_dora_Employee', JSON.stringify(initialData.Employee));
+    }
+  }
+} catch (e) {
+  console.warn('Storage sync init:', e);
+}
+
+const STORAGE_PREFIX = 'hr_flow_v7_dora_';
+
 
 export const initialData = {
   Company: [

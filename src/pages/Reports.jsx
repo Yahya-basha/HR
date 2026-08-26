@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
-import { CheckCircle2, Clock, XCircle, TrendingUp, Award, UserSearch, BarChart3, Users } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, TrendingUp, Award, UserSearch, BarChart3, Users, Sparkles, RefreshCw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import EmployeeReportCard from '@/components/EmployeeReportCard';
@@ -20,6 +21,17 @@ export default function Reports() {
   const [to, setTo] = useState('2026-08-31');
   const [shifts, setShifts] = useState([]);
 
+  const handleForceSync = () => {
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('hr_flow_') || k.startsWith('nexus_')) {
+          localStorage.removeItem(k);
+        }
+      });
+      window.location.reload();
+    } catch {}
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -33,7 +45,7 @@ export default function Reports() {
         setShifts(shfs || []);
 
         if (emps && emps.length > 0) {
-          const defaultEmp = emps.find(e => e.employee_number === '1002') || emps[0];
+          const defaultEmp = emps.find(e => e.employee_number === '1022') || emps[0];
           setTrackEmp(defaultEmp.id);
         }
       } catch (e) {
@@ -60,7 +72,7 @@ export default function Reports() {
   return (
     <div className="space-y-6" dir="rtl">
       
-      {/* Header */}
+      {/* Header with Force Sync Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center font-bold shadow-sm">
@@ -71,6 +83,16 @@ export default function Reports() {
             <p className="text-xs text-muted-foreground mt-0.5">متابعة دقيقة لحركات الفترتين الصباحية والمسائية وبصمات الجمعة</p>
           </div>
         </div>
+
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleForceSync}
+          className="text-xs font-bold gap-1.5 rounded-xl border-emerald-500/30 text-emerald-800 hover:bg-emerald-50 shadow-sm"
+        >
+          <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
+          <span>مزامنة وتحديث البيانات الأصلية</span>
+        </Button>
       </div>
 
       {/* Filter Bar */}
