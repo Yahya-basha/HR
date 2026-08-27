@@ -1504,6 +1504,154 @@ export default function Payroll() {
         />
       )}
 
+      
+      {/* ─── MODAL: ADVANCE PRINT A4 (PROMISSORY NOTE) ──────────────────────── */}
+      {selectedAdvanceForPrint && (
+        <AdvancePrintModal
+          open={!!selectedAdvanceForPrint}
+          onOpenChange={(o) => !o && setSelectedAdvanceForPrint(null)}
+          advance={selectedAdvanceForPrint}
+          employee={employees.find(e => String(e.employee_number || e.id) === String(selectedAdvanceForPrint?.employee_number))}
+        />
+      )}
+
+      {/* ─── MODAL: REGISTER NEW ADVANCE / LOAN ────────────────────────────── */}
+      <Dialog open={newAdvanceModal} onOpenChange={setNewAdvanceModal}>
+        <DialogContent className="sm:max-w-md rounded-3xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-heading font-black flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-purple-700" />
+              <span>تسجيل ومنح سلفة مالية جديدة لموظف</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-xs">
+            {/* Employee Selector */}
+            <div className="space-y-1.5">
+              <Label className="font-bold">الموظف المستفيد *:</Label>
+              <Select
+                value={advanceForm.employee_number}
+                onValueChange={(v) => setAdvanceForm(prev => ({ ...prev, employee_number: v }))}
+              >
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="اختر الموظف..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map(e => (
+                    <SelectItem key={e.id} value={String(e.employee_number || e.id)}>
+                      {e.full_name} (#{e.employee_number}) - {e.branch_name || 'الفرع الرئيسي'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Amount and Installments */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="font-bold">إجمالي مبلغ السلفة (ر.س) *:</Label>
+                <Input
+                  type="number"
+                  value={advanceForm.total_amount}
+                  onChange={(e) => setAdvanceForm(prev => ({ ...prev, total_amount: Number(e.target.value) }))}
+                  className="rounded-xl font-mono font-bold"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="font-bold">عدد الأقساط الشهرية *:</Label>
+                <Select
+                  value={String(advanceForm.total_installments)}
+                  onValueChange={(v) => setAdvanceForm(prev => ({ ...prev, total_installments: Number(v) }))}
+                >
+                  <SelectTrigger className="rounded-xl font-mono font-bold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 8, 10, 12, 18, 24].map(n => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n} {n === 1 ? 'شهر (دفعة واحدة)' : n <= 10 ? 'أشهر' : 'شهراً'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Live Monthly Installment Calculation */}
+            <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 flex items-center justify-between">
+              <div>
+                <div className="text-[10px] text-purple-700 dark:text-purple-300 font-bold">القسط الشهري المحسوب تلقائياً:</div>
+                <div className="font-mono font-black text-base text-purple-900 dark:text-purple-100 mt-0.5">
+                  {fmtNum((Number(advanceForm.total_amount) || 0) / (Number(advanceForm.total_installments) || 1))} ر.س / شهر
+                </div>
+              </div>
+              <Badge className="bg-purple-600 text-white font-bold text-[10px]">استقطاع آلي</Badge>
+            </div>
+
+            {/* Start Month */}
+            <div className="space-y-1.5">
+              <Label className="font-bold">شهر بدء الاستقطاع من الراتب:</Label>
+              <Input
+                type="month"
+                value={advanceForm.start_month}
+                onChange={(e) => setAdvanceForm(prev => ({ ...prev, start_month: e.target.value }))}
+                className="rounded-xl font-mono"
+              />
+            </div>
+
+            {/* Reason */}
+            <div className="space-y-1.5">
+              <Label className="font-bold">سبب ومبرر السلفة:</Label>
+              <Textarea
+                rows={2}
+                value={advanceForm.reason}
+                onChange={(e) => setAdvanceForm(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="سلفة شخصية طارئة، ظروف عائلية..."
+                className="rounded-xl text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setNewAdvanceModal(false)} className="rounded-xl font-bold">
+              إلغاء
+            </Button>
+            <Button
+              onClick={() => {
+                if (!advanceForm.employee_number || !advanceForm.total_amount) {
+                  toast({ title: 'يرجى اختيار الموظف ومبلغ السلفة', variant: 'destructive' });
+                  return;
+                }
+                const emp = employees.find(e => String(e.employee_number || e.id) === String(advanceForm.employee_number));
+                const monthly = Math.round((Number(advanceForm.total_amount) / Number(advanceForm.total_installments)) * 100) / 100;
+                
+                const createdAdvance = saveAdvance({
+                  employee_id: emp?.id || '',
+                  employee_number: emp?.employee_number || advanceForm.employee_number,
+                  employee_name: emp?.full_name || '',
+                  total_amount: Number(advanceForm.total_amount),
+                  total_installments: Number(advanceForm.total_installments),
+                  monthly_installment: monthly,
+                  start_month: advanceForm.start_month,
+                  reason: advanceForm.reason || 'سلفة شخصية',
+                  approved_by: advanceForm.approved_by || 'فهد ناصر محمد الجوعي (المدير العام)'
+                });
+
+                setAdvancesList(getAdvances());
+                setNewAdvanceModal(false);
+                toast({ title: '✓ تم تسجيل ومنح السلفة بنجاح وتفعيل الاستقطاع الشهري الآلي' });
+                // Automatically open printable note
+                setSelectedAdvanceForPrint(createdAdvance);
+              }}
+              className="bg-purple-700 hover:bg-purple-600 text-white rounded-xl font-bold shadow-md shadow-purple-500/20"
+            >
+              اعتماد ومنح السلفة ➔
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       {/* ─── MODAL: ADD ADJUSTMENT (BONUS / PENALTY) ────────────────────────── */}
       <Dialog open={newAdjModal} onOpenChange={setNewAdjModal}>
         <DialogContent className="sm:max-w-md rounded-3xl" dir="rtl">
