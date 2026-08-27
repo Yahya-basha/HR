@@ -285,29 +285,40 @@ export function getAuditLog() {
 
 export function formatMinutes(m) {
   if (m === null || m === undefined) return '—';
-  const h = Math.floor(Math.abs(m) / 60); const min = Math.round(Math.abs(m) % 60);
-  if (h === 0 && min === 0) return '0';
-  if (h === 0) return min + ' د'; if (min === 0) return h + ' س';
+  const h = Math.floor(Math.abs(m) / 60);
+  const min = Math.round(Math.abs(m) % 60);
+  if (h === 0 && min === 0) return '0 د';
+  if (h === 0) return min + ' د';
+  if (min === 0) return h + ' س';
   return h + ' س ' + min + ' د';
 }
+
 export function formatHours(hours) {
   if (!hours && hours !== 0) return '—';
-  const h = Math.floor(Math.abs(hours)); const m = Math.round((Math.abs(hours)-h)*60);
-  if (h === 0 && m === 0) return '0'; if (m === 0) return String(h);
-  return h + ':' + m.toString().padStart(2,'0');
+  const h = Math.floor(Math.abs(hours));
+  const m = Math.round((Math.abs(hours) - h) * 60);
+  if (h === 0 && m === 0) return '0:00';
+  return h + ':' + m.toString().padStart(2, '0');
 }
+
 export function formatTimeDisplay(timeStr) {
   if (!timeStr) return '—';
   try {
     let h, m;
     if (timeStr.toString().includes('T')) {
-      const d = new Date(timeStr); h = d.getHours(); m = d.getMinutes().toString().padStart(2,'0');
+      const d = new Date(timeStr);
+      h = d.getHours();
+      m = d.getMinutes().toString().padStart(2, '0');
     } else {
-      const parts = timeStr.replace(/\./g,':').split(':');
-      h = parseInt(parts[0],10); m = (parts[1]||'00').padStart(2,'0');
+      const parts = timeStr.replace(/\./g, ':').split(':');
+      h = parseInt(parts[0], 10);
+      m = (parts[1] || '00').padStart(2, '0');
     }
     const ap = h >= 12 ? 'م' : 'ص';
-    if (h > 12) h -= 12; if (h === 0) h = 12;
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
     return h + ':' + m + ' ' + ap;
-  } catch { return timeStr; }
+  } catch {
+    return timeStr;
+  }
 }
