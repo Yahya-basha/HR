@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { useTheme } from '@/lib/theme';
 import { EKTEFA_MODULES } from '@/lib/nav';
 import { 
   Search, 
   ChevronLeft, 
   ChevronRight, 
-  Sparkles, 
-  UserCheck, 
-  Check, 
-  PanelLeftClose, 
-  PanelLeftOpen 
+  Check 
 } from 'lucide-react';
 
 export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
@@ -43,9 +38,9 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
 
   const activeModule = EKTEFA_MODULES.find(m => m.id === activeModuleId) || EKTEFA_MODULES[0];
 
-  const filteredItems = activeModule.items.filter(it => {
+  const filteredItems = (activeModule?.items || []).filter(it => {
     const permMatch = !it.admin || isAdmin;
-    const searchMatch = !searchQuery || it.label.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchMatch = !searchQuery || (it.label || '').toLowerCase().includes(searchQuery.toLowerCase());
     return permMatch && searchMatch;
   });
 
@@ -56,24 +51,23 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
   };
 
   return (
-    <div className="hidden lg:flex fixed inset-y-0 end-0 z-40" dir="rtl">
+    <div className="hidden lg:flex fixed top-0 bottom-0 right-0 z-40 flex-row" dir="rtl">
       
-      {/* ─── RAIL 1: SLIM PRIMARY ICON RAIL (68px) ────────────────────────── */}
+      {/* ─── RAIL 1: SLIM PRIMARY ICON RAIL (68px) ON FAR RIGHT ─────────── */}
       <aside 
-        className="w-[68px] bg-white dark:bg-slate-900 border-s border-border/80 flex flex-col items-center py-3 z-20 shadow-sm shrink-0"
-        style={{ borderInlineStartWidth: '1px' }}
+        className="w-[68px] h-full bg-white dark:bg-slate-900 border-l border-slate-200/80 dark:border-slate-800 flex flex-col items-center py-3 z-20 shadow-sm shrink-0"
       >
         {/* Brand Mini Logo */}
         <Link 
           to="/" 
-          className="w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-md mb-4 hover:scale-105 transition-transform"
+          className="w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-md mb-3 hover:scale-105 transition-transform shrink-0 p-1"
           title="Green Arrow HR"
         >
           <img src="/green-arrow-logo.png" alt="logo" className="w-7 h-7 object-contain" />
         </Link>
 
-        {/* Primary Module Icons */}
-        <div className="flex-1 flex flex-col items-center gap-2 overflow-y-auto no-scrollbar w-full px-1.5">
+        {/* Primary Module Icons List */}
+        <div className="flex-1 flex flex-col items-center gap-1.5 overflow-y-auto no-scrollbar w-full px-1.5 py-1">
           {EKTEFA_MODULES.map((mod) => {
             const isCurrent = activeModuleId === mod.id;
             const Icon = mod.icon;
@@ -85,13 +79,12 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
                 onClick={() => {
                   setActiveModuleId(mod.id);
                   if (!isSubMenuOpen) setIsSubMenuOpen(true);
-                  // Automatically navigate to first item in module
                   const firstItem = mod.items.find(it => !it.admin || isAdmin);
                   if (firstItem && !isItemActive(firstItem.to)) {
                     navigate(firstItem.to);
                   }
                 }}
-                className={`group relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-200 ${
+                className={`group relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-200 shrink-0 ${
                   isCurrent 
                     ? 'shadow-md ring-2 ring-offset-2 ring-offset-background' 
                     : 'hover:bg-slate-100 dark:hover:bg-slate-800/80 text-muted-foreground'
@@ -122,11 +115,10 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
                   {mod.label}
                 </span>
 
-                {/* Active Indicator Strip */}
+                {/* Rightmost Active Indicator Strip */}
                 {isCurrent && (
                   <span 
-                    className="absolute -end-1.5 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-s-full"
-                    style={{ backgroundColor: mod.color }}
+                    className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-s-full bg-white shadow-sm"
                   />
                 )}
               </button>
@@ -134,37 +126,37 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
           })}
         </div>
 
-        {/* Bottom Panel Toggle Button */}
+        {/* Bottom Collapse Toggle Arrow */}
         <button
           type="button"
           onClick={() => setIsSubMenuOpen(!isSubMenuOpen)}
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mt-2"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mt-2 shrink-0"
           title={isSubMenuOpen ? 'إخفاء القائمة الفرعية' : 'إظهار القائمة الفرعية'}
         >
           {isSubMenuOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </aside>
 
-      {/* ─── RAIL 2: SECONDARY SUB-MENU PANEL (200px) ────────────────────── */}
+      {/* ─── RAIL 2: SECONDARY SUB-MENU PANEL (200px) TO THE LEFT OF RAIL 1 ── */}
       {isSubMenuOpen && (
         <aside 
-          className="w-[200px] bg-slate-50/95 dark:bg-slate-900/95 border-s border-border/70 flex flex-col py-4 px-3 shadow-lg z-10 animate-in slide-in-from-right-2 duration-200"
+          className="w-[200px] h-full bg-slate-50/95 dark:bg-slate-900/95 border-l border-slate-200/80 dark:border-slate-800 flex flex-col py-4 px-3 shadow-lg z-10 animate-in slide-in-from-right duration-200 shrink-0"
         >
           {/* Sub-Menu Header & Search Input */}
-          <div className="space-y-3 mb-3">
+          <div className="space-y-3 mb-3 shrink-0">
             <div className="flex items-center gap-2 px-1">
               <div 
-                className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs shrink-0"
-                style={{ backgroundColor: activeModule.color }}
+                className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs shrink-0 shadow-sm"
+                style={{ backgroundColor: activeModule?.color || '#0284c7' }}
               >
-                <activeModule.icon className="w-3.5 h-3.5" />
+                {activeModule && <activeModule.icon className="w-3.5 h-3.5" />}
               </div>
               <h3 className="font-heading font-black text-xs text-foreground truncate">
-                {activeModule.label}
+                {activeModule?.label || 'الرئيسية'}
               </h3>
             </div>
 
-            {/* Cyan / Blue Search Bar like in Ektefa */}
+            {/* Cyan Search Input (Ektefa Exact Style) */}
             <div className="relative">
               <input
                 type="text"
@@ -173,14 +165,14 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
                 placeholder="بحث في القائمة..."
                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 pe-8 ps-2 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
-              <div className="absolute top-1/2 -translate-y-1/2 end-1 w-6 h-6 bg-sky-500 text-white rounded-lg flex items-center justify-center">
+              <div className="absolute top-1/2 -translate-y-1/2 end-1 w-6 h-6 bg-sky-500 text-white rounded-lg flex items-center justify-center shadow-sm">
                 <Search className="w-3 h-3" />
               </div>
             </div>
           </div>
 
           {/* Sub-Items Navigation List */}
-          <nav className="flex-1 space-y-1 overflow-y-auto no-scrollbar">
+          <nav className="flex-1 space-y-1 overflow-y-auto no-scrollbar py-1">
             {filteredItems.map((item) => {
               const active = isItemActive(item.to);
               const ItemIcon = item.icon;
@@ -191,7 +183,7 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
                   to={item.to}
                   className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 group ${
                     active
-                      ? 'bg-sky-100/80 dark:bg-sky-950/60 text-sky-900 dark:text-sky-200 shadow-sm border-r-2 border-sky-600'
+                      ? 'bg-sky-100/90 dark:bg-sky-950/70 text-sky-900 dark:text-sky-200 shadow-sm border-r-2 border-sky-600'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-foreground'
                   }`}
                 >
@@ -199,16 +191,16 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
                     <ItemIcon className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 group-hover:text-slate-600'}`} />
                     <span className="truncate">{item.label}</span>
                   </div>
-                  {active && <Check className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />}
+                  {active && <Check className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Footer Info / User Role */}
-          <div className="pt-3 border-t border-border/60 text-[10px] text-muted-foreground flex items-center justify-between px-1">
+          {/* Footer Info */}
+          <div className="pt-3 border-t border-border/60 text-[10px] text-muted-foreground flex items-center justify-between px-1 shrink-0">
             <span className="font-mono">Green Arrow HR</span>
-            <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-bold">v2.4</span>
+            <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-bold font-mono">v2.4</span>
           </div>
         </aside>
       )}
