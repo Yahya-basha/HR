@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { DollarSign, useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
@@ -41,6 +41,22 @@ export default function Settings() {
       logo_url: '/green-arrow-logo.png'
     };
   });
+
+  // Payroll Settings State
+  const [payrollSettings, setPayrollSettings] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('hr_flow_payroll_settings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { friday_daily_rate: 50, overtime_daily_rate: 100, days_per_month: 30 };
+  });
+
+  const handleSavePayrollSettings = () => {
+    localStorage.setItem('hr_flow_payroll_settings', JSON.stringify(payrollSettings));
+    window.dispatchEvent(new Event('payroll_settings_updated'));
+    toast({ title: 'تم حفظ إعدادات الرواتب بنجاح' });
+  };
+
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
@@ -93,6 +109,7 @@ export default function Settings() {
             <Building2 className="w-4 h-4 text-primary" />
             <span>هوية وشعار الشركة</span>
           </TabsTrigger>
+        <TabsTrigger value="payroll" className="rounded-xl font-bold text-xs">إعدادات الرواتب</TabsTrigger>
         </TabsList>
 
         {/* TAB 1: THEME CUSTOMIZATION */}
@@ -310,6 +327,67 @@ export default function Settings() {
             </form>
           </Card>
         </TabsContent>
+
+      
+      {/* === PAYROLL SETTINGS TAB === */}{/* payroll_settings_tab */}
+      <TabsContent value="payroll">
+        <Card className="rounded-2xl border-border/60 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-5 border-b border-border/40 bg-emerald-500/5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="font-heading font-extrabold text-foreground">اعدادات الرواتب والبدلات</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">تحكم في مبالغ بدل الجمعة والاضافي وعدد ايام الشهر لاحتساب الراتب</p>
+            </div>
+          </div>
+          <div className="p-6 space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="space-y-2">
+                <Label className="font-bold text-sm">بدل يوم الجمعة (ريال)</Label>
+                <Input
+                  type="number"
+                  value={payrollSettings.friday_daily_rate}
+                  onChange={e => setPayrollSettings(p => ({...p, friday_daily_rate: Number(e.target.value)}))}
+                  className="rounded-xl h-10 font-mono font-bold"
+                  min="0" step="10"
+                />
+                <p className="text-xs text-muted-foreground">المبلغ الاضافي لكل يوم جمعة حضره الموظف (بصمة فعلية)</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-sm">اضافي ساعة يومياً (ريال)</Label>
+                <Input
+                  type="number"
+                  value={payrollSettings.overtime_daily_rate}
+                  onChange={e => setPayrollSettings(p => ({...p, overtime_daily_rate: Number(e.target.value)}))}
+                  className="rounded-xl h-10 font-mono font-bold"
+                  min="0" step="10"
+                />
+                <p className="text-xs text-muted-foreground">المبلغ لكل يوم في شفت 9 ساعات (has_overtime = true)</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-sm">عدد ايام الشهر للاحتساب</Label>
+                <Input
+                  type="number"
+                  value={payrollSettings.days_per_month}
+                  onChange={e => setPayrollSettings(p => ({...p, days_per_month: Number(e.target.value)}))}
+                  className="rounded-xl h-10 font-mono font-bold"
+                  min="26" max="31" step="1"
+                />
+                <p className="text-xs text-muted-foreground">يستخدم في: قيمة الساعة = (الراتب ÷ الايام ÷ ساعات الشفت)</p>
+              </div>
+            </div>
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-bold space-y-1">
+              <p>معادلة قيمة الساعة: الراتب الاساسي ÷ {payrollSettings.days_per_month} يوم ÷ ساعات الشفت</p>
+              <p>مثال راتب 1500 ريال وشفت 5 ساعات: 1500 ÷ {payrollSettings.days_per_month} ÷ 5 = {(1500 / (payrollSettings.days_per_month || 30) / 5).toFixed(2)} ريال/ساعة</p>
+            </div>
+            <Button onClick={handleSavePayrollSettings}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl px-6 h-10 shadow gap-2">
+              <Save className="w-4 h-4" /> حفظ اعدادات الرواتب
+            </Button>
+          </div>
+        </Card>
+      </TabsContent>
 
       </Tabs>
     </div>

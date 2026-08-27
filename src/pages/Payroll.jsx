@@ -1,417 +1,573 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { 
-  Wallet, 
-  Download, 
-  Printer, 
-  FileSpreadsheet, 
-  ShieldCheck, 
-  CheckCircle2, 
-  Calendar, 
-  Clock, 
-  Sparkles, 
-  Eye, 
-  DollarSign,
-  ChevronLeft,
-  CalendarCheck
+import {
+  Wallet, Download, Printer, CheckCircle2, Clock, AlertTriangle,
+  Eye, ChevronDown, FileSpreadsheet, ShieldCheck, Users,
+  CalendarCheck, RotateCcw, History, Filter, Search, X, Edit3, Check, XCircle
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/lib/AuthContext';
+import {
+  computeEmployeePayroll,
+  getPayrollSettings,
+  saveShortfallApproval,
+  getAuditLog,
+  appendAuditLog,
+  formatMinutes,
+  formatHours,
+} from '@/lib/payrollEngine';
+import PayslipPrint from '@/components/PayslipPrint';
 
-// Strict helper to verify real biometric punch times exist (rejects Arabic words like 'عطلة', 'لم يباشر', '—')
-const hasActualBiometricPunches = (str) => {
-  if (!str) return false;
-  const clean = str.toString().trim();
-  if (clean.includes('عطلة') || clean.includes('لم يباشر') || clean === '—' || clean === '-') return false;
-  return /\d{1,2}[:.]\d{2}/.test(clean);
+const fmtSAR = (n) => (Number(n) || 0).toLocaleString('ar-SA');
+
+const APPROVAL_BADGE = {
+  pending: { label: 'قيد المراجعة', cls: 'bg-amber-100 text-amber-800' },
+  approved: { label: 'معتمد', cls: 'bg-emerald-100 text-emerald-800' },
+  rejected: { label: 'مرفوض', cls: 'bg-slate-100 text-slate-600' },
+  modified: { label: 'معتمد بتعديل', cls: 'bg-blue-100 text-blue-800' },
 };
 
 export default function Payroll() {
+  const { user } = useAuth();
   const { toast } = useToast();
+
   const [employees, setEmployees] = useState([]);
   const [attendanceLogs, setAttendanceLogs] = useState([]);
+  const [shifts, setShifts] = useState([]);
   const [month, setMonth] = useState('2026-08');
-  const [selectedPayslip, setSelectedPayslip] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQ, setSearchQ] = useState('');
+  const [branchFilter, setBranchFilter] = useState('');
+
+  // Payslip dialog
+  const [payslipEmp, setPayslipEmp] = useState(null);
   const [payslipOpen, setPayslipOpen] = useState(false);
 
+  // Approval dialog
+  const [approvalEmp, setApprovalEmp] = useState(null);
+  const [approvalResult, setApprovalResult] = useState(null);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [approvalAction, setApprovalAction] = useState('approved');
+  const [approvalCustomAmt, setApprovalCustomAmt] = useState('');
+  const [approvalNote, setApprovalNote] = useState('');
+
+  // Audit log
+  const [auditLog, setAuditLog] = useState([]);
+
+  const settings = useMemo(() => ({ ...getPayrollSettings(), monthPrefix: month }), [month]);
+
   useEffect(() => {
+    setLoading(true);
     Promise.all([
       base44.entities.Employee.list(),
-      base44.entities.AttendanceLog.list('-log_date', 800)
-    ]).then(([emps, logs]) => {
+      base44.entities.AttendanceLog.list('-log_date', 800),
+      base44.entities.Shift.list(),
+    ]).then(([emps, logs, shfs]) => {
       setEmployees(emps || []);
       setAttendanceLogs(logs || []);
-    }).catch(console.error);
+      setShifts(shfs || []);
+    }).catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  // Strict Calculation of Friday Attendance & Overtime for each employee
-  const payrollData = useMemo(() => {
-    const selectedMonthPrefix = month.substring(0, 7); // e.g. '2026-08'
+  useEffect(() => {
+    setAuditLog(getAuditLog());
+  }, []);
 
-    return employees.map((emp) => {
-      // 1. Filter logs strictly for this employee AND strictly for the selected month
-      const empLogs = (attendanceLogs || []).filter(l => {
-        const isThisEmp = l.user_id === emp.id || 
-                          (l.employee_number && l.employee_number.toString() === emp.employee_number?.toString()) || 
-                          (l.employee_name && l.employee_name.trim() === emp.full_name?.trim());
-        const isInMonth = l.log_date && l.log_date.startsWith(selectedMonthPrefix);
-        return isThisEmp && isInMonth;
-      });
+  // Compute all payrolls
+  const allPayrolls = useMemo(() => {
+    if (!employees.length) return [];
+    return employees.map(emp =>
+      computeEmployeePayroll(emp, attendanceLogs, shifts, settings)
+    );
+  }, [employees, attendanceLogs, shifts, settings]);
 
-      // Deduplicate by date (keep only 1 record per calendar day)
-      const dateMap = {};
-      empLogs.forEach(l => {
-        if (!dateMap[l.log_date] || hasActualBiometricPunches(l.timestamp_raw)) {
-          dateMap[l.log_date] = l;
-        }
-      });
-      const uniqueDays = Object.values(dateMap);
-
-      // 2. Count ONLY Fridays where the employee actually had REAL biometric punches
-      const attendedFridays = uniqueDays.filter(l => {
-        if (!l.log_date) return false;
-        
-        // Strict Friday check in August 2026
-        const isFriday = l.log_date.endsWith('-07') || 
-                         l.log_date.endsWith('-14') || 
-                         l.log_date.endsWith('-21') || 
-                         l.log_date.endsWith('-28') ||
-                         new Date(l.log_date).getDay() === 5;
-        
-        if (!isFriday) return false;
-
-        // REAL PUNCH VALIDATION: Must contain actual time numbers (e.g. "16:07 -- 20:15")
-        const hasCheckInTime = l.check_in && hasActualBiometricPunches(l.check_in);
-        const hasTimestampPunches = hasActualBiometricPunches(l.timestamp_raw);
-        const hasRawPunches = hasActualBiometricPunches(l.punches_raw);
-
-        const hasRealPunches = hasCheckInTime || hasTimestampPunches || hasRawPunches;
-
-        // If status was explicit absent or not started
-        const isAbsentOrNotStarted = l.status === 'absent' || l.status === 'not_started' || l.status === 'غائب' || l.status === 'لم يباشر';
-
-        return isFriday && hasRealPunches && !isAbsentOrNotStarted;
-      });
-
-      // Strict Friday Count (0 if didn't attend any Friday!)
-      const fridayCount = attendedFridays.length;
-      const fridayAllowance = fridayCount * 50;
-      const fridayNote = fridayCount > 0 
-        ? `${fridayAllowance} ريال عن إضافي حضور ${fridayCount} أيام جمعة`
-        : 'لم يحضر أيام الجمعة (عطلة رسمية)';
-
-      const basicSalary = Number(emp.salary) || 4000;
-      const housing = Number(emp.housing_allowance) || 0;
-      const transport = Number(emp.transport_allowance) || 0;
-      
-      // Daily Overtime for 9-hour split shifts (100 SAR daily)
-      const isOvertimeShift = emp.shift?.includes('9') || emp.shift?.includes('إضافي') || emp.job_title?.includes('موارد') || emp.employee_number === '1022';
-      const monthlyOvertime = isOvertimeShift ? 2600 : 0;
-
-      // GOSI Calculation (9.75% for Saudis, 2% for Non-Saudis)
-      const isSaudi = (emp.nationality || '').includes('سعودي');
-      const gosiDeduction = isSaudi ? Math.round(basicSalary * 0.0975) : Math.round(basicSalary * 0.02);
-
-      // Net Salary Calculation
-      const totalAllowances = housing + transport + fridayAllowance + monthlyOvertime;
-      const netSalary = basicSalary + totalAllowances - gosiDeduction;
-
-      return {
-        ...emp,
-        basicSalary,
-        housing,
-        transport,
-        fridayCount,
-        fridayAllowance,
-        fridayNote,
-        monthlyOvertime,
-        totalAllowances,
-        gosiDeduction,
-        netSalary
-      };
+  // Filtered payrolls
+  const filteredPayrolls = useMemo(() => {
+    return allPayrolls.filter(p => {
+      const name = (p.emp.full_name || '').toLowerCase();
+      const empNum = (p.emp.employee_number || '').toString();
+      const branch = p.emp.branch_name || p.emp.branch || '';
+      if (searchQ && !name.includes(searchQ.toLowerCase()) && !empNum.includes(searchQ)) return false;
+      if (branchFilter && branch !== branchFilter) return false;
+      return true;
     });
-  }, [employees, attendanceLogs, month]);
+  }, [allPayrolls, searchQ, branchFilter]);
 
-  const totalBasic = payrollData.reduce((sum, e) => sum + e.basicSalary, 0);
-  const totalAllowances = payrollData.reduce((sum, e) => sum + e.totalAllowances, 0);
-  const totalFridayAllowances = payrollData.reduce((sum, e) => sum + e.fridayAllowance, 0);
-  const totalGOSI = payrollData.reduce((sum, e) => sum + e.gosiDeduction, 0);
-  const totalNet = payrollData.reduce((sum, e) => sum + e.netSalary, 0);
+  // Unique branches for filter
+  const branches = useMemo(() => {
+    const bSet = new Set(employees.map(e => e.branch_name || e.branch || '').filter(Boolean));
+    return [...bSet];
+  }, [employees]);
 
-  const handleViewPayslip = (row) => {
-    setSelectedPayslip(row);
+  // Summary totals
+  const summary = useMemo(() => {
+    const total = filteredPayrolls.reduce((acc, p) => ({
+      basic: acc.basic + p.basicSalary,
+      friday: acc.friday + p.fridayAllowance,
+      overtime: acc.overtime + p.dailyOvertimeAllowance,
+      deductions: acc.deductions + p.totalDeductions,
+      net: acc.net + p.netSalary,
+      shortfall: acc.shortfall + p.proposedShortfallDeduction,
+    }), { basic: 0, friday: 0, overtime: 0, deductions: 0, net: 0, shortfall: 0 });
+    return total;
+  }, [filteredPayrolls]);
+
+  // Alert counts
+  const alertCounts = useMemo(() => ({
+    shortfall: filteredPayrolls.filter(p => p.shortfallHours > 0 && p.shortfallApprovalStatus === 'pending').length,
+    friday: filteredPayrolls.filter(p => p.fridayDays > 0).length,
+    overtime: filteredPayrolls.filter(p => p.dailyOvertimeAllowance > 0).length,
+  }), [filteredPayrolls]);
+
+  const handleViewPayslip = useCallback((pr) => {
+    setPayslipEmp(pr);
     setPayslipOpen(true);
-  };
+  }, []);
 
-  const handleExportWPS = () => {
-    const headers = 'Employee_ID,Employee_Name,National_ID,Basic_Salary,Housing_Allowance,Transport_Allowance,Friday_Overtime,GOSI_Deduction,Net_Salary,Bank_IBAN';
-    const rows = payrollData.map(e => {
-      return `"${e.employee_number}","${e.full_name}","${e.national_id || ''}",${e.basicSalary},${e.housing},${e.transport},${e.fridayAllowance},${e.gosiDeduction},${e.netSalary},"SA0000000000000000000000"`;
+  const handleOpenApproval = useCallback((pr) => {
+    setApprovalEmp(pr);
+    setApprovalResult(null);
+    setApprovalAction('approved');
+    setApprovalCustomAmt(pr.proposedShortfallDeduction.toFixed(2));
+    setApprovalNote('');
+    setApprovalOpen(true);
+  }, []);
+
+  const handleApprovalSubmit = useCallback(() => {
+    if (!approvalEmp) return;
+    const finalDeduction = approvalAction === 'rejected' ? 0
+      : approvalAction === 'modified' ? Number(approvalCustomAmt) || 0
+      : approvalEmp.proposedShortfallDeduction;
+
+    const decision = {
+      status: approvalAction,
+      finalDeduction,
+      note: approvalNote,
+      approvedBy: user?.full_name || 'المدير العام',
+    };
+
+    saveShortfallApproval(approvalEmp.emp.employee_number, month, decision);
+    setAuditLog(getAuditLog());
+
+    toast({
+      title: approvalAction === 'approved' ? '✅ تم اعتماد الخصم' : approvalAction === 'rejected' ? '🚫 تم رفض الخصم' : '✏️ تم تعديل الخصم',
+      description: approvalEmp.emp.full_name + ' — ' + (decision.note || ''),
     });
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers, ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `WPS_Mudad_Payroll_${month}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast({ title: 'تم تصدير مسير الرواتب المعتمد مع إضافي الجمعة لملف WPS مدد 📑' });
-  };
+
+    setApprovalOpen(false);
+
+    // Re-fetch to update state
+    setLoading(true);
+    base44.entities.AttendanceLog.list('-log_date', 800).then(logs => {
+      setAttendanceLogs(logs || []);
+    }).finally(() => setLoading(false));
+  }, [approvalEmp, approvalAction, approvalCustomAmt, approvalNote, month, user]);
+
+  const handleExportWPS = useCallback(() => {
+    const headers = 'Employee_ID,Employee_Name,National_ID,Basic_Salary,Friday_OT,Daily_OT,GOSI,Shortfall_Deduction,Net_Salary';
+    const rows = filteredPayrolls.map(p => {
+      const e = p.emp;
+      return `"${e.employee_number}","${e.full_name}","${e.national_id||''}",${p.basicSalary},${p.fridayAllowance},${p.dailyOvertimeAllowance},${p.gosiDeduction},${p.approvedShortfallDeduction},${p.netSalary}`;
+    });
+    const csv = '\uFEFF' + [headers, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'WPS_' + month + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'تم تصدير ملف WPS مدد بنجاح 📑' });
+  }, [filteredPayrolls, month]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-40">
+      <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
-    <div className="space-y-6" dir="rtl">
-      
+    <div className="space-y-5" dir="rtl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center font-bold shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shadow-sm">
             <Wallet className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-heading font-extrabold text-foreground">مسير الرواتب والبدلات وإضافي الجمعة</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              احتساب دقيق وموثق بالبصمات لإضافي أيام الجمعة (+50 ريال) للذين حضروا فقط
-            </p>
+            <h1 className="text-2xl font-heading font-extrabold text-foreground">مسير الرواتب والبدلات</h1>
+            <p className="text-xs text-muted-foreground">محاسبة دقيقة: عجز الساعات | بدل الجمعة | الإضافي | اعتماد الخصومات</p>
           </div>
         </div>
-
         <div className="flex items-center gap-2">
-          <Button 
-            onClick={handleExportWPS}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs gap-2 shadow-md"
-          >
-            <Download className="w-4 h-4" />
-            <span>تصدير ملف WPS (منصة مدد)</span>
+          <input type="month" value={month} onChange={e => setMonth(e.target.value)}
+            className="h-9 px-3 rounded-xl border border-border/60 bg-white dark:bg-slate-900 text-sm font-bold" />
+          <Button onClick={handleExportWPS} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs gap-2 shadow-md">
+            <Download className="w-4 h-4" /> تصدير WPS مدد
           </Button>
         </div>
       </div>
 
-      {/* 4 Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
-          <p className="text-xs font-bold text-muted-foreground">إجمالي الرواتب الأساسية</p>
-          <p className="text-2xl font-heading font-black text-foreground mt-1">{totalBasic.toLocaleString()} ر.س</p>
-        </Card>
-
-        <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">إجمالي إضافي الجمعة الفعلي</p>
-            <Badge className="bg-emerald-100 text-emerald-800 text-[10px]">50 ر.س / جمعة</Badge>
-          </div>
-          <p className="text-2xl font-heading font-black text-emerald-600 mt-1">{totalFridayAllowances.toLocaleString()} ر.س</p>
-        </Card>
-
-        <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
-          <p className="text-xs font-bold text-amber-700 dark:text-amber-400">خصومات التأمينات (GOSI)</p>
-          <p className="text-2xl font-heading font-black text-amber-600 mt-1">{totalGOSI.toLocaleString()} ر.س</p>
-        </Card>
-
-        <Card className="p-5 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
-          <p className="text-xs font-bold text-primary">صافي المسير المستحق للصرف</p>
-          <p className="text-2xl font-heading font-black text-primary mt-1">{totalNet.toLocaleString()} ر.س</p>
-        </Card>
-      </div>
-
-      {/* Main Payroll Table */}
-      <Card className="border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
-        <div className="p-5 pb-3 border-b border-border/40 flex items-center justify-between bg-secondary/20">
-          <h2 className="font-heading font-bold text-base text-foreground">
-            كشف مسير رواتب منسوبي المنشأة (شهر {month})
-          </h2>
-          <Badge variant="outline" className="font-mono text-xs">
-            {payrollData.length} موظفاً معتمداً
-          </Badge>
-        </div>
-
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-secondary/60 text-xs">
-                <TableHead>الموظف</TableHead>
-                <TableHead>الرقم الوظيفي</TableHead>
-                <TableHead>الراتب الأساسي</TableHead>
-                <TableHead className="text-emerald-700 font-extrabold">إضافي حضور الجمعة الفعلي (+50 ر.س)</TableHead>
-                <TableHead>البدلات والإضافي</TableHead>
-                <TableHead className="text-amber-700">خصم التأمينات (GOSI)</TableHead>
-                <TableHead className="text-primary font-black">صافي الراتب المستحق</TableHead>
-                <TableHead className="text-center">قسيمة الراتب</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payrollData.map((emp) => (
-                <TableRow key={emp.id} className="hover:bg-secondary/40 text-xs">
-                  
-                  {/* Name */}
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                      <div>
-                        <p className="font-bold text-xs text-foreground">{emp.full_name}</p>
-                        <p className="text-[10px] text-muted-foreground">{emp.job_title || 'موظف'}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Emp Number */}
-                  <TableCell className="font-mono font-bold text-slate-700">
-                    {emp.employee_number}
-                  </TableCell>
-
-                  {/* Basic */}
-                  <TableCell className="font-mono font-bold text-slate-900 dark:text-slate-100">
-                    {emp.basicSalary.toLocaleString()} ر.س
-                  </TableCell>
-
-                  {/* Friday Allowance (STRICT & VERIFIED) */}
-                  <TableCell>
-                    {emp.fridayCount > 0 ? (
-                      <div className="space-y-0.5">
-                        <span className="font-mono font-black text-xs text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-                          +{emp.fridayAllowance} ر.س
-                        </span>
-                        <p className="text-[10px] text-emerald-700 font-semibold">
-                          ({emp.fridayCount} أيام جمعة × 50)
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                        0 ر.س (عطلة رسمية)
-                      </span>
-                    )}
-                  </TableCell>
-
-                  {/* Allowances & OT */}
-                  <TableCell className="font-mono font-semibold text-slate-700">
-                    {(emp.housing + emp.transport + emp.monthlyOvertime).toLocaleString()} ر.س
-                    {emp.monthlyOvertime > 0 && (
-                      <span className="block text-[9px] text-amber-600 font-bold">شامل إضافي 9 ساعات</span>
-                    )}
-                  </TableCell>
-
-                  {/* GOSI */}
-                  <TableCell className="font-mono font-bold text-amber-700">
-                    -{emp.gosiDeduction.toLocaleString()} ر.س
-                  </TableCell>
-
-                  {/* Net Salary */}
-                  <TableCell className="font-mono font-black text-sm text-emerald-600 dark:text-emerald-400">
-                    {emp.netSalary.toLocaleString()} ر.س
-                  </TableCell>
-
-                  {/* Action Payslip */}
-                  <TableCell className="text-center">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleViewPayslip(emp)}
-                      className="h-8 px-2.5 text-xs font-bold gap-1 rounded-xl border-emerald-500/30 text-emerald-800 hover:bg-emerald-50"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>عرض القسيمة</span>
-                    </Button>
-                  </TableCell>
-
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-
-      {/* DETAILED PAYSLIP MODAL */}
-      {selectedPayslip && (
-        <Dialog open={payslipOpen} onOpenChange={setPayslipOpen}>
-          <DialogContent className="sm:max-w-md" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="font-heading font-bold text-base text-foreground flex items-center justify-between">
-                <span>قسيمة الراتب الرسمية — شهر {month}</span>
-                <Badge className="bg-emerald-600 text-white text-[10px]">معتمد للصرف</Badge>
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4 py-3 text-xs">
-              
-              {/* Employee Summary */}
-              <div className="p-3.5 rounded-2xl bg-secondary/50 border border-border/60 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-sm text-foreground">{selectedPayslip.full_name}</h3>
-                  <p className="text-[11px] text-muted-foreground">الرقم الوظيفي: #{selectedPayslip.employee_number} • {selectedPayslip.job_title}</p>
-                </div>
-                <div className="text-left font-mono">
-                  <p className="text-[10px] text-muted-foreground">الفرع</p>
-                  <p className="font-bold text-xs text-foreground">{selectedPayslip.branch_name || 'فرع كيا'}</p>
-                </div>
-              </div>
-
-              {/* Earnings Breakdown */}
-              <div className="space-y-2 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-border/60">
-                <p className="font-bold text-xs text-emerald-800 dark:text-emerald-400 border-b border-border/40 pb-1">
-                  المستحقات والبدلات (Earnings):
-                </p>
-                
-                <div className="flex justify-between py-1 border-b border-dashed border-border/40">
-                  <span className="text-muted-foreground">الراتب الأساسي:</span>
-                  <span className="font-mono font-bold">{selectedPayslip.basicSalary.toLocaleString()} ر.س</span>
-                </div>
-
-                {selectedPayslip.fridayAllowance > 0 && (
-                  <>
-                    <div className="flex justify-between py-1 border-b border-dashed border-border/40 text-emerald-800 dark:text-emerald-300 font-bold bg-emerald-50/60 p-1.5 rounded-lg">
-                      <span>إضافي حضور أيام الجمعة:</span>
-                      <span className="font-mono">+{selectedPayslip.fridayAllowance} ر.س</span>
-                    </div>
-                    <p className="text-[10px] text-emerald-700 font-semibold px-1">
-                      📌 {selectedPayslip.fridayNote}
-                    </p>
-                  </>
-                )}
-
-                {selectedPayslip.monthlyOvertime > 0 && (
-                  <div className="flex justify-between py-1 border-b border-dashed border-border/40 text-amber-800 dark:text-amber-300 font-bold">
-                    <span>بدل عمل إضافي (شفت 9 ساعات):</span>
-                    <span className="font-mono">+{selectedPayslip.monthlyOvertime.toLocaleString()} ر.س</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Deductions Breakdown */}
-              <div className="space-y-2 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-border/60">
-                <p className="font-bold text-xs text-amber-800 dark:text-amber-400 border-b border-border/40 pb-1">
-                  الاستقطاعات والخصومات (Deductions):
-                </p>
-                <div className="flex justify-between py-1 text-amber-700">
-                  <span>التأمينات الاجتماعية (GOSI):</span>
-                  <span className="font-mono font-bold">-{selectedPayslip.gosiDeduction.toLocaleString()} ر.س</span>
-                </div>
-              </div>
-
-              {/* Net Pay */}
-              <div className="p-4 rounded-2xl bg-emerald-600 text-white flex items-center justify-between shadow-lg shadow-emerald-600/20">
-                <div>
-                  <p className="text-xs text-emerald-100 font-bold">صافي الراتب المستحق للحساب البنكي</p>
-                  <p className="text-xs text-emerald-200 mt-0.5">طريقة الصرف: تحويل سريع عبر نظام حماية الأجور (WPS)</p>
-                </div>
-                <p className="text-2xl font-heading font-black">{selectedPayslip.netSalary.toLocaleString()} ر.س</p>
-              </div>
-
+      {/* Alerts */}
+      {(alertCounts.shortfall > 0 || alertCounts.friday > 0 || alertCounts.overtime > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {alertCounts.shortfall > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs font-bold text-amber-800">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {alertCounts.shortfall} موظف بعجز حضور يحتاج مراجعة واعتماد
             </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setPayslipOpen(false)} className="text-xs font-bold">إلغاء</Button>
-              <Button onClick={() => window.print()} className="bg-emerald-600 text-white font-bold text-xs gap-1.5 shadow-md">
-                <Printer className="w-3.5 h-3.5" />
-                <span>طباعة القسيمة</span>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          )}
+          {alertCounts.friday > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-800">
+              <CalendarCheck className="w-3.5 h-3.5" />
+              {alertCounts.friday} موظف لديه بدل حضور أيام الجمعة
+            </div>
+          )}
+          {alertCounts.overtime > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs font-bold text-orange-800">
+              <Clock className="w-3.5 h-3.5" />
+              {alertCounts.overtime} موظف لديه إضافي ساعة يومياً
+            </div>
+          )}
+        </div>
       )}
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        {[
+          { label: 'إجمالي الرواتب الأساسية', value: fmtSAR(summary.basic), sub: 'ريال', cls: 'text-foreground' },
+          { label: 'بدل أيام الجمعة الفعلي', value: fmtSAR(summary.friday), sub: 'ريال', cls: 'text-emerald-600' },
+          { label: 'إضافي الشفت اليومي', value: fmtSAR(summary.overtime), sub: 'ريال', cls: 'text-amber-600' },
+          { label: 'خصومات مقترحة (عجز)', value: fmtSAR(summary.shortfall), sub: 'ريال', cls: 'text-red-600' },
+          { label: 'صافي المسير الكلي', value: fmtSAR(summary.net), sub: 'ريال', cls: 'text-primary font-black' },
+        ].map(c => (
+          <Card key={c.label} className="p-4 border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900">
+            <p className="text-[11px] text-muted-foreground font-medium">{c.label}</p>
+            <p className={`text-lg font-heading font-black mt-1 ${c.cls}`}>{c.value}</p>
+            <p className="text-[10px] text-muted-foreground">{c.sub}</p>
+          </Card>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="payroll">
+        <TabsList className="bg-secondary rounded-2xl p-1 h-auto flex-wrap gap-1">
+          <TabsTrigger value="payroll" className="rounded-xl text-xs font-bold">مسير الرواتب</TabsTrigger>
+          <TabsTrigger value="shortfall" className="rounded-xl text-xs font-bold">
+            عجز الساعات
+            {alertCounts.shortfall > 0 && <Badge className="mr-1 bg-amber-500 text-white text-[9px] px-1">{alertCounts.shortfall}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="rounded-xl text-xs font-bold">سجل التعديلات</TabsTrigger>
+        </TabsList>
+
+        {/* ── TAB: PAYROLL ──────────────────────────────────────────────── */}
+        <TabsContent value="payroll" className="mt-4">
+          {/* Filters */}
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <div className="relative flex-1 min-w-40">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input value={searchQ} onChange={e => setSearchQ(e.target.value)}
+                placeholder="بحث باسم أو رقم الموظف..."
+                className="pr-9 h-9 rounded-xl text-xs" />
+            </div>
+            <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)}
+              className="h-9 px-3 rounded-xl border border-border/60 bg-white dark:bg-slate-900 text-xs font-bold">
+              <option value="">جميع الفروع</option>
+              {branches.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+            {(searchQ || branchFilter) && (
+              <Button variant="ghost" size="sm" onClick={() => { setSearchQ(''); setBranchFilter(''); }} className="h-9 rounded-xl text-xs gap-1">
+                <X className="w-3.5 h-3.5" /> مسح
+              </Button>
+            )}
+          </div>
+
+          <Card className="border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
+            <div className="p-4 border-b border-border/40 bg-secondary/20 flex items-center justify-between">
+              <h2 className="font-heading font-bold text-sm text-foreground">كشف مسير رواتب — {month}</h2>
+              <Badge variant="outline" className="font-mono text-xs">{filteredPayrolls.length} موظف</Badge>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary/60 text-[11px]">
+                    <TableHead>الموظف</TableHead>
+                    <TableHead>الشفت / ساعاته</TableHead>
+                    <TableHead>الراتب الأساسي</TableHead>
+                    <TableHead className="text-emerald-700 font-black">بدل الجمعة (فعلي بالبصمة)</TableHead>
+                    <TableHead className="text-amber-700 font-black">إضافي يومي</TableHead>
+                    <TableHead className="text-red-700 font-black">عجز / خصم</TableHead>
+                    <TableHead className="text-amber-700">GOSI</TableHead>
+                    <TableHead className="text-primary font-black">صافي الراتب</TableHead>
+                    <TableHead className="text-center">إجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPayrolls.map(pr => {
+                    const ab = APPROVAL_BADGE[pr.shortfallApprovalStatus] || APPROVAL_BADGE.pending;
+                    return (
+                      <TableRow key={pr.emp.id} className="hover:bg-secondary/40 text-[11px]">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                            <div>
+                              <p className="font-bold text-foreground">{pr.emp.full_name}</p>
+                              <p className="text-[10px] text-muted-foreground">#{pr.emp.employee_number} | {pr.emp.job_title}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-[10px]">
+                          <div>{pr.shiftName || '—'}</div>
+                          <div className="text-muted-foreground">{pr.shiftHours} س/يوم</div>
+                        </TableCell>
+                        <TableCell className="font-mono font-bold">{fmtSAR(pr.basicSalary)} ر.س</TableCell>
+                        <TableCell>
+                          {pr.fridayAllowance > 0 ? (
+                            <div>
+                              <span className="font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">+{fmtSAR(pr.fridayAllowance)} ر.س</span>
+                              <p className="text-[9px] text-muted-foreground mt-0.5">{pr.fridayDays} أيام جمعة × {pr.fridayDailyRate}</p>
+                            </div>
+                          ) : <span className="text-muted-foreground text-[10px]">0 ر.س</span>}
+                        </TableCell>
+                        <TableCell>
+                          {pr.dailyOvertimeAllowance > 0 ? (
+                            <div>
+                              <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">+{fmtSAR(pr.dailyOvertimeAllowance)} ر.س</span>
+                              <p className="text-[9px] text-muted-foreground mt-0.5">{pr.overtimeDays} يوم</p>
+                            </div>
+                          ) : <span className="text-muted-foreground text-[10px]">—</span>}
+                        </TableCell>
+                        <TableCell>
+                          {pr.proposedShortfallDeduction > 0 ? (
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1">
+                                <span className="font-bold text-red-700 text-[10px]">عجز: {formatHours(pr.shortfallHours)}س</span>
+                              </div>
+                              <span className="text-[10px] font-bold text-red-700">مقترح: -{fmtSAR(pr.proposedShortfallDeduction)} ر.س</span>
+                              <div><Badge className={`text-[9px] ${ab.cls}`}>{ab.label}</Badge></div>
+                              {pr.approvedShortfallDeduction > 0 && (
+                                <span className="text-[9px] font-bold text-red-600">معتمد: -{fmtSAR(pr.approvedShortfallDeduction)} ر.س</span>
+                              )}
+                            </div>
+                          ) : <span className="text-emerald-600 text-[10px] font-bold">لا عجز ✓</span>}
+                        </TableCell>
+                        <TableCell className="font-mono font-bold text-amber-700">-{fmtSAR(pr.gosiDeduction)} ر.س</TableCell>
+                        <TableCell className="font-mono font-black text-emerald-600 text-sm">{fmtSAR(pr.netSalary)} ر.س</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="outline" size="sm" onClick={() => handleViewPayslip(pr)}
+                              className="h-7 px-2 text-[10px] font-bold rounded-lg gap-1 border-emerald-400/40 text-emerald-700">
+                              <Eye className="w-3 h-3" /> قسيمة
+                            </Button>
+                            {pr.proposedShortfallDeduction > 0 && pr.shortfallApprovalStatus === 'pending' && (
+                              <Button variant="outline" size="sm" onClick={() => handleOpenApproval(pr)}
+                                className="h-7 px-2 text-[10px] font-bold rounded-lg gap-1 border-amber-400/40 text-amber-700">
+                                <ShieldCheck className="w-3 h-3" /> اعتماد
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* ── TAB: SHORTFALL ────────────────────────────────────────────── */}
+        <TabsContent value="shortfall" className="mt-4">
+          <Card className="border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
+            <div className="p-4 border-b border-border/40 bg-amber-50/60 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <h2 className="font-heading font-bold text-sm text-foreground">مراجعة واعتماد عجز الحضور</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary/60 text-[11px]">
+                    <TableHead>الموظف</TableHead>
+                    <TableHead>الشفت</TableHead>
+                    <TableHead>ساعات مطلوبة</TableHead>
+                    <TableHead>ساعات فعلية</TableHead>
+                    <TableHead className="text-red-700">إجمالي العجز</TableHead>
+                    <TableHead>قيمة الساعة</TableHead>
+                    <TableHead className="text-red-700 font-black">الخصم المقترح</TableHead>
+                    <TableHead>حالة الاعتماد</TableHead>
+                    <TableHead className="text-center">إجراء</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPayrolls.filter(p => p.proposedShortfallDeduction > 0).map(pr => {
+                    const ab = APPROVAL_BADGE[pr.shortfallApprovalStatus] || APPROVAL_BADGE.pending;
+                    return (
+                      <TableRow key={pr.emp.id} className="hover:bg-secondary/40 text-[11px]">
+                        <TableCell>
+                          <p className="font-bold">{pr.emp.full_name}</p>
+                          <p className="text-[10px] text-muted-foreground">#{pr.emp.employee_number}</p>
+                        </TableCell>
+                        <TableCell className="text-[10px]">{pr.shiftName || '—'}</TableCell>
+                        <TableCell className="font-mono">{formatMinutes(pr.totalRequiredMinutes)}</TableCell>
+                        <TableCell className="font-mono">{formatMinutes(pr.totalActualMinutes)}</TableCell>
+                        <TableCell className="font-mono font-bold text-red-700">
+                          {formatMinutes(pr.totalShortfallMinutes)}
+                          <span className="text-[9px] text-muted-foreground block">({formatHours(pr.shortfallHours)} ساعة)</span>
+                        </TableCell>
+                        <TableCell className="font-mono">{fmtSAR(pr.hourlyRate)} ريال/س</TableCell>
+                        <TableCell className="font-mono font-black text-red-700">-{fmtSAR(pr.proposedShortfallDeduction)} ر.س</TableCell>
+                        <TableCell><Badge className={`text-[9px] ${ab.cls}`}>{ab.label}</Badge></TableCell>
+                        <TableCell className="text-center">
+                          <Button onClick={() => handleOpenApproval(pr)} size="sm" variant="outline"
+                            className="h-7 px-2 text-[10px] font-bold rounded-lg border-amber-400/40 text-amber-700 gap-1">
+                            <ShieldCheck className="w-3 h-3" />
+                            {pr.shortfallApprovalStatus === 'pending' ? 'مراجعة' : 'تعديل'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {filteredPayrolls.filter(p => p.proposedShortfallDeduction > 0).length === 0 && (
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">✓ لا يوجد عجز حضور في هذه الفترة</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* ── TAB: AUDIT LOG ────────────────────────────────────────────── */}
+        <TabsContent value="audit" className="mt-4">
+          <Card className="border-border/60 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden">
+            <div className="p-4 border-b border-border/40 bg-secondary/20 flex items-center gap-2">
+              <History className="w-4 h-4 text-muted-foreground" />
+              <h2 className="font-heading font-bold text-sm text-foreground">سجل التعديلات المالية (Audit Log)</h2>
+              <Badge variant="outline" className="text-[10px] mr-auto">للقراءة فقط — لا يمكن الحذف</Badge>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-secondary/60 text-[11px]">
+                    <TableHead>التاريخ والوقت</TableHead>
+                    <TableHead>الموظف</TableHead>
+                    <TableHead>الشهر</TableHead>
+                    <TableHead>الإجراء</TableHead>
+                    <TableHead>القيمة المعتمدة</TableHead>
+                    <TableHead>المعتمد بواسطة</TableHead>
+                    <TableHead>الملاحظات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditLog.length === 0 ? (
+                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">لا توجد سجلات بعد</TableCell></TableRow>
+                  ) : auditLog.map(entry => {
+                    const actionMap = {
+                      shortfall_approved: { label: 'اعتماد خصم', cls: 'bg-emerald-100 text-emerald-800' },
+                      shortfall_rejected: { label: 'رفض خصم', cls: 'bg-slate-100 text-slate-700' },
+                      shortfall_modified: { label: 'تعديل خصم', cls: 'bg-blue-100 text-blue-800' },
+                    };
+                    const a = actionMap[entry.action] || { label: entry.action, cls: 'bg-gray-100 text-gray-700' };
+                    return (
+                      <TableRow key={entry.id} className="text-[11px]">
+                        <TableCell className="font-mono text-[10px]">{new Date(entry.timestamp).toLocaleString('ar-SA')}</TableCell>
+                        <TableCell className="font-bold">#{entry.employeeNumber}</TableCell>
+                        <TableCell>{entry.monthPrefix}</TableCell>
+                        <TableCell><Badge className={`text-[9px] ${a.cls}`}>{a.label}</Badge></TableCell>
+                        <TableCell className="font-mono font-bold text-red-700">{fmtSAR(entry.finalDeduction)} ر.س</TableCell>
+                        <TableCell className="font-bold">{entry.approvedBy}</TableCell>
+                        <TableCell className="text-muted-foreground">{entry.note || '—'}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* ── PAYSLIP DIALOG ────────────────────────────────────────────────── */}
+      <Dialog open={payslipOpen} onOpenChange={setPayslipOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>قسيمة الراتب — {payslipEmp?.emp?.full_name}</DialogTitle>
+          </DialogHeader>
+          {payslipEmp && <PayslipPrint payrollResult={payslipEmp} month={month} />}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayslipOpen(false)} className="text-xs font-bold">إغلاق</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── APPROVAL DIALOG ───────────────────────────────────────────────── */}
+      <Dialog open={approvalOpen} onOpenChange={setApprovalOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold">
+              <ShieldCheck className="w-4 h-4 text-amber-600" />
+              مراجعة واعتماد خصم عجز الحضور
+            </DialogTitle>
+          </DialogHeader>
+          {approvalEmp && (
+            <div className="space-y-4 py-2 text-xs">
+              <div className="p-3 bg-secondary/50 rounded-xl border border-border/60">
+                <p className="font-bold text-sm">{approvalEmp.emp.full_name}</p>
+                <p className="text-muted-foreground">#{approvalEmp.emp.employee_number} | {approvalEmp.shiftName}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <div><p className="text-muted-foreground">إجمالي العجز</p><p className="font-black text-red-700">{formatMinutes(approvalEmp.totalShortfallMinutes)}</p></div>
+                <div><p className="text-muted-foreground">قيمة الساعة</p><p className="font-black">{fmtSAR(approvalEmp.hourlyRate)} ريال/س</p></div>
+                <div><p className="text-muted-foreground">الخصم المقترح</p><p className="font-black text-red-700">{fmtSAR(approvalEmp.proposedShortfallDeduction)} ر.س</p></div>
+                <div><p className="text-muted-foreground">الساعات المطلوبة</p><p className="font-black">{formatMinutes(approvalEmp.totalRequiredMinutes)}</p></div>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-xs">الإجراء المطلوب</Label>
+                <div className="flex gap-2">
+                  {[
+                    { v: 'approved', l: 'اعتماد الخصم', icon: <Check className="w-3 h-3" />, cls: 'border-emerald-500 text-emerald-700 bg-emerald-50' },
+                    { v: 'rejected', l: 'رفض الخصم', icon: <XCircle className="w-3 h-3" />, cls: 'border-slate-500 text-slate-700 bg-slate-50' },
+                    { v: 'modified', l: 'تعديل المبلغ', icon: <Edit3 className="w-3 h-3" />, cls: 'border-blue-500 text-blue-700 bg-blue-50' },
+                  ].map(opt => (
+                    <button key={opt.v} onClick={() => setApprovalAction(opt.v)}
+                      className={`flex-1 flex items-center justify-center gap-1 py-2 px-2 rounded-xl border font-bold text-[11px] transition-all ${approvalAction === opt.v ? opt.cls + ' ring-2 ring-offset-1 ring-current' : 'border-border/60 text-muted-foreground bg-white hover:bg-secondary/50'}`}>
+                      {opt.icon} {opt.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {approvalAction === 'modified' && (
+                <div className="space-y-1">
+                  <Label className="font-bold text-xs">المبلغ المعدل (ريال)</Label>
+                  <Input type="number" value={approvalCustomAmt} onChange={e => setApprovalCustomAmt(e.target.value)}
+                    min="0" max={approvalEmp.proposedShortfallDeduction} step="0.5"
+                    className="rounded-xl text-xs h-9" placeholder="أدخل المبلغ المعدل" />
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label className="font-bold text-xs">سبب القرار (مطلوب للتوثيق)</Label>
+                <Textarea value={approvalNote} onChange={e => setApprovalNote(e.target.value)} rows={2}
+                  className="rounded-xl text-xs" placeholder="مثال: تصحيح بصمة يوم 15/8، أو إجازة غير مسجلة..." />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setApprovalOpen(false)} className="text-xs font-bold">إلغاء</Button>
+            <Button onClick={handleApprovalSubmit}
+              className={`text-xs font-bold ${approvalAction === 'rejected' ? 'bg-slate-600' : approvalAction === 'modified' ? 'bg-blue-600' : 'bg-emerald-600'} text-white`}>
+              {approvalAction === 'rejected' ? 'رفض الخصم' : approvalAction === 'modified' ? 'اعتماد المبلغ المعدل' : 'اعتماد الخصم'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
