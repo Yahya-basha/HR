@@ -280,6 +280,25 @@ export default function Reports() {
     return Array.from(set);
   }, [employees]);
 
+  // Filtered employees list based on selected branch
+  const branchFilteredEmployees = useMemo(() => {
+    if (filterBranch === 'all') return employees;
+    return employees.filter(e => (e.branch_name || e.branch || '') === filterBranch);
+  }, [employees, filterBranch]);
+
+  // When branch changes, ensure selected employee belongs to that branch
+  const handleBranchChange = (newBranch) => {
+    setFilterBranch(newBranch);
+    if (newBranch !== 'all' && filterEmpId !== 'all') {
+      const stillValid = employees.some(e => 
+        String(e.employee_number || e.id) === String(filterEmpId) && 
+        (e.branch_name || e.branch || '') === newBranch
+      );
+      if (!stillValid) setFilterEmpId('all');
+    }
+  };
+
+
   // ─── GENERATE REPORT ENGINE ───────────────────────────────────────────────
   const handleGenerateReport = () => {
     setIsGenerating(true);
@@ -682,35 +701,46 @@ export default function Reports() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
               
-              {/* 1. Employee Selector */}
+              {/* 1. Branch Selector (FIRST) */}
               <div className="space-y-1.5">
-                <label className="font-bold text-muted-foreground">الموظف المعني:</label>
-                <Select value={filterEmpId} onValueChange={setFilterEmpId}>
-                  <SelectTrigger className="rounded-2xl text-xs h-10 font-bold bg-slate-50 dark:bg-slate-800/60 border-0">
-                    <SelectValue placeholder="اختر الموظف..." />
+                <label className="font-bold text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>1. الفرع أو القسم:</span>
+                </label>
+                <Select value={filterBranch} onValueChange={handleBranchChange}>
+                  <SelectTrigger className="rounded-2xl text-xs h-10 font-bold bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <SelectValue placeholder="كافة الفروع والأقسام" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">كافة الموظفين (الكل)</SelectItem>
-                    {employees.map(e => (
-                      <SelectItem key={e.id} value={String(e.employee_number || e.id)}>
-                        {e.employee_number} - {e.full_name} ({e.national_id || '--'})
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">🏢 كافة الفروع والأقسام ({employees.length} موظف)</SelectItem>
+                    {branches.map(b => {
+                      const count = employees.filter(e => (e.branch_name || e.branch || '') === b).length;
+                      return (
+                        <SelectItem key={b} value={b}>
+                          📍 {b} ({count} موظف)
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* 2. Branch Selector */}
+              {/* 2. Cascading Employee Selector (SECOND - Filtered by chosen branch) */}
               <div className="space-y-1.5">
-                <label className="font-bold text-muted-foreground">الفرع / القسم:</label>
-                <Select value={filterBranch} onValueChange={setFilterBranch}>
-                  <SelectTrigger className="rounded-2xl text-xs h-10 font-bold bg-slate-50 dark:bg-slate-800/60 border-0">
-                    <SelectValue placeholder="كافة الفروع" />
+                <label className="font-bold text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>2. الموظف المستهدف:</span>
+                </label>
+                <Select value={filterEmpId} onValueChange={setFilterEmpId}>
+                  <SelectTrigger className="rounded-2xl text-xs h-10 font-bold bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <SelectValue placeholder="اختر الموظف..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">كافة الفروع والأقسام</SelectItem>
-                    {branches.map(b => (
-                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    <SelectItem value="all">👥 كافة موظفي الفرع المختار ({branchFilteredEmployees.length} موظف)</SelectItem>
+                    {branchFilteredEmployees.map(e => (
+                      <SelectItem key={e.id} value={String(e.employee_number || e.id)}>
+                        #{e.employee_number} - {e.full_name} ({e.national_id || '--'})
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
