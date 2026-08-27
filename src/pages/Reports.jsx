@@ -317,34 +317,39 @@ export default function Reports() {
       const repId = currentReportDef?.id;
 
       if (repId === 'daily_biometrics') {
-        // Daily attendance logs between fromDate and toDate
+        // Daily attendance logs between fromDate and toDate using verified master engine
+        const monthKey = fromDate.slice(0, 7) || '2026-08';
+        const settings = getPayrollSettings();
+
         targetEmployees.forEach(emp => {
-          const empLogs = attendanceLogs.filter(l => {
-            const matchesEmp = String(l.employee_number) === String(emp.employee_number) || l.employee_id === emp.id;
-            const logDate = l.log_date || '';
-            const inRange = logDate >= fromDate && logDate <= toDate;
-            return matchesEmp && inRange;
+          const pr = computeEmployeePayroll(emp, attendanceLogs, shifts, {
+            ...settings,
+            monthPrefix: monthKey
           });
 
-          empLogs.forEach(l => {
-            const punches = (l.punches || []).filter(p => p && p.trim() !== '');
-            const checkIn = punches.length > 0 ? punches[0] : (l.check_in_time || '--:--');
-            const checkOut = punches.length > 1 ? punches[punches.length - 1] : (l.check_out_time || '--:--');
-            const actualHrs = l.actual_minutes ? (l.actual_minutes / 60).toFixed(1) : (l.actual_hours || 0);
+          const days = (pr.dailyDetails || []).filter(d => {
+            const dStr = d.dateStr || d.date || '';
+            return !dStr || (dStr >= fromDate && dStr <= toDate);
+          });
+
+          days.forEach(d => {
+            const checkIn = d.firstCheckIn && d.firstCheckIn !== '—' ? d.firstCheckIn : (d.checkIn || '--:--');
+            const checkOut = d.lastCheckOut && d.lastCheckOut !== '—' ? d.lastCheckOut : (d.checkOut || '--:--');
+            const actualHrs = d.actualMinutes ? (d.actualMinutes / 60).toFixed(1) : (d.actualHours || 0);
 
             rows.push({
-              date: l.log_date,
-              day_name: l.day_name || 'اليوم',
+              date: d.dateStr || `${monthKey}-${String(d.dayNum).padStart(2, '0')}`,
+              day_name: d.dayName || 'اليوم',
               emp_name: emp.full_name,
               emp_num: emp.employee_number,
-              branch: emp.branch_name || 'الفرع الرئيسي',
-              shift: l.shift_name || emp.shift_name || 'الوردية الصباحية',
+              branch: emp.branch_name || emp.branch || 'الفرع الرئيسي',
+              shift: emp.shift_name || d.shiftName || 'الوردية الصباحية',
               check_in: checkIn,
               check_out: checkOut,
               actual_hours: actualHrs,
-              late_minutes: l.late_minutes || 0,
-              early_leave: l.early_leave_minutes || 0,
-              status: l.status === 'present' ? 'حاضر' : l.status === 'late' ? 'متأخر' : l.status === 'absent' ? 'غائب' : 'إجازة/عطلة'
+              late_minutes: d.lateMinutes || 0,
+              early_leave: d.earlyMinutes || 0,
+              status: d.statusLabel || (d.status === 'present' ? 'حاضر ومنضبط' : d.status === 'late' ? 'متأخر' : d.status === 'absent' ? 'غائب' : 'عطلة/معفى')
             });
           });
         });
@@ -355,6 +360,7 @@ export default function Reports() {
           totalRows: rows.length,
           totalHours: rows.reduce((acc, r) => acc + Number(r.actual_hours || 0), 0).toFixed(1),
           totalLateMins: rows.reduce((acc, r) => acc + Number(r.late_minutes || 0), 0),
+          presentDays: rows.filter(r => r.status.includes('حاضر') || r.status.includes('متأخر')).length,
           employeesCount: targetEmployees.length
         };
 
