@@ -190,7 +190,7 @@ export default function Devices() {
       employee_id: emp.id,
       employee_name: emp.full_name,
       log_date: now.toISOString().split('T')[0],
-      check_in: punchType === 'check_in' ? timeStr : '08:00',
+      check_in: punchType === 'check_in' ? timeStr : null,
       check_out: punchType === 'check_out' ? timeStr : null,
       status: isLate ? 'late' : 'present',
       notes: `تم التسجيل تلقائياً عبر جهاز بصمة ADMS (${devices[0]?.name || 'ZKTeco'})`

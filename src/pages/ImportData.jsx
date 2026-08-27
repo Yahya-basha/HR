@@ -441,8 +441,8 @@ export default function ImportData() {
       if (matchedEmp) matched++;
       else unmatched++;
 
-      // Compute status & delay
-      let computedStatus = 'present';
+      // Compute status & delay strictly from actual data
+      let computedStatus = 'absent';
       if (statusText === 'غائب' || statusText.includes('غياب')) {
         computedStatus = 'absent';
       } else if (statusText === 'إجازة' || statusText.includes('اجاز')) {
@@ -451,15 +451,19 @@ export default function ImportData() {
         computedStatus = 'exempt';
       } else if (statusText === 'لم يباشر') {
         computedStatus = 'not_started';
-      } else if (statusText.includes('عطلة')) {
-        computedStatus = 'weekend';
-      } else if (checkIn) {
+      } else if (statusText.includes('عطلة') || dayName.includes('جمع') || dayName.toLowerCase().includes('fri')) {
+        computedStatus = 'exempt';
+      } else if (checkIn && checkIn !== '—') {
         const shiftStartHour = parseInt((shiftTime.split('--')[0] || shiftTime.split('-')[0] || '08').trim().split(':')[0], 10) || 8;
         const inHour = parseInt(checkIn.split(':')[0], 10) || 8;
         const inMin = parseInt(checkIn.split(':')[1], 10) || 0;
         if (inHour > shiftStartHour || (inHour === shiftStartHour && inMin > 15)) {
           computedStatus = 'late';
+        } else {
+          computedStatus = 'present';
         }
+      } else {
+        computedStatus = 'absent';
       }
 
       const isNewEmpAuto = cleanEmpNum === '1015' || newEmps.some(ne => ne.employee_number === cleanEmpNum);
@@ -476,7 +480,7 @@ export default function ImportData() {
         shiftTime: shiftTime || '08:00 -- 17:00',
         timestampStr,
         rawPunchesStr,
-        checkIn: checkIn || (computedStatus === 'present' ? '08:00:00' : '—'),
+        checkIn: checkIn || '—',
         checkOut: checkOut || '—',
         punchCount: Math.max(timestampTimes.length, rawPunchesTimes.length, (checkIn ? 1 : 0)),
         status: computedStatus,
