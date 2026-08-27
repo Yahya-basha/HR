@@ -1,254 +1,830 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { useI18n } from '@/lib/i18n';
-import { 
-  Plus, 
-  Search, 
-  Eye, 
-  Pencil, 
-  Trash2, 
-  Building2, 
-  Clock, 
-  IdCard, 
-  Phone, 
-  Mail, 
-  DollarSign, 
-  ShieldCheck, 
+import { useToast } from '@/components/ui/use-toast';
+import {
+  Plus,
+  Search,
+  Eye,
+  Pencil,
+  Trash2,
+  Building2,
+  Clock,
+  IdCard,
+  Phone,
+  Mail,
+  DollarSign,
+  ShieldCheck,
   UserCheck,
-  Globe
+  Globe,
+  Users,
+  UserX,
+  MapPin,
+  MessageCircle,
+  Share2,
+  Filter,
+  Download,
+  LayoutGrid,
+  List,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Printer,
+  CheckCircle2,
+  Calendar
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import EmployeeForm from '@/components/EmployeeForm';
-import { useToast } from '@/components/ui/use-toast';
-import { getEmployeeActiveAdvance } from '@/lib/payrollEngine';
-
-const nationalityBadge = (nat) => {
-  const map = {
-    'سعودي': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200',
-    'مصري': 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-200',
-    'يمني': 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200',
-    'سوري': 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-200',
-  };
-  return map[nat] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-};
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 export default function Employees() {
   const { user } = useAuth();
-  const { t } = useI18n();
   const { toast } = useToast();
-  const isAdmin = user?.role === 'admin';
-  const [employees, setEmployees] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const navigate = useNavigate();
 
-  const load = async () => {
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Filters & Search
+  const [search, setSearch] = useState('');
+  const [activeTabFilter, setActiveTabFilter] = useState('all'); // 'all' | 'saudi' | 'resident' | 'main' | 'hyundai' | 'kia' | 'mgmt'
+  const [branchFilter, setBranchFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
+
+  // Add / Edit Modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingEmp, setEditingEmp] = useState(null);
+  const [form, setForm] = useState({
+    employee_number: '',
+    full_name: '',
+    job_title: 'بائع قطع غيار',
+    branch_name: 'الفرع الرئيسي',
+    department_name: 'درة السيارة لقطع الغيار',
+    shift: 'فترة عمل غير السعوديين',
+    nationality: 'سعودي',
+    national_id: '',
+    phone: '',
+    email: '',
+    salary: 3000,
+    join_date: '2026-01-01',
+    gender: 'male',
+    status: 'active'
+  });
+
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [emps, depts] = await Promise.all([
-        base44.entities.Employee.list(),
-        base44.entities.Department.list(),
-      ]);
-      setEmployees(emps || []);
-      setDepartments(depts || []);
-    } catch (err) {
-      console.error(err);
+      const list = await base44.entities.Employee.list();
+      setEmployees(list || []);
+    } catch (e) {
+      console.error('Error loading employees:', e);
+      toast({ title: 'خطأ في تحميل الموظفين', description: e.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
+  }, [toast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Statistics calculation (Ektefa Exact KPI cards)
+  const stats = useMemo(() => {
+    const total = employees.length;
+    const active = employees.filter(e => e.status !== 'inactive').length;
+    const inactive = employees.filter(e => e.status === 'inactive').length;
+    const saudi = employees.filter(e => e.nationality === 'سعودي').length;
+    const resident = total - saudi;
+    const male = employees.filter(e => e.gender !== 'female').length;
+    const female = total - male;
+
+    return { total, active, inactive, saudi, resident, male, female };
+  }, [employees]);
+
+  // Filtered employees list
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(emp => {
+      // 1. Search filter
+      const q = search.toLowerCase();
+      const matchSearch = !search ||
+        (emp.full_name || '').toLowerCase().includes(q) ||
+        (emp.employee_number || '').toString().includes(q) ||
+        (emp.phone || '').includes(q) ||
+        (emp.email || '').toLowerCase().includes(q) ||
+        (emp.job_title || '').toLowerCase().includes(q) ||
+        (emp.national_id || '').includes(q);
+
+      // 2. Tab Filter
+      let matchTab = true;
+      if (activeTabFilter === 'saudi') matchTab = emp.nationality === 'سعودي';
+      else if (activeTabFilter === 'resident') matchTab = emp.nationality !== 'سعودي';
+      else if (activeTabFilter === 'main') matchTab = (emp.branch_name || '').includes('الرئيسي');
+      else if (activeTabFilter === 'hyundai') matchTab = (emp.branch_name || '').includes('هونداي');
+      else if (activeTabFilter === 'kia') matchTab = (emp.branch_name || '').includes('كيا');
+      else if (activeTabFilter === 'mgmt') matchTab = (emp.branch_name || '').includes('الإدارة');
+
+      // 3. Branch filter dropdown
+      const matchBranch = branchFilter === 'all' || (emp.branch_name || '') === branchFilter;
+
+      return matchSearch && matchTab && matchBranch;
+    });
+  }, [employees, search, activeTabFilter, branchFilter]);
+
+  // Handle Add New
+  const handleOpenAdd = () => {
+    const nextNum = String(Math.max(...employees.map(e => Number(e.employee_number) || 1000)) + 1);
+    setEditingEmp(null);
+    setForm({
+      employee_number: nextNum,
+      full_name: '',
+      job_title: 'بائع قطع غيار',
+      branch_name: 'الفرع الرئيسي',
+      department_name: 'درة السيارة لقطع الغيار',
+      shift: 'فترة عمل غير السعوديين',
+      nationality: 'سعودي',
+      national_id: '',
+      phone: '966',
+      email: '',
+      salary: 3000,
+      join_date: new Date().toISOString().split('T')[0],
+      gender: 'male',
+      status: 'active'
+    });
+    setModalOpen(true);
   };
 
-  useEffect(() => { load(); }, []);
+  // Handle Edit
+  const handleOpenEdit = (emp) => {
+    setEditingEmp(emp);
+    setForm({
+      employee_number: emp.employee_number || '',
+      full_name: emp.full_name || '',
+      job_title: emp.job_title || 'بائع قطع غيار',
+      branch_name: emp.branch_name || 'الفرع الرئيسي',
+      department_name: emp.department_name || 'درة السيارة لقطع الغيار',
+      shift: emp.shift || 'فترة عمل غير السعوديين',
+      nationality: emp.nationality || 'سعودي',
+      national_id: emp.national_id || '',
+      phone: emp.phone || '',
+      email: emp.email || '',
+      salary: emp.salary || 3000,
+      join_date: emp.join_date || '2026-01-01',
+      gender: emp.gender || 'male',
+      status: emp.status || 'active'
+    });
+    setModalOpen(true);
+  };
 
-  const filtered = employees.filter((e) => {
-    const q = search.toLowerCase();
-    if (!q) return true;
-    return (
-      e.employee_number?.toString().includes(q) ||
-      e.full_name?.toLowerCase().includes(q) ||
-      e.job_title?.toLowerCase().includes(q) ||
-      e.department_name?.toLowerCase().includes(q) ||
-      e.branch_name?.toLowerCase().includes(q) ||
-      e.nationality?.toLowerCase().includes(q) ||
-      e.phone?.includes(q) ||
-      e.email?.toLowerCase().includes(q)
-    );
-  });
-
-  const openAdd = () => { setEditing(null); setFormOpen(true); };
-  const openEdit = (emp) => { setEditing(emp); setFormOpen(true); };
-
-  const handleDelete = async (emp) => {
-    const activeAdvance = getEmployeeActiveAdvance(emp.employee_number || emp.id);
-    if (activeAdvance && Number(activeAdvance.remaining_balance) > 0) {
-      alert(`⛔ تنبيه أمان مالي وإداري:\n\nلا يمكن حذف الموظف أو إنهاء خدماته لوجود سلفة / مديونية قائمة غير مسددة بالكامل بمبلغ (${Number(activeAdvance.remaining_balance).toLocaleString('en-US')} ر.س).\n\nيجب تصفية وسداد كامل السلفة أولاً قبل إخلاء طرف الموظف أو حذفه من النظام.`);
+  // Save Employee (Create or Update)
+  const handleSave = async () => {
+    if (!form.full_name.trim()) {
+      toast({ title: 'يرجى إدخال اسم الموظف بالكامل', variant: 'destructive' });
       return;
     }
 
-    if (!confirm(`هل أنت متأكد من حذف الموظف ${emp.full_name} (${emp.employee_number})؟`)) return;
     try {
-      await base44.entities.Employee.delete(emp.id);
-      toast({ title: 'تم حذف الموظف بنجاح' });
-      load();
-    } catch (err) {
-      toast({ title: 'خطأ أثناء الحذف', description: err.message, variant: 'destructive' });
+      if (editingEmp) {
+        await base44.entities.Employee.update(editingEmp.id, form);
+        toast({ title: '✓ تم تحديث بيانات الموظف بنجاح' });
+      } else {
+        await base44.entities.Employee.create(form);
+        toast({ title: '✓ تم إضافة الموظف الجديد بنجاح' });
+      }
+      setModalOpen(false);
+      loadData();
+    } catch (e) {
+      toast({ title: 'خطأ أثناء الحفظ', description: e.message, variant: 'destructive' });
     }
   };
 
+  // Delete Employee
+  const handleDelete = async (emp) => {
+    if (!confirm(`هل أنت متأكد من حذف الموظف ${emp.full_name} (#${emp.employee_number})؟`)) return;
+    try {
+      await base44.entities.Employee.delete(emp.id);
+      toast({ title: '✓ تم حذف الموظف بنجاح' });
+      loadData();
+    } catch (e) {
+      toast({ title: 'خطأ أثناء الحذف', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  // Export CSV
+  const handleExportCSV = () => {
+    if (filteredEmployees.length === 0) {
+      toast({ title: 'لا توجد بيانات للتصدير' });
+      return;
+    }
+    const headers = ['الرقم الوظيفي', 'الاسم', 'المسمى الوظيفي', 'الفرع', 'الجنسية', 'الهوية', 'الجوال', 'الإيميل', 'الراتب', 'تاريخ الانضمام'];
+    const rows = filteredEmployees.map(e => [
+      e.employee_number,
+      e.full_name,
+      e.job_title,
+      e.branch_name,
+      e.nationality,
+      e.national_id,
+      e.phone,
+      e.email,
+      e.salary,
+      e.join_date
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,﻿' + [headers.join(','), ...rows.map(r => r.map(c => `"${c || ''}"`).join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `دليل_الموظفين_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: '✓ تم تصدير ملف الموظفين بنجاح' });
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">دليل الموظفين وسجلات الكادر ({employees.length} موظف)</h1>
-          <p className="text-muted-foreground text-sm mt-1">إدارة بيانات الموظفين، الأرقام الوظيفية، الفروع، والرواتب</p>
+    <div className="space-y-6" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
+      
+      {/* ─── 1. TOP STATS CARDS (EKTEFA EXACT "ملخص" ROW) ──────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="font-heading font-black text-sm text-foreground flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-sky-500" />
+            ملخص وإحصائيات القوى العاملة
+          </h2>
+          <span className="text-xs text-muted-foreground font-mono font-bold">
+            إجمالي {stats.total} موظف
+          </span>
         </div>
-        <Button onClick={openAdd} className="bg-primary text-primary-foreground shadow-sm">
-          <Plus className="w-4 h-4 me-2" /> إضافة موظف جديد
-        </Button>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          
+          {/* Active */}
+          <div 
+            onClick={() => setActiveTabFilter('all')}
+            className={`p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-transform ${
+              activeTabFilter === 'all' ? 'ring-2 ring-sky-500 border-sky-500' : ''
+            }`}
+          >
+            <div>
+              <div className="text-[11px] text-muted-foreground font-bold">نشط</div>
+              <div className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">{stats.active}</div>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+              <UserCheck className="w-5 h-5" />
+            </div>
+          </div>
+
+          {/* Inactive */}
+          <div 
+            className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between"
+          >
+            <div>
+              <div className="text-[11px] text-muted-foreground font-bold">غير نشط</div>
+              <div className="font-mono font-black text-2xl text-slate-400 mt-1">{stats.inactive}</div>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
+              <UserX className="w-5 h-5" />
+            </div>
+          </div>
+
+          {/* Citizens (Saudi) */}
+          <div 
+            onClick={() => setActiveTabFilter(activeTabFilter === 'saudi' ? 'all' : 'saudi')}
+            className={`p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-transform ${
+              activeTabFilter === 'saudi' ? 'ring-2 ring-emerald-500 border-emerald-500' : ''
+            }`}
+          >
+            <div>
+              <div className="text-[11px] text-muted-foreground font-bold">مواطن</div>
+              <div className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">{stats.saudi}</div>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+
+          {/* Residents */}
+          <div 
+            onClick={() => setActiveTabFilter(activeTabFilter === 'resident' ? 'all' : 'resident')}
+            className={`p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-transform ${
+              activeTabFilter === 'resident' ? 'ring-2 ring-teal-500 border-teal-500' : ''
+            }`}
+          >
+            <div>
+              <div className="text-[11px] text-muted-foreground font-bold">مقيم</div>
+              <div className="font-mono font-black text-2xl text-teal-600 dark:text-teal-400 mt-1">{stats.resident}</div>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-teal-500 text-white flex items-center justify-center shadow-md shadow-teal-500/20">
+              <Globe className="w-5 h-5" />
+            </div>
+          </div>
+
+          {/* Males */}
+          <div 
+            className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between"
+          >
+            <div>
+              <div className="text-[11px] text-muted-foreground font-bold">ذكر</div>
+              <div className="font-mono font-black text-2xl text-blue-600 dark:text-blue-400 mt-1">{stats.male}</div>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+
+          {/* Females */}
+          <div 
+            className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between"
+          >
+            <div>
+              <div className="text-[11px] text-muted-foreground font-bold">أنثى</div>
+              <div className="font-mono font-black text-2xl text-pink-500 mt-1">{stats.female}</div>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-pink-100 dark:bg-pink-950/60 text-pink-500 flex items-center justify-center">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+
+        </div>
       </div>
 
-      {/* Search & Filters */}
-      <Card className="p-4 border-border/60 shadow-sm rounded-2xl">
-        <div className="relative">
-          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="البحث بالرقم الوظيفي (مثال: 1001, 1022), الاسم, المسمى الوظيفي, الفرع, أو الجنسية..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="ps-10 h-12 rounded-xl bg-secondary/30 text-sm"
-          />
+      {/* ─── 2. MAIN TITLE BAR & ACTION BUTTONS ────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-3xl border shadow-sm">
+        <div>
+          <h1 className="text-xl font-heading font-black text-foreground flex items-center gap-2">
+            قائمة الموظفين
+            <Badge className="bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 text-xs font-mono font-bold">
+              {filteredEmployees.length} موظف
+            </Badge>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            دليل الكوادر الوظيفية، العقود، والملفات الشخصية 360°
+          </p>
         </div>
-      </Card>
 
-      {/* Employees Table */}
-      <Card className="border-border/60 shadow-sm rounded-2xl overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-secondary/40 hover:bg-secondary/40">
-              <TableHead className="font-bold text-xs">الرقم الوظيفي</TableHead>
-              <TableHead className="font-bold text-xs">الموظف والبيانات</TableHead>
-              <TableHead className="font-bold text-xs">المسمى الوظيفي</TableHead>
-              <TableHead className="font-bold text-xs">الفرع / القسم</TableHead>
-              <TableHead className="font-bold text-xs">فترة العمل (الوردية)</TableHead>
-              <TableHead className="font-bold text-xs">الراتب والبدلات</TableHead>
-              <TableHead className="font-bold text-xs">التأمينات (GOSI)</TableHead>
-              <TableHead className="font-bold text-xs">الجنسية</TableHead>
-              <TableHead className="font-bold text-xs text-center">الإجراءات</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              [...Array(6)].map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell colSpan={9} className="h-14 bg-secondary/20 animate-pulse" />
-                </TableRow>
-              ))
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-12 text-muted-foreground font-medium">
-                  لا توجد نتائج مطابقة لبحثك
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((emp) => (
-                <TableRow key={emp.id} className="hover:bg-secondary/20 transition-colors">
-                  {/* Employee Number #ID */}
-                  <TableCell className="font-mono font-bold">
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-bold px-2.5 py-1 text-xs">
-                      #{emp.employee_number || emp.id}
-                    </Badge>
-                  </TableCell>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View Mode Switcher */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-xl text-xs font-bold transition-all ${
+                viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-sky-600 shadow-sm' : 'text-muted-foreground'
+              }`}
+              title="عرض البطاقات"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`p-1.5 rounded-xl text-xs font-bold transition-all ${
+                viewMode === 'table' ? 'bg-white dark:bg-slate-700 text-sky-600 shadow-sm' : 'text-muted-foreground'
+              }`}
+              title="عرض الجدول"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
 
-                  {/* Name, Phone, Email */}
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10 border border-border shrink-0">
-                        <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
-                          {emp.full_name?.slice(0, 2) || 'HR'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <Link to={`/employees/${emp.id}`} className="font-bold text-sm text-foreground hover:text-primary transition-colors block">
-                          {emp.full_name}
-                        </Link>
-                        <span className="text-xs text-muted-foreground font-mono ltr-nums block" dir="ltr" style={{direction: "ltr", unicodeBidi: "embed"}}>{emp.phone || emp.email}</span>
-                      </div>
-                    </div>
-                  </TableCell>
+          {/* Export Button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExportCSV}
+            className="rounded-2xl text-xs font-bold gap-1.5 h-9"
+          >
+            <Download className="w-3.5 h-3.5 text-sky-600" />
+            <span>تصدير Excel</span>
+          </Button>
 
-                  {/* Job Title */}
-                  <TableCell className="font-medium text-xs text-foreground">
-                    {emp.job_title || 'بائع قطع غيار'}
-                  </TableCell>
+          {/* Add Employee Button (Ektefa Sky Blue) */}
+          <Button
+            size="sm"
+            onClick={handleOpenAdd}
+            className="bg-sky-600 hover:bg-sky-500 text-white rounded-2xl text-xs font-black gap-1.5 h-9 shadow-md shadow-sky-500/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>إضافة موظف جديد</span>
+          </Button>
+        </div>
+      </div>
 
-                  {/* Branch & Department */}
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                      <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <span>{emp.branch_name || emp.department_name || 'الفرع الرئيسي'}</span>
-                    </div>
-                  </TableCell>
+      {/* ─── 3. FILTER TABS & SEARCH TOOLBAR ────────────────────────────────── */}
+      <div className="space-y-3">
+        {/* Quick Branch & Category Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          {[
+            { id: 'all', label: `الكل (${stats.total})` },
+            { id: 'saudi', label: `🇸🇦 سعودي (${stats.saudi})` },
+            { id: 'resident', label: `🌍 مقيم (${stats.resident})` },
+            { id: 'main', label: 'الفرع الرئيسي' },
+            { id: 'hyundai', label: 'فرع هونداي (الرواف)' },
+            { id: 'kia', label: 'فرع كيا (السليم)' },
+            { id: 'mgmt', label: 'مكتب الإدارة' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTabFilter(tab.id)}
+              className={`px-3.5 py-1.5 rounded-2xl text-xs font-bold shrink-0 transition-all ${
+                activeTabFilter === tab.id
+                  ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                  : 'bg-white dark:bg-slate-900 text-muted-foreground border hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-                  {/* Shift */}
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                      <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      <span className="truncate max-w-[140px]">{emp.shift || 'دوام رسمي'}</span>
-                    </div>
-                  </TableCell>
-
-                  {/* Salary & Allowances */}
-                  <TableCell>
-                    <div className="text-xs font-bold text-foreground">
-                      {Number(emp.salary || 0).toLocaleString()} ر.س
-                    </div>
-                    {(emp.housing_allowance > 0 || emp.transport_allowance > 0) && (
-                      <div className="text-[10px] text-muted-foreground">
-                        بدلات: +{Number(emp.housing_allowance || 0) + Number(emp.transport_allowance || 0)} ر.س
-                      </div>
-                    )}
-                  </TableCell>
-
-                  {/* Nationality */}
-                  <TableCell>
-                    <Badge variant="outline" className={`text-[11px] font-bold px-2 py-0.5 border ${nationalityBadge(emp.nationality)}`}>
-                      {emp.nationality || 'سعودي'}
-                    </Badge>
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell>
-                    <div className="flex items-center justify-center gap-1">
-                      <Link to={`/employees/${emp.id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-secondary">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(emp)} className="h-8 w-8 hover:bg-secondary">
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(emp)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+        {/* Search & Branch Select Bar */}
+        <Card className="p-3 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="البحث بالاسم، الرقم الوظيفي (#1001), الجوال، أو رقم الهوية..."
+              className="ps-10 rounded-2xl text-xs h-10 bg-slate-50 dark:bg-slate-800/60 border-0 focus-visible:ring-1 focus-visible:ring-sky-500"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-bold hover:text-foreground"
+              >
+                مسح
+              </button>
             )}
-          </TableBody>
-        </Table>
-      </Card>
+          </div>
 
-      <EmployeeForm open={formOpen} onOpenChange={setFormOpen} employee={editing} departments={departments} onSaved={load} />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Select value={branchFilter} onValueChange={setBranchFilter}>
+              <SelectTrigger className="w-full sm:w-52 rounded-2xl text-xs h-10 bg-background">
+                <SelectValue placeholder="كافة الفروع" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كافة الفروع</SelectItem>
+                <SelectItem value="مكتب الإدارة">مكتب الإدارة</SelectItem>
+                <SelectItem value="الفرع الرئيسي">الفرع الرئيسي</SelectItem>
+                <SelectItem value="فرع هونداي ( الرواف )">فرع هونداي ( الرواف )</SelectItem>
+                <SelectItem value="فرع كيا ( السليم )">فرع كيا ( السليم )</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
+      </div>
+
+      {/* ─── 4. EMPLOYEE CARDS GRID VIEW (EKTEFA EXACT SPEC) ────────────────── */}
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {loading ? (
+            [...Array(6)].map((_, i) => (
+              <Card key={i} className="p-6 rounded-3xl border bg-white dark:bg-slate-900 animate-pulse h-64" />
+            ))
+          ) : filteredEmployees.length === 0 ? (
+            <div className="col-span-full py-16 text-center text-muted-foreground">
+              <Users className="w-12 h-12 mx-auto text-slate-300 mb-2" />
+              <div className="font-heading font-black text-sm text-foreground">لا توجد نتائج مطابقة لبحثك</div>
+              <p className="text-xs mt-1">جرب تغيير كلمات البحث أو إعادة ضبط الفلاتر</p>
+            </div>
+          ) : (
+            filteredEmployees.map((emp) => {
+              const whatsappNumber = (emp.phone || '').replace(/[^0-9]/g, '');
+              const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`مرحباً أخي ${emp.full_name}`)}`;
+
+              return (
+                <Card
+                  key={emp.id}
+                  className="p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
+                >
+                  {/* Top Header inside card */}
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      
+                      {/* Avatar with Status Pulse */}
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 via-teal-500 to-emerald-500 text-white flex items-center justify-center font-heading font-black text-base shadow-md group-hover:scale-105 transition-transform">
+                            {emp.full_name ? emp.full_name[0] : 'م'}
+                          </div>
+                          <span className="absolute -bottom-0.5 -end-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white ring-1 ring-emerald-300"></span>
+                        </div>
+
+                        <div className="min-w-0">
+                          <Link
+                            to={`/employees/${emp.id}`}
+                            className="font-heading font-black text-sm text-foreground hover:text-sky-600 transition-colors truncate block"
+                          >
+                            {emp.full_name}
+                          </Link>
+                          <div className="text-xs text-muted-foreground truncate font-medium">
+                            {emp.job_title || 'بائع قطع غيار'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Employee # Badge */}
+                      <Badge className="bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 font-mono font-black text-xs px-2.5 py-1 rounded-xl shrink-0">
+                        #{emp.employee_number}
+                      </Badge>
+                    </div>
+
+                    {/* Meta Chips */}
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                      
+                      {/* Branch */}
+                      <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border flex items-center gap-2">
+                        <Building2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                        <span className="truncate text-foreground font-bold text-[11px]">{emp.branch_name || 'الفرع الرئيسي'}</span>
+                      </div>
+
+                      {/* Shift */}
+                      <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="truncate text-foreground font-bold text-[11px]">{emp.shift || 'دوام رسمي'}</span>
+                      </div>
+
+                      {/* Phone */}
+                      <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="font-mono text-[11px] text-foreground font-bold truncate">{emp.phone || '—'}</span>
+                      </div>
+
+                      {/* Nationality */}
+                      <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                        <span className="text-[11px] text-foreground font-bold truncate">{emp.nationality || 'سعودي'}</span>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Card Actions Footer (Ektefa Pastel Buttons + 360 Link) */}
+                  <div className="pt-3 border-t border-border/70 flex items-center justify-between gap-2">
+                    
+                    {/* Direct Quick Tools */}
+                    <div className="flex items-center gap-1.5">
+                      {/* WhatsApp Button */}
+                      {emp.phone && (
+                        <a
+                          href={whatsappUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 flex items-center justify-center transition-colors shadow-sm"
+                          title="محادثة واتساب"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </a>
+                      )}
+
+                      {/* Email Button */}
+                      {emp.email && (
+                        <a
+                          href={`mailto:${emp.email}`}
+                          className="w-8 h-8 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 flex items-center justify-center transition-colors shadow-sm"
+                          title="إرسال بريد"
+                        >
+                          <Mail className="w-4 h-4" />
+                        </a>
+                      )}
+
+                      {/* Edit Button */}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleOpenEdit(emp)}
+                        className="w-8 h-8 rounded-xl hover:bg-slate-100 text-slate-600"
+                        title="تعديل الموظف"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+
+                      {/* Delete Button */}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDelete(emp)}
+                        className="w-8 h-8 rounded-xl hover:bg-rose-50 text-rose-500"
+                        title="حذف الموظف"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+
+                    {/* View Profile 360 Button */}
+                    <Link to={`/employees/${emp.id}`}>
+                      <Button
+                        size="sm"
+                        className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold gap-1.5 h-8 px-3"
+                      >
+                        <span>ملفي 360°</span>
+                        <ChevronLeft className="w-3.5 h-3.5 text-sky-400" />
+                      </Button>
+                    </Link>
+
+                  </div>
+                </Card>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ─── 5. EMPLOYEE TABLE VIEW ─────────────────────────────────────────── */}
+      {viewMode === 'table' && (
+        <Card className="rounded-3xl border shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs" style={{ direction: 'rtl' }}>
+              <thead>
+                <tr className="bg-sky-600 text-white font-heading font-black border-b border-sky-700">
+                  <th className="py-3 px-4"># الرقم</th>
+                  <th className="py-3 px-4">الموظف والبيانات</th>
+                  <th className="py-3 px-3">المسمى الوظيفي</th>
+                  <th className="py-3 px-3">الفرع</th>
+                  <th className="py-3 px-3">فترة العمل</th>
+                  <th className="py-3 px-3">رقم الجوال</th>
+                  <th className="py-3 px-3">الجنسية</th>
+                  <th className="py-3 px-3">تاريخ الانضمام</th>
+                  <th className="py-3 px-4 text-center">الخيارات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60">
+                {filteredEmployees.map((emp) => (
+                  <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="py-3 px-4 font-mono font-black text-sky-600">#{emp.employee_number}</td>
+                    <td className="py-3 px-4">
+                      <Link to={`/employees/${emp.id}`} className="font-bold text-foreground hover:text-sky-600 transition-colors">
+                        {emp.full_name}
+                      </Link>
+                      <div className="text-[10px] text-muted-foreground font-mono">{emp.email || '—'}</div>
+                    </td>
+                    <td className="py-3 px-3 text-foreground font-medium">{emp.job_title}</td>
+                    <td className="py-3 px-3 text-muted-foreground">{emp.branch_name}</td>
+                    <td className="py-3 px-3 font-medium">{emp.shift}</td>
+                    <td className="py-3 px-3 font-mono">{emp.phone || '—'}</td>
+                    <td className="py-3 px-3">
+                      <Badge variant="outline" className="text-[10px] font-bold">
+                        {emp.nationality || 'سعودي'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-3 font-mono text-muted-foreground">{emp.join_date}</td>
+                    <td className="py-3 px-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Link to={`/employees/${emp.id}`}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-sky-600 hover:bg-sky-50 rounded-lg">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                        </Link>
+                        <Button size="icon" variant="ghost" onClick={() => handleOpenEdit(emp)} className="h-7 w-7 hover:bg-slate-100 rounded-lg">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleDelete(emp)} className="h-7 w-7 text-rose-500 hover:bg-rose-50 rounded-lg">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* ─── ADD / EDIT EMPLOYEE MODAL ──────────────────────────────────────── */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-black text-base flex items-center gap-2">
+              <Users className="w-5 h-5 text-sky-600" />
+              {editingEmp ? `تعديل بيانات: ${editingEmp.full_name}` : 'إضافة موظف جديد للمنظومة'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="font-bold">الرقم الوظيفي:</Label>
+                <Input value={form.employee_number} onChange={(e) => setForm(prev => ({ ...prev, employee_number: e.target.value }))} className="rounded-xl font-mono font-bold" />
+              </div>
+              <div className="space-y-1">
+                <Label className="font-bold">الاسم بالكامل (بالعربية):</Label>
+                <Input value={form.full_name} onChange={(e) => setForm(prev => ({ ...prev, full_name: e.target.value }))} className="rounded-xl" placeholder="مثال: محمد علي السعوي" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="font-bold">المسمى الوظيفي:</Label>
+                <Input value={form.job_title} onChange={(e) => setForm(prev => ({ ...prev, job_title: e.target.value }))} className="rounded-xl" />
+              </div>
+              <div className="space-y-1">
+                <Label className="font-bold">الفرع المعتمد:</Label>
+                <Select value={form.branch_name} onValueChange={(val) => setForm(prev => ({ ...prev, branch_name: val }))}>
+                  <SelectTrigger className="rounded-xl text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="الفرع الرئيسي">الفرع الرئيسي</SelectItem>
+                    <SelectItem value="مكتب الإدارة">مكتب الإدارة</SelectItem>
+                    <SelectItem value="فرع هونداي ( الرواف )">فرع هونداي ( الرواف )</SelectItem>
+                    <SelectItem value="فرع كيا ( السليم )">فرع كيا ( السليم )</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="font-bold">فترة العمل (الوردية):</Label>
+                <Select value={form.shift} onValueChange={(val) => setForm(prev => ({ ...prev, shift: val }))}>
+                  <SelectTrigger className="rounded-xl text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="فترة عمل السعودي الصباح">فترة عمل السعودي الصباح</SelectItem>
+                    <SelectItem value="فترة عمل السعودي المساء">فترة عمل السعودي المساء</SelectItem>
+                    <SelectItem value="فترة عمل غير السعوديين">فترة عمل غير السعوديين</SelectItem>
+                    <SelectItem value="فترة عمل غير السعوديين (745)">فترة عمل غير السعوديين (745)</SelectItem>
+                    <SelectItem value="فترة عمل الاداره">فترة عمل الاداره</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="font-bold">الجنسية:</Label>
+                <Select value={form.nationality} onValueChange={(val) => setForm(prev => ({ ...prev, nationality: val }))}>
+                  <SelectTrigger className="rounded-xl text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="سعودي">سعودي</SelectItem>
+                    <SelectItem value="مصري">مصري</SelectItem>
+                    <SelectItem value="يمني">يمني</SelectItem>
+                    <SelectItem value="سوري">سوري</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="font-bold">رقم الهوية / الإقامة:</Label>
+                <Input value={form.national_id} onChange={(e) => setForm(prev => ({ ...prev, national_id: e.target.value }))} className="rounded-xl font-mono" />
+              </div>
+              <div className="space-y-1">
+                <Label className="font-bold">رقم الجوال:</Label>
+                <Input value={form.phone} onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))} className="rounded-xl font-mono" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="font-bold">البريد الإلكتروني:</Label>
+                <Input value={form.email} onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))} className="rounded-xl font-mono" />
+              </div>
+              <div className="space-y-1">
+                <Label className="font-bold">الراتب الأساسي (ر.س):</Label>
+                <Input type="number" value={form.salary} onChange={(e) => setForm(prev => ({ ...prev, salary: Number(e.target.value) }))} className="rounded-xl font-mono font-bold" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="font-bold">تاريخ المباشرة والانضمام:</Label>
+                <Input type="date" value={form.join_date} onChange={(e) => setForm(prev => ({ ...prev, join_date: e.target.value }))} className="rounded-xl font-mono" />
+              </div>
+              <div className="space-y-1">
+                <Label className="font-bold">الجنس:</Label>
+                <Select value={form.gender} onValueChange={(val) => setForm(prev => ({ ...prev, gender: val }))}>
+                  <SelectTrigger className="rounded-xl text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">ذكر</SelectItem>
+                    <SelectItem value="female">أنثى</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setModalOpen(false)} className="rounded-xl font-bold">
+              إلغاء
+            </Button>
+            <Button onClick={handleSave} className="bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold">
+              {editingEmp ? 'حفظ التعديلات' : 'إضافة الموظف'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
