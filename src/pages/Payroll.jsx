@@ -585,7 +585,7 @@ export default function Payroll() {
 
                         {/* 7. GOSI INSURANCE STATUS (NO DEDUCTION) */}
                         <td className="p-3 text-right">
-                          {pr.emp.is_insured !== false && pr.emp.is_insured !== 'false' ? (
+                          {(pr.emp.is_insured === true || pr.emp.is_insured === 'true') ? (
                             <div className="space-y-0.5">
                               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
                                 <span>🛡️ مؤمن عليه</span>

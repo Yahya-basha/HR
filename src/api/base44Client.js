@@ -703,6 +703,52 @@ function getTableName(entityName) {
 
 function toDbRecord(entityName, item) {
   if (!item) return item;
+
+  if (entityName === 'Employee') {
+    const isInsured = item.is_insured === true || item.is_insured === 'true';
+    const gosiNum = isInsured ? (item.gosi_number || '') : '';
+    
+    let existingManager = item.manager_name || null;
+    if (typeof existingManager === 'string' && existingManager.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(existingManager);
+        existingManager = parsed.manager_name || null;
+      } catch (e) {}
+    }
+
+    const meta = JSON.stringify({
+      is_insured: isInsured,
+      gosi_number: gosiNum,
+      manager_name: existingManager,
+      company: item.company || 'درة السيارة لقطع غيار السيارات',
+      gender: item.gender || 'male'
+    });
+
+    return {
+      id: item.id || ('emp_' + (item.employee_number || Date.now())),
+      employee_number: String(item.employee_number || item.id || '').replace('emp_', ''),
+      full_name: item.full_name || '',
+      email: item.email || null,
+      phone: item.phone || null,
+      job_title: item.job_title || '',
+      department_name: item.department_name || item.department || 'مكتب الإدارة',
+      branch_name: item.branch_name || item.branch || 'مكتب الإدارة',
+      shift: item.shift || 'فترة عمل غير سعودي',
+      manager_name: meta,
+      nationality: item.nationality || 'سعودي',
+      national_id: item.national_id || '',
+      id_expiry_date: item.id_expiry_date || null,
+      birth_date: item.birth_date || null,
+      join_date: item.join_date || item.hire_date || null,
+      salary: Number(item.salary) || 0,
+      housing_allowance: Number(item.housing_allowance) || 0,
+      transport_allowance: Number(item.transport_allowance) || 0,
+      leave_policy: item.leave_policy || 'الاجازة السنوية',
+      status: item.status || 'active',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
   if (entityName === 'AttendanceLog') {
     return {
       id: item.id || ('att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
@@ -732,6 +778,44 @@ function toDbRecord(entityName, item) {
 
 function fromDbRecord(entityName, row) {
   if (!row) return row;
+
+  if (entityName === 'Employee') {
+    let is_insured = true;
+    let gosi_number = '';
+    let manager_name = row.manager_name;
+    let company = 'درة السيارة لقطع غيار السيارات';
+
+    if (row.manager_name && typeof row.manager_name === 'string') {
+      if (row.manager_name.startsWith('{')) {
+        try {
+          const meta = JSON.parse(row.manager_name);
+          if (meta.is_insured !== undefined) {
+            is_insured = meta.is_insured === true || meta.is_insured === 'true';
+          }
+          if (meta.gosi_number !== undefined) {
+            gosi_number = meta.gosi_number;
+          }
+          if (meta.manager_name !== undefined) {
+            manager_name = meta.manager_name;
+          }
+          if (meta.company !== undefined) {
+            company = meta.company;
+          }
+        } catch (e) {}
+      }
+    }
+
+    return {
+      ...row,
+      is_insured,
+      gosi_number,
+      manager_name,
+      company,
+      department: row.department_name,
+      branch: row.branch_name
+    };
+  }
+
   if (entityName === 'AttendanceLog') {
     let extra = {};
     if (row.notes) {

@@ -218,7 +218,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const dailyOvertimeNote = overtimeDays > 0 ? overtimeDays + ' يوم × ' + overtimeDailyRate + ' = ' + dailyOvertimeAllowance + ' ريال' : null;
   // GOSI (Social Insurance) is 100% employer-covered — ZERO deduction on employee salary
   const isSaudi = (emp.nationality || '').includes('سعودي');
-  const isInsured = emp.is_insured !== false && emp.is_insured !== 'false';
+  const isInsured = emp.is_insured === true || emp.is_insured === 'true';
   const gosiNumber = emp.gosi_number || emp.gosi_subscription_number || (isInsured ? ('GSI-' + (emp.employee_number || '0000')) : '');
   const gosiDeduction = 0; // ZERO deduction from employee salary
 

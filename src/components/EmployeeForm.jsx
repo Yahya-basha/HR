@@ -92,6 +92,7 @@ export default function EmployeeForm({ open, onOpenChange, employee, departments
   useEffect(() => {
     if (open) {
       if (employee) {
+        const isInsuredVal = employee.is_insured === false || employee.is_insured === 'false' ? false : true;
         setForm({
           ...empty,
           ...employee,
@@ -105,7 +106,9 @@ export default function EmployeeForm({ open, onOpenChange, employee, departments
           employee_number: employee.employee_number || employee.employee_id || '',
           hire_date: employee.join_date || employee.hire_date || '',
           join_date: employee.join_date || employee.hire_date || '',
-          company: employee.company || 'درة السيارة لقطع غيار السيارات'
+          company: employee.company || 'درة السيارة لقطع غيار السيارات',
+          is_insured: isInsuredVal,
+          gosi_number: isInsuredVal ? (employee.gosi_number || '') : ''
         });
       } else {
         setForm({ ...empty, employee_number: String(1000 + Math.floor(Math.random() * 900)) });
@@ -330,9 +333,19 @@ export default function EmployeeForm({ open, onOpenChange, employee, departments
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">حالة التأمين الاجتماعي</Label>
-                  <Select value={form.is_insured ? 'true' : 'false'} onValueChange={(v) => set('is_insured', v === 'true')}>
+                  <Select
+                    value={form.is_insured ? 'true' : 'false'}
+                    onValueChange={(v) => {
+                      const isTrue = v === 'true';
+                      setForm(prev => ({
+                        ...prev,
+                        is_insured: isTrue,
+                        gosi_number: isTrue ? prev.gosi_number : ''
+                      }));
+                    }}
+                  >
                     <SelectTrigger className="bg-white dark:bg-slate-900">
-                      <SelectValue />
+                      <SelectValue placeholder="اختر حالة التأمين..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="true">مؤمن عليه في التأمينات (نشط)</SelectItem>
