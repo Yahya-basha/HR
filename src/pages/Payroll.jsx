@@ -1978,3 +1978,349 @@ function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls
     </div>
   );
 }
+
+
+// ─── DEDICATED ADVANCES & LOANS MANAGEMENT HUB COMPONENT ─────────────────────
+function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAdvance, onPrintAdvance, fmtNum }) {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'completed'
+  const { toast } = useToast();
+
+  // Statistics
+  const stats = useMemo(() => {
+    let totalGranted = 0;
+    let totalRepaid = 0;
+    let activeCount = 0;
+    let completedCount = 0;
+
+    advancesList.forEach(adv => {
+      totalGranted += Number(adv.total_amount) || 0;
+      totalRepaid += Number(adv.paid_amount) || 0;
+      const rem = (Number(adv.total_amount) || 0) - (Number(adv.paid_amount) || 0);
+      if (rem <= 0 || adv.status === 'completed') completedCount++;
+      else activeCount++;
+    });
+
+    const totalRemaining = Math.max(0, totalGranted - totalRepaid);
+    return { totalGranted, totalRepaid, totalRemaining, activeCount, completedCount, totalCount: advancesList.length };
+  }, [advancesList]);
+
+  // Filtered advances
+  const filtered = useMemo(() => {
+    return advancesList.filter(adv => {
+      const q = search.toLowerCase();
+      const matchSearch = !search ||
+        (adv.employee_name || '').toLowerCase().includes(q) ||
+        (adv.employee_number || '').toString().includes(q) ||
+        (adv.reason || '').toLowerCase().includes(q);
+
+      const rem = (Number(adv.total_amount) || 0) - (Number(adv.paid_amount) || 0);
+      const isComp = rem <= 0 || adv.status === 'completed';
+
+      let matchStatus = true;
+      if (statusFilter === 'active') matchStatus = !isComp;
+      if (statusFilter === 'completed') matchStatus = isComp;
+
+      return matchSearch && matchStatus;
+    });
+  }, [advancesList, search, statusFilter]);
+
+  const handleDelete = (adv) => {
+    if ((Number(adv.paid_amount) || 0) > 0) {
+      toast({
+        title: 'لا يمكن حذف هذه السلفة',
+        description: 'تم البدء في استقطاع أقساط هذه السلفة بالفعل ومسجلة في القيود المالية.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!confirm(`هل أنت متأكد من إلغاء سلفة الموظف: ${adv.employee_name} بمبلغ ${fmtNum(adv.total_amount)} ر.س؟`)) return;
+
+    // Delete advance from storage
+    const all = getAdvances().filter(a => a.id !== adv.id);
+    localStorage.setItem('green_arrow_hr_advances', JSON.stringify(all));
+    toast({ title: '✓ تم إلغاء السلفة بنجاح' });
+    onRefresh();
+  };
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      
+      {/* ─── 1. TOP TITLE BAR ──────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0 font-bold">
+            <CreditCard className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-heading font-black text-foreground">
+                نظام إدارة السلف والقروض المؤسسية
+              </h1>
+              <Badge className="bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 text-xs font-mono font-bold">
+                {advancesList.length} سلفة مسجلة
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              متابعة السلف، جدولة الأقساط الشهرية الآلية، وسندات لأمر المعتمدة
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={onOpenNewAdvance}
+            className="bg-purple-700 hover:bg-purple-600 text-white rounded-2xl text-xs font-black gap-2 h-10 px-5 shadow-md shadow-purple-500/20"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>تسجيل سلفة جديدة لموظف</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* ─── 2. TOP STATS CARDS ────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Total Granted */}
+        <Card className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-xs text-muted-foreground font-bold">إجمالي مبالغ السلف</div>
+            <div className="font-mono font-black text-2xl text-purple-700 dark:text-purple-400 mt-1">
+              {fmtNum(stats.totalGranted)} <span className="text-xs font-normal">ر.س</span>
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{stats.totalCount} سلفة إجمالية</div>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950 text-purple-700 flex items-center justify-center font-bold">
+            <CreditCard className="w-5 h-5" />
+          </div>
+        </Card>
+
+        {/* Repaid */}
+        <Card className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-xs text-muted-foreground font-bold">المبالغ المسددة والمستردة</div>
+            <div className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
+              {fmtNum(stats.totalRepaid)} <span className="text-xs font-normal">ر.س</span>
+            </div>
+            <div className="text-[10px] text-emerald-600 font-bold mt-0.5">
+              {stats.totalGranted > 0 ? Math.round((stats.totalRepaid / stats.totalGranted) * 100) : 0}% نسبة الاسترداد
+            </div>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center font-bold">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+        </Card>
+
+        {/* Remaining Unpaid */}
+        <Card className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-xs text-muted-foreground font-bold">الرصيد المتبقي قيد السداد</div>
+            <div className="font-mono font-black text-2xl text-rose-600 dark:text-rose-400 mt-1">
+              {fmtNum(stats.totalRemaining)} <span className="text-xs font-normal">ر.س</span>
+            </div>
+            <div className="text-[10px] text-rose-600 font-bold mt-0.5">ذمم مدينة قيد الاستقطاع</div>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950 text-rose-600 flex items-center justify-center font-bold">
+            <Clock className="w-5 h-5" />
+          </div>
+        </Card>
+
+        {/* Active Borrowers */}
+        <Card className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-xs text-muted-foreground font-bold">السلف النشطة الجارية</div>
+            <div className="font-mono font-black text-2xl text-sky-600 dark:text-sky-400 mt-1">
+              {stats.activeCount} <span className="text-xs font-normal">سلف</span>
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{stats.completedCount} سلفة مكتملة السداد</div>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950 text-sky-600 flex items-center justify-center font-bold">
+            <Users className="w-5 h-5" />
+          </div>
+        </Card>
+
+      </div>
+
+      {/* ─── 3. ADVANCES MASTER TABLE ───────────────────────────────────────── */}
+      <Card className="rounded-3xl border shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+        
+        {/* Search & Filter Bar */}
+        <div className="p-4 border-b bg-slate-50 dark:bg-slate-800/40 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-600" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="البحث باسم الموظف، الرقم الوظيفي، أو سبب السلفة..."
+              className="ps-10 rounded-2xl text-xs h-10 bg-white dark:bg-slate-900"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'all' ? 'bg-purple-700 text-white' : 'bg-white dark:bg-slate-900 text-muted-foreground border'
+              }`}
+            >
+              الكل ({advancesList.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('active')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'active' ? 'bg-purple-700 text-white' : 'bg-white dark:bg-slate-900 text-muted-foreground border'
+              }`}
+            >
+              السارية فقط ({stats.activeCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('completed')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'completed' ? 'bg-purple-700 text-white' : 'bg-white dark:bg-slate-900 text-muted-foreground border'
+              }`}
+            >
+              المسددة بالكامل ({stats.completedCount})
+            </button>
+          </div>
+        </div>
+
+        {/* Table Content */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-xs" style={{ direction: 'rtl' }}>
+            <thead>
+              <tr className="bg-purple-700 text-white font-heading font-black border-b border-purple-800">
+                <th className="py-3 px-4"># الموظف</th>
+                <th className="py-3 px-3">مبلغ السلفة</th>
+                <th className="py-3 px-3">القسط الشهري والمدة</th>
+                <th className="py-3 px-3">المسدد حتى الآن</th>
+                <th className="py-3 px-3">المتبقي للسداد</th>
+                <th className="py-3 px-3">شهر البداية</th>
+                <th className="py-3 px-3">الحالة</th>
+                <th className="py-3 px-4 text-center">الخيارات والطباعة</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground font-bold">
+                    لا توجد سلف مسجلة مطابقة للبحث
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((adv) => {
+                  const emp = employees.find(e => String(e.employee_number || e.id) === String(adv.employee_number));
+                  const total = Number(adv.total_amount) || 0;
+                  const paid = Number(adv.paid_amount) || 0;
+                  const remaining = Math.max(0, total - paid);
+                  const isCompleted = remaining <= 0 || adv.status === 'completed';
+                  const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+
+                  return (
+                    <tr key={adv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      
+                      {/* Employee Name & Badge */}
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-foreground text-xs">
+                          {emp?.full_name || adv.employee_name}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-mono">
+                          #{adv.employee_number} • {emp?.branch_name || 'الفرع الرئيسي'}
+                        </div>
+                      </td>
+
+                      {/* Total Amount */}
+                      <td className="py-3.5 px-3 font-mono font-black text-foreground">
+                        {fmtNum(adv.total_amount)} ر.س
+                      </td>
+
+                      {/* Monthly Installment */}
+                      <td className="py-3.5 px-3">
+                        <div className="font-mono font-bold text-purple-700 dark:text-purple-300">
+                          {fmtNum(adv.monthly_installment)} ر.س / شهر
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          على {adv.total_installments} أشهر
+                        </div>
+                      </td>
+
+                      {/* Paid with progress */}
+                      <td className="py-3.5 px-3">
+                        <div className="font-mono font-bold text-emerald-600">
+                          {fmtNum(paid)} ر.س ({percent}%)
+                        </div>
+                        <div className="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mt-1 overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${percent}%` }}></div>
+                        </div>
+                      </td>
+
+                      {/* Remaining */}
+                      <td className="py-3.5 px-3 font-mono font-black text-rose-600">
+                        {fmtNum(remaining)} ر.س
+                      </td>
+
+                      {/* Start Month */}
+                      <td className="py-3.5 px-3 font-mono text-muted-foreground">
+                        {adv.start_month}
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3.5 px-3">
+                        {isCompleted ? (
+                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px]">
+                            ✓ مسددة بالكامل
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold text-[10px]">
+                            🟢 سارية وقيد الاستقطاع
+                          </Badge>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          
+                          {/* Print Promissory Note A4 */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onPrintAdvance(adv)}
+                            className="h-8 text-xs font-bold rounded-xl gap-1 border-purple-200 text-purple-800 hover:bg-purple-50"
+                            title="طباعة سند وإقرار السلفة A4"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-purple-600" />
+                            سند السلفة A4
+                          </Button>
+
+                          {/* Delete if not paid */}
+                          {paid === 0 && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDelete(adv)}
+                              className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-xl"
+                              title="إلغاء السلفة"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+      </Card>
+
+    </div>
+  );
+}
