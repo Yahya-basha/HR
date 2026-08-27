@@ -7040,17 +7040,6 @@ initialData.EmploymentContract = initialData.Employee.map((e) => ({
   status: 'active'
 }));
 
-// Generate today attendance records
-const todayStr = new Date().toISOString().split('T')[0];
-initialData.AttendanceLog = [
-  { id: 'att_1', employee_id: 'emp_1001', employee_name: 'فهد ناصر محمد الجوعي', log_date: todayStr, check_in: '08:55', check_out: null, status: 'present' },
-  { id: 'att_2', employee_id: 'emp_1022', employee_name: 'يحيي محمد عبدالغفار باشا', log_date: todayStr, check_in: '08:00', check_out: null, status: 'present' },
-  { id: 'att_3', employee_id: 'emp_1005', employee_name: 'هشام ابوالفضل زغلول', log_date: todayStr, check_in: '08:10', check_out: null, status: 'present' },
-  { id: 'att_4', employee_id: 'emp_1002', employee_name: 'محمود طه المحيميد', log_date: todayStr, check_in: '08:20', check_out: null, status: 'late' },
-  { id: 'att_5', employee_id: 'emp_1004', employee_name: 'صالح علي المحيميد', log_date: todayStr, check_in: '07:55', check_out: null, status: 'present' },
-  { id: 'att_6', employee_id: 'emp_1013', employee_name: 'وضاح صالح سالم أحمد العولقي', log_date: todayStr, check_in: '08:05', check_out: null, status: 'present' }
-];
-
 function getLocalItems(entityName) {
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + entityName);
