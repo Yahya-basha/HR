@@ -13,46 +13,30 @@ function normalizeEmployeeBranches(list) {
   });
 }
 
-// ============================================================================
-// ZENITH HR SAAS - OFFICIAL ENTERPRISE DATABASE CLIENT
-// 100% Exact Live Data from Dora Cars Base44 Export
-// ============================================================================
-
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://omnvdvmmmarwsobadlsb.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_nUzUqD6WBgXey6SRU76zUA_Q5mlC1B5';
-
-const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-// Versioned key to ensure instant hydration in browser
 
 // ============================================================================
-// AUTO DATABASE SYNC & PURGE (Forces all browsers to load 100% exact live data)
+// AUTO DATABASE SYNC v8 (Guarantees zero cache mismatch across all browsers)
 // ============================================================================
-const CURRENT_DB_VERSION = 'v7_exact_live_aligned';
+const CURRENT_DB_VERSION = 'v8_perfect_excel_match';
 try {
   if (typeof window !== 'undefined' && window.localStorage) {
-    const savedVersion = localStorage.getItem('hr_flow_version');
-    if (savedVersion !== CURRENT_DB_VERSION) {
-      // Clear old cached logs
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith('hr_flow_') || k.startsWith('nexus_')) {
+    if (localStorage.getItem('hr_flow_db_ver') !== CURRENT_DB_VERSION) {
+      // Clear all legacy storage keys
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('hr_flow_') || k.startsWith('nexus_'))) {
           localStorage.removeItem(k);
         }
-      });
-      localStorage.setItem('hr_flow_version', CURRENT_DB_VERSION);
-      // Pre-seed clean attendance logs
-      localStorage.setItem('hr_flow_v7_dora_AttendanceLog', JSON.stringify(initialData.AttendanceLog));
-      localStorage.setItem('hr_flow_v7_dora_Employee', JSON.stringify(initialData.Employee));
+      }
+      localStorage.setItem('hr_flow_db_ver', CURRENT_DB_VERSION);
     }
   }
 } catch (e) {
-  console.warn('Storage sync init:', e);
+  console.warn('Storage sync:', e);
 }
 
-const STORAGE_PREFIX = 'hr_flow_v7_dora_';
+const STORAGE_PREFIX = 'hr_flow_v8_dora_';
+
 
 
 export const initialData = {

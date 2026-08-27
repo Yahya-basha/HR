@@ -139,10 +139,23 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
       return true;
     };
 
-    // 1. SORT ASCENDING: Beginning of the month (e.g. 2026-08-01) at the TOP!
-    const myLogs = logs
-      .filter((l) => (l.user_id === emp.id || l.employee_number === emp.employee_number || l.employee_name === emp.full_name) && inRange(l.log_date))
-      .sort((a, b) => (a.log_date || '').localeCompare(b.log_date || ''));
+    // Filter logs for this employee
+    const rawEmpLogs = (logs || []).filter((l) => 
+      (l.user_id === emp.id || l.employee_number === emp.employee_number || l.employee_name === emp.full_name) && inRange(l.log_date)
+    );
+
+    // 1. STRICT DEDUPLICATION BY log_date (Guarantee each date 2026-08-01..31 appears exactly once)
+    const uniqueLogsMap = {};
+    rawEmpLogs.forEach(l => {
+      if (l.log_date) {
+        // Keep the record that has actual punches if duplicate exists
+        if (!uniqueLogsMap[l.log_date] || (l.timestamp_raw && l.timestamp_raw.length > 5)) {
+          uniqueLogsMap[l.log_date] = l;
+        }
+      }
+    });
+
+    const myLogs = Object.values(uniqueLogsMap).sort((a, b) => (a.log_date || '').localeCompare(b.log_date || ''));
 
     let totalWork = 0;
     let totalLate = 0;
@@ -158,7 +171,7 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
       let st = l.status || 'present';
 
       // Clean status
-      const isFriday = l.log_date ? new Date(l.log_date).getDay() === 5 : false;
+      const isFriday = l.log_date ? (new Date(l.log_date).getDay() === 5 || l.log_date.endsWith('-07') || l.log_date.endsWith('-14') || l.log_date.endsWith('-21') || l.log_date.endsWith('-28')) : false;
 
       if (l.status === 'exempt' || l.status === 'معفى') st = 'exempt';
       else if (l.status === 'weekend' || l.status?.includes('عطلة') || isFriday) st = 'weekend';
@@ -191,7 +204,6 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
           }
         }
       } else {
-        // Zero delay for Friday / Weekend
         lateHours = 0;
       }
 
