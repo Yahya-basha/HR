@@ -6,6 +6,7 @@ import { useI18n } from '@/lib/i18n';
 import { Users, Clock, CalendarDays, UserPlus, LogIn, FileText, Download, CheckCircle2, ShieldAlert, IdCard, Globe, FileSignature } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import QuickActions from '@/components/QuickActions';
+import QuickActionsGrid from '@/components/QuickActionsGrid';
 import AttendanceDonut from '@/components/AttendanceDonut';
 import ActivityPanel from '@/components/ActivityPanel';
 import Announcements from '@/components/Announcements';
@@ -160,12 +161,9 @@ export default function Dashboard() {
           <h1 className="text-2xl font-heading font-bold mt-1">{greeting()}, {user?.full_name?.split(' ')[0] || 'Admin'}</h1>
           <p className="text-muted-foreground text-sm mt-1">{t('dashboard.adminOverview')}</p>
         </div>
-        <QuickActions actions={[
-          { icon: UserPlus, label: t('quick.addEmployee'), onClick: () => setEmpFormOpen(true), primary: true },
-          { icon: LogIn, label: t('quick.logAttendance'), onClick: () => navigate('/attendance') },
-          { icon: FileText, label: t('quick.submitLeave'), onClick: () => setLeaveFormOpen(true) },
-          { icon: Download, label: t('quick.exportData'), onClick: exportCSV },
-        ]} />
+        <div className="w-full">
+        <QuickActionsGrid />
+      </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">

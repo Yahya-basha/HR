@@ -17,70 +17,169 @@ import {
   FileText, 
   UploadCloud, 
   Megaphone, 
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  MessageSquare,
+  Briefcase,
+  TrendingUp,
+  FileCheck,
+  HelpCircle,
+  CreditCard,
+  UserCheck,
+  FolderOpen,
+  Sparkles,
+  Award
 } from 'lucide-react';
 
+export const EKTEFA_MODULES = [
+  {
+    id: 'dashboard',
+    label: 'الرئيسية',
+    icon: LayoutDashboard,
+    color: '#0284c7', // Sky Blue
+    badgeColor: 'bg-sky-500 text-white',
+    activeBg: 'bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200',
+    items: [
+      { to: '/', label: 'لوحة التحكم', icon: LayoutDashboard },
+      { to: '/employee-profile', label: 'ملفي', icon: UserCheck },
+      { to: '/leave', label: 'طلباتي', icon: CalendarDays },
+      { to: '/attendance', label: 'موافقاتي', icon: FileCheck },
+      { to: '/documents-print', label: 'مستنداتي', icon: FolderOpen },
+    ]
+  },
+  {
+    id: 'communication',
+    label: 'التواصل',
+    icon: MessageSquare,
+    color: '#ec4899', // Pink
+    badgeColor: 'bg-pink-500 text-white',
+    activeBg: 'bg-pink-50 text-pink-900 dark:bg-pink-950/40 dark:text-pink-200',
+    items: [
+      { to: '/announcements', label: 'الإعلانات والأحداث', icon: Megaphone, admin: true },
+      { to: '/announcements?tab=messages', label: 'الرسائل والتعاميم', icon: MessageSquare, admin: true },
+    ]
+  },
+  {
+    id: 'attendance',
+    label: 'الحضور',
+    icon: Clock,
+    color: '#f97316', // Orange
+    badgeColor: 'bg-orange-500 text-white',
+    activeBg: 'bg-orange-50 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200',
+    items: [
+      { to: '/attendance', label: 'إدارة البصمات', icon: Clock },
+      { to: '/devices', label: 'أجهزة البصمة', icon: Fingerprint, admin: true },
+      { to: '/import-data', label: 'رفع الحضور', icon: UploadCloud, admin: true },
+      { to: '/attendance?mode=manual', label: 'التحضير اليدوي', icon: FileCheck, admin: true },
+      { to: '/devices?sync=true', label: 'تحديث البصمات', icon: Fingerprint, admin: true },
+    ]
+  },
+  {
+    id: 'employees',
+    label: 'الموظفين',
+    icon: Users,
+    color: '#ef4444', // Red
+    badgeColor: 'bg-rose-500 text-white',
+    activeBg: 'bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200',
+    items: [
+      { to: '/employees', label: 'سجل الموظفين', icon: Users, admin: true },
+      { to: '/branches', label: 'الفروع والأقسام', icon: Building2, admin: true },
+      { to: '/shifts', label: 'الورديات وفترات العمل', icon: Timer, admin: true },
+      { to: '/contracts', label: 'العقود والتوثيق', icon: FileSignature, admin: true },
+      { to: '/leave-policies', label: 'سياسات الإجازات', icon: CalendarClock, admin: true },
+    ]
+  },
+  {
+    id: 'payroll',
+    label: 'الأجور',
+    icon: Wallet,
+    color: '#a855f7', // Purple
+    badgeColor: 'bg-purple-500 text-white',
+    activeBg: 'bg-purple-50 text-purple-900 dark:bg-purple-950/40 dark:text-purple-200',
+    items: [
+      { to: '/payroll', label: 'مسير الرواتب (4 مراحل)', icon: Wallet, admin: true },
+      { to: '/payroll?tab=advances', label: 'نظام السلف والقروض', icon: CreditCard, admin: true },
+      { to: '/rewards-penalties', label: 'إعدادات المكافآت والجزاءات', icon: Gift, admin: true },
+      { to: '/end-of-service', label: 'حاسبة نهاية الخدمة', icon: Calculator, admin: true },
+    ]
+  },
+  {
+    id: 'evaluation',
+    label: 'التقييم',
+    icon: Trophy,
+    color: '#14b8a6', // Teal
+    badgeColor: 'bg-teal-500 text-white',
+    activeBg: 'bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-200',
+    items: [
+      { to: '/evaluations', label: 'تقييم الأداء والموظفين', icon: Trophy, admin: true },
+      { to: '/evaluations?tab=kpis', label: 'مؤشرات الأداء الرئيسية', icon: Award, admin: true },
+    ]
+  },
+  {
+    id: 'development',
+    label: 'التطوير',
+    icon: TrendingUp,
+    color: '#f59e0b', // Amber
+    badgeColor: 'bg-amber-500 text-white',
+    activeBg: 'bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200',
+    items: [
+      { to: '/evaluations?tab=training', label: 'الدورات والتدريب', icon: TrendingUp, admin: true },
+      { to: '/announcements', label: 'خطط التطوير الوظيفي', icon: Briefcase, admin: true },
+    ]
+  },
+  {
+    id: 'reports',
+    label: 'التقارير',
+    icon: BarChart3,
+    color: '#f43f5e', // Coral
+    badgeColor: 'bg-rose-500 text-white',
+    activeBg: 'bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200',
+    items: [
+      { to: '/reports', label: 'تقارير الحضور والغياب', icon: BarChart3, admin: true },
+      { to: '/documents-print', label: 'طابعة المستندات والنماذج A4', icon: Printer, admin: true },
+      { to: '/print-templates', label: 'نماذج الطباعة الرسمية', icon: FileText, admin: true },
+    ]
+  },
+  {
+    id: 'settings',
+    label: 'الإعدادات',
+    icon: SettingsIcon,
+    color: '#d946ef', // Fuchsia
+    badgeColor: 'bg-fuchsia-500 text-white',
+    activeBg: 'bg-fuchsia-50 text-fuchsia-900 dark:bg-fuchsia-950/40 dark:text-fuchsia-200',
+    items: [
+      { to: '/settings', label: 'إعدادات المنظومة', icon: SettingsIcon },
+      { to: '/users', label: 'المستخدمون والصلاحيات', icon: Users, admin: true },
+      { to: '/settings?tab=payroll', label: 'إعدادات الرواتب والبدلات', icon: Wallet, admin: true },
+    ]
+  },
+  {
+    id: 'support',
+    label: 'الدعم',
+    icon: HelpCircle,
+    color: '#334155', // Slate
+    badgeColor: 'bg-slate-700 text-white',
+    activeBg: 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100',
+    items: [
+      { to: '/settings?tab=support', label: 'الدعم الفني والمساعدة', icon: HelpCircle },
+      { to: '/settings?tab=backup', label: 'النسخ الاحتياطي السحابي', icon: FolderOpen, admin: true },
+    ]
+  }
+];
+
 export function getNavGroups(isAdmin, t) {
-  return [
-    {
-      group: 'الرئيسية',
-      items: [
-        { to: '/', icon: LayoutDashboard, label: 'لوحة التحكم' },
-      ]
-    },
-    {
-      group: 'الموارد البشرية',
-      items: [
-        { to: '/employees', icon: Users, label: 'الموظفون', admin: true },
-        { to: '/branches', icon: Building2, label: 'الفروع', admin: true },
-        { to: '/shifts', icon: Timer, label: 'الورديات', admin: true },
-        { to: '/evaluations', icon: Trophy, label: 'تقييم الأداء', admin: true },
-      ]
-    },
-    {
-      group: 'الحضور والإجازات',
-      items: [
-        { to: '/attendance', icon: Clock, label: 'الحضور' },
-        { to: '/leave', icon: CalendarDays, label: 'طلبات الإجازات' },
-        { to: '/leave-policies', icon: CalendarClock, label: 'سياسات الإجازات', admin: true },
-        { to: '/reports', icon: BarChart3, label: 'التقارير', admin: true },
-      ]
-    },
-    {
-      group: 'التعويضات',
-      items: [
-        { to: '/payroll', icon: Wallet, label: 'الرواتب', admin: true },
-        { to: '/end-of-service', icon: Calculator, label: 'حاسبة نهاية الخدمة', admin: true },
-        { to: '/rewards-penalties', icon: Gift, label: 'إعدادات المكافآت والجزاءات', admin: true },
-        { to: '/contracts', icon: FileSignature, label: 'العقود', admin: true },
-      ]
-    },
-    {
-      group: 'العمليات',
-      items: [
-        { to: '/devices', icon: Fingerprint, label: 'أجهزة الحضور', admin: true },
-        { to: '/documents-print', icon: Printer, label: 'طابعة المستندات', admin: true },
-        { to: '/print-templates', icon: FileText, label: 'نماذج الطباعة', admin: true },
-        { to: '/import-data', icon: UploadCloud, label: 'استيراد البيانات', admin: true },
-      ]
-    },
-    {
-      group: 'النظام',
-      items: [
-        { to: '/announcements', icon: Megaphone, label: 'الإعلانات والأحداث', admin: true },
-        { to: '/users', icon: Users, label: 'المستخدمون', admin: true },
-        { to: '/settings', icon: SettingsIcon, label: 'الإعدادات' },
-      ]
-    }
-  ];
+  return EKTEFA_MODULES.map(mod => ({
+    group: mod.label,
+    items: mod.items.filter(it => !it.admin || isAdmin)
+  }));
 }
 
 export function getNavItems(isAdmin, t) {
-  const groups = getNavGroups(isAdmin, t);
   const items = [];
-  groups.forEach(g => {
-    g.items.forEach(i => {
-      if (!i.admin || isAdmin) items.push(i);
+  EKTEFA_MODULES.forEach(mod => {
+    mod.items.forEach(it => {
+      if (!it.admin || isAdmin) {
+        items.push({ ...it, moduleColor: mod.color, moduleName: mod.label });
+      }
     });
   });
   return items;
