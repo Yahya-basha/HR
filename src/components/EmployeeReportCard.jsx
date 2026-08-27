@@ -383,7 +383,7 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
 
                     {/* Status */}
                     <TableCell>
-                      {getStatusBadge(l.status, l.isFriday)}
+                      {getStatusBadge(l.status, l.isFriday, !!(s.morningIn || s.eveningIn))}
                     </TableCell>
 
                     {/* Period 1: Morning */}
@@ -397,7 +397,7 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-[11px] font-semibold">
-                          {l.isFriday ? '— (عطلة الجمعة الصباحية)' : '—'}
+                          {l.isFriday ? '— (عطلة الجمعة)' : '— (لم يباشر / عجز)'}
                         </span>
                       )}
                     </TableCell>

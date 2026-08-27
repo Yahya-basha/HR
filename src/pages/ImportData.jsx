@@ -28,6 +28,7 @@ import {
   CalendarCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -70,6 +71,9 @@ export default function ImportData() {
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importedSuccess, setImportedSuccess] = useState(false);
+  const [clearLogsDialogOpen, setClearLogsDialogOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [cleanWipeBeforeImport, setCleanWipeBeforeImport] = useState(true);
 
   // Load existing employees for real-time matching
   const loadEmployees = async () => {
@@ -491,6 +495,10 @@ export default function ImportData() {
 
       setImportProgress(20);
 
+      // Clean wipe before import if requested
+      if (cleanWipeBeforeImport && base44.entities.AttendanceLog?.clearAll) {
+        await base44.entities.AttendanceLog.clearAll();
+      }
       // 2. Save Attendance Records
       let savedCount = 0;
       const total = parsedRecords.length;
@@ -538,6 +546,31 @@ export default function ImportData() {
     }
   };
 
+  
+  const handleClearAllAttendanceLogs = async () => {
+    setClearing(true);
+    try {
+      if (base44.entities.AttendanceLog?.clearAll) {
+        await base44.entities.AttendanceLog.clearAll();
+      }
+      try {
+        localStorage.removeItem('hr_flow_v10_dora_AttendanceLog');
+        localStorage.removeItem('hr_flow_v8_dora_AttendanceLog');
+        localStorage.removeItem('hr_flow_v9_dora_AttendanceLog');
+      } catch (e) {}
+      setClearLogsDialogOpen(false);
+      toast({
+        title: '✅ تم مسح كافة سجلات البصمة والحضور بنجاح!',
+        description: 'قاعدة البيانات الآن فارغة تماماً وجاهزة لرفع شيت البصمة الجديد بدون أي أخطاء أو تكرار.'
+      });
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'حدث خطأ أثناء مسح السجلات', variant: 'destructive' });
+    } finally {
+      setClearing(false);
+    }
+  };
+
   const handleReset = () => {
     setFile(null);
     setParsedRecords([]);
@@ -563,7 +596,52 @@ export default function ImportData() {
             </p>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setClearLogsDialogOpen(true)}
+            className="border-red-300 hover:bg-red-50 text-red-700 dark:border-red-800 dark:hover:bg-red-950/40 dark:text-red-400 rounded-xl font-bold text-xs gap-2 shadow-sm"
+          >
+            <Trash2 className="w-4 h-4 text-red-600" />
+            مسح كافة سجلات البصمة الحالية
+          </Button>
+        </div>
       </div>
+
+      {/* Clear Confirmation Dialog */}
+      <Dialog open={clearLogsDialogOpen} onOpenChange={setClearLogsDialogOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600 font-bold text-base">
+              <Trash2 className="w-5 h-5" />
+              تأكيد مسح كافة سجلات البصمة والحضور
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-xs">
+            <p className="text-foreground leading-relaxed">
+              هل أنت متأكد من رغبتك في <strong>مسح وتصفير كافة سجلات البصمة والحضور</strong> بالكامل من النظام؟
+            </p>
+            <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-red-800 dark:text-red-300 space-y-1">
+              <p className="font-bold">⚠️ تنبيه هام:</p>
+              <p>• سيتم حذف كافة البصمات السابقة نهائياً.</p>
+              <p>• لن يتأثر الموظفون أو الشفتات أو الهيكل الإداري.</p>
+              <p>• ستتمكن بعدها مباشرة من رفع ملف الإكسل الجديد نظيفاً ومطابقاً 100%.</p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setClearLogsDialogOpen(false)} className="text-xs font-bold">
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleClearAllAttendanceLogs}
+              disabled={clearing}
+              className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold gap-1.5"
+            >
+              {clearing ? 'جارِ المسح...' : 'نعم، امسح كافة البصمات الآن'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 1. UPLOAD DROPZONE AREA */}
       {!file ? (
