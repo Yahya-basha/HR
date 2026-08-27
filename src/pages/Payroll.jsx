@@ -65,7 +65,25 @@ export default function Payroll() {
   const [mainView, setMainView] = useState('wizard');
   
   // Current Workflow Stage: 1: Biometrics, 2: Deductions, 3: Earnings, 4: Final Review & Lock
-  const [currentStep, setCurrentStep] = useState(1);
+    const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const stageParam = searchParams.get('stage');
+  const tabParam = searchParams.get('tab');
+
+  // Reactive currentStep directly derived from URL query parameters (?stage=1..5)
+  const currentStep = useMemo(() => {
+    if (tabParam === 'archive' || stageParam === '5') return 5;
+    if (stageParam === '2') return 2;
+    if (stageParam === '3') return 3;
+    if (stageParam === '4') return 4;
+    return 1;
+  }, [stageParam, tabParam]);
+
+  const handleStepChange = useCallback((stepNum) => {
+    navigate(`/payroll?stage=${stepNum}`);
+  }, [navigate]);
   
   const [monthPrefix, setMonthPrefix] = useState('2026-08');
   const [employees, setEmployees] = useState([]);
@@ -392,28 +410,28 @@ export default function Payroll() {
       {mainView === 'wizard' && (
         <div className="space-y-6">
           
-          {/* ─── 4-STAGE STEPPER BAR ───────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* ─── 5-STAGE STEPPER BAR ───────────────────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             
             {/* Step 1 */}
             <button
               type="button"
               onClick={() => handleStepChange(1)}
-              className={`p-4 rounded-3xl border text-right transition-all flex items-center justify-between ${
+              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
                 currentStep === 1
-                  ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-500/20'
+                  ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-500/20 scale-[1.02]'
                   : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm ${
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
                   currentStep === 1 ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                 }`}>
                   1
                 </div>
                 <div>
-                  <div className="text-xs font-bold opacity-80">المرحلة الأولى</div>
-                  <div className="text-sm font-black">🕒 مراجعة وتدقيق البصمات</div>
+                  <div className="text-[10px] font-bold opacity-80">المرحلة الأولى</div>
+                  <div className="text-xs font-black">🕒 تدقيق البصمات</div>
                 </div>
               </div>
               <ChevronLeft className="w-4 h-4 opacity-50" />
@@ -423,21 +441,21 @@ export default function Payroll() {
             <button
               type="button"
               onClick={() => handleStepChange(2)}
-              className={`p-4 rounded-3xl border text-right transition-all flex items-center justify-between ${
+              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
                 currentStep === 2
-                  ? 'bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-500/20'
+                  ? 'bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-500/20 scale-[1.02]'
                   : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm ${
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
                   currentStep === 2 ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                 }`}>
                   2
                 </div>
                 <div>
-                  <div className="text-xs font-bold opacity-80">المرحلة الثانية</div>
-                  <div className="text-sm font-black">⚠️ اعتماد الاستقطاعات والخصم</div>
+                  <div className="text-[10px] font-bold opacity-80">المرحلة الثانية</div>
+                  <div className="text-xs font-black">⚠️ الاستقطاعات والخصم</div>
                 </div>
               </div>
               <ChevronLeft className="w-4 h-4 opacity-50" />
@@ -447,21 +465,21 @@ export default function Payroll() {
             <button
               type="button"
               onClick={() => handleStepChange(3)}
-              className={`p-4 rounded-3xl border text-right transition-all flex items-center justify-between ${
+              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
                 currentStep === 3
-                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-500/20'
+                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-500/20 scale-[1.02]'
                   : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm ${
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
                   currentStep === 3 ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                 }`}>
                   3
                 </div>
                 <div>
-                  <div className="text-xs font-bold opacity-80">المرحلة الثالثة</div>
-                  <div className="text-sm font-black">🎁 اعتماد المستحقات والمكافآت</div>
+                  <div className="text-[10px] font-bold opacity-80">المرحلة الثالثة</div>
+                  <div className="text-xs font-black">🎁 الاستحقاقات والمكافآت</div>
                 </div>
               </div>
               <ChevronLeft className="w-4 h-4 opacity-50" />
@@ -471,24 +489,48 @@ export default function Payroll() {
             <button
               type="button"
               onClick={() => handleStepChange(4)}
-              className={`p-4 rounded-3xl border text-right transition-all flex items-center justify-between ${
+              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
                 currentStep === 4
-                  ? 'bg-slate-900 text-white border-slate-950 shadow-md ring-2 ring-slate-700/20'
+                  ? 'bg-slate-900 text-white border-slate-950 shadow-md ring-2 ring-slate-700/20 scale-[1.02]'
                   : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm ${
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
                   currentStep === 4 ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
                 }`}>
                   4
                 </div>
                 <div>
-                  <div className="text-xs font-bold opacity-80">المرحلة الرابعة</div>
-                  <div className="text-sm font-black">🔒 المراجعة والإقفال النهائي</div>
+                  <div className="text-[10px] font-bold opacity-80">المرحلة الرابعة</div>
+                  <div className="text-xs font-black">🔒 الإقفال النهائي</div>
                 </div>
               </div>
               <Lock className="w-4 h-4 text-emerald-400" />
+            </button>
+
+            {/* Step 5 */}
+            <button
+              type="button"
+              onClick={() => handleStepChange(5)}
+              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
+                currentStep === 5
+                  ? 'bg-purple-700 text-white border-purple-800 shadow-md ring-2 ring-purple-500/20 scale-[1.02]'
+                  : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
+                  currentStep === 5 ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                }`}>
+                  5
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold opacity-80">المرحلة الخامسة</div>
+                  <div className="text-xs font-black">📜 رواتب الشهور السابقة</div>
+                </div>
+              </div>
+              <Award className="w-4 h-4 text-amber-400" />
             </button>
 
           </div>
