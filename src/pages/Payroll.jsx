@@ -1173,7 +1173,10 @@ export default function Payroll() {
               branches={branches}
               monthPrefix={monthPrefix}
               fmtNum={fmtNum}
-              payrollEngine={calculatePayrollForEmployee}
+              allPayrolls={allPayrolls}
+              attendanceLogs={attendanceLogs}
+              shifts={shifts}
+              settings={settings}
             />
           )}
 
@@ -1630,7 +1633,7 @@ export default function Payroll() {
 
 
 // ─── STAGE 5 COMPONENT: HISTORICAL CERTIFIED PAYSLIP WITH ACCOUNTANT STAMP ────
-function Stage5HistoricalArchive({ employees, branches, monthPrefix, fmtNum, payrollEngine }) {
+function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls, attendanceLogs, shifts, settings, fmtNum }) {
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(monthPrefix || '2026-08');
@@ -1659,7 +1662,7 @@ function Stage5HistoricalArchive({ employees, branches, monthPrefix, fmtNum, pay
     const emp = employees.find(e => String(e.employee_number || e.id) === String(selectedEmpId));
     if (!emp) return;
 
-    const result = payrollEngine(emp, selectedMonth);
+    const result = computeEmployeePayroll(emp, attendanceLogs, shifts, { ...settings, monthPrefix: selectedMonth });
     setExtractedData({
       employee: emp,
       month: selectedMonth,
