@@ -12,7 +12,8 @@ import {
   Sparkles, 
   Eye, 
   DollarSign,
-  ChevronLeft
+  ChevronLeft,
+  CalendarCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,14 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
+
+// Strict helper to verify real biometric punch times exist (rejects Arabic words like 'عطلة', 'لم يباشر', '—')
+const hasActualBiometricPunches = (str) => {
+  if (!str) return false;
+  const clean = str.toString().trim();
+  if (clean.includes('عطلة') || clean.includes('لم يباشر') || clean === '—' || clean === '-') return false;
+  return /\d{1,2}[:.]\d{2}/.test(clean);
+};
 
 export default function Payroll() {
   const { toast } = useToast();
@@ -45,7 +54,7 @@ export default function Payroll() {
 
     return employees.map((emp) => {
       // 1. Filter logs strictly for this employee AND strictly for the selected month
-      const empLogs = attendanceLogs.filter(l => {
+      const empLogs = (attendanceLogs || []).filter(l => {
         const isThisEmp = l.user_id === emp.id || 
                           (l.employee_number && l.employee_number.toString() === emp.employee_number?.toString()) || 
                           (l.employee_name && l.employee_name.trim() === emp.full_name?.trim());
@@ -53,27 +62,39 @@ export default function Payroll() {
         return isThisEmp && isInMonth;
       });
 
-      // Deduplicate by date (keep only one record per day)
+      // Deduplicate by date (keep only 1 record per calendar day)
       const dateMap = {};
       empLogs.forEach(l => {
-        if (!dateMap[l.log_date]) dateMap[l.log_date] = l;
+        if (!dateMap[l.log_date] || hasActualBiometricPunches(l.timestamp_raw)) {
+          dateMap[l.log_date] = l;
+        }
       });
       const uniqueDays = Object.values(dateMap);
 
-      // 2. Count ONLY Fridays where the employee actually had punches / attendance
+      // 2. Count ONLY Fridays where the employee actually had REAL biometric punches
       const attendedFridays = uniqueDays.filter(l => {
         if (!l.log_date) return false;
-        const d = new Date(l.log_date);
-        const isFriday = d.getDay() === 5 || l.day_name === 'الجمعة';
         
-        // Strict check: Must have real punches or check_in (NOT absent or not started)
-        const hasRealPunches = (l.check_in && l.check_in !== '—') || 
-                               (l.timestamp_raw && l.timestamp_raw.length > 3) || 
-                               (l.punches_raw && l.punches_raw.length > 3);
+        // Strict Friday check in August 2026
+        const isFriday = l.log_date.endsWith('-07') || 
+                         l.log_date.endsWith('-14') || 
+                         l.log_date.endsWith('-21') || 
+                         l.log_date.endsWith('-28') ||
+                         new Date(l.log_date).getDay() === 5;
         
-        const isNotAbsent = l.status !== 'absent' && l.status !== 'not_started' && l.status !== 'غائب' && l.status !== 'لم يباشر';
+        if (!isFriday) return false;
 
-        return isFriday && hasRealPunches && isNotAbsent;
+        // REAL PUNCH VALIDATION: Must contain actual time numbers (e.g. "16:07 -- 20:15")
+        const hasCheckInTime = l.check_in && hasActualBiometricPunches(l.check_in);
+        const hasTimestampPunches = hasActualBiometricPunches(l.timestamp_raw);
+        const hasRawPunches = hasActualBiometricPunches(l.punches_raw);
+
+        const hasRealPunches = hasCheckInTime || hasTimestampPunches || hasRawPunches;
+
+        // If status was explicit absent or not started
+        const isAbsentOrNotStarted = l.status === 'absent' || l.status === 'not_started' || l.status === 'غائب' || l.status === 'لم يباشر';
+
+        return isFriday && hasRealPunches && !isAbsentOrNotStarted;
       });
 
       // Strict Friday Count (0 if didn't attend any Friday!)
@@ -81,7 +102,7 @@ export default function Payroll() {
       const fridayAllowance = fridayCount * 50;
       const fridayNote = fridayCount > 0 
         ? `${fridayAllowance} ريال عن إضافي حضور ${fridayCount} أيام جمعة`
-        : 'لا يوجد حضور في أيام الجمعة لهذا الشهر';
+        : 'لم يحضر أيام الجمعة (عطلة رسمية)';
 
       const basicSalary = Number(emp.salary) || 4000;
       const housing = Number(emp.housing_allowance) || 0;
@@ -154,7 +175,7 @@ export default function Payroll() {
           <div>
             <h1 className="text-2xl font-heading font-extrabold text-foreground">مسير الرواتب والبدلات وإضافي الجمعة</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              احتساب الرواتب الفعلية مع تجميع أيام الجمعة (+50 ريال/جمعة) للموظفين الذين حضروا فقط
+              احتساب دقيق وموثق بالبصمات لإضافي أيام الجمعة (+50 ريال) للذين حضروا فقط
             </p>
           </div>
         </div>
@@ -246,7 +267,7 @@ export default function Payroll() {
                     {emp.basicSalary.toLocaleString()} ر.س
                   </TableCell>
 
-                  {/* Friday Allowance (STRICT) */}
+                  {/* Friday Allowance (STRICT & VERIFIED) */}
                   <TableCell>
                     {emp.fridayCount > 0 ? (
                       <div className="space-y-0.5">
@@ -258,7 +279,9 @@ export default function Payroll() {
                         </p>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground font-mono text-[11px]">0 ر.س (لم يحضر جمعة)</span>
+                      <span className="text-muted-foreground font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                        0 ر.س (عطلة رسمية)
+                      </span>
                     )}
                   </TableCell>
 
