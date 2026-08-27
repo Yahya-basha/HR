@@ -641,12 +641,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-01",
     "day_name": "السبت",
-    "check_in": "2026-08-01T07:55:00",
-    "check_out": "2026-08-01T20:15:00",
+    "check_in": "2026-08-01T08:19:00",
+    "check_out": "2026-08-01T20:57:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
-    "punches_raw": "07:55, 12:08, 16:05, 20:15"
-  },
+    "timestamp_raw": "08:19:00 -- 12:45:00 & 16:47:00 -- 20:57:00",
+    "punches_raw": "08:19, 12:45, 16:47, 20:57"
+},
   {
     "id": "att_1002_2026-08-01",
     "user_id": "emp_1002",
@@ -888,12 +888,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-02",
     "day_name": "الأحد",
-    "check_in": "2026-08-02T07:55:00",
-    "check_out": "2026-08-02T20:15:00",
+    "check_in": "2026-08-02T08:43:00",
+    "check_out": "2026-08-02T21:02:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
-    "punches_raw": "07:55, 12:08, 16:05, 20:15"
-  },
+    "timestamp_raw": "08:43:00 -- 12:53:00 & 17:10:00 -- 21:02:00",
+    "punches_raw": "08:43, 12:53, 17:10, 21:02"
+},
   {
     "id": "att_1002_2026-08-02",
     "user_id": "emp_1002",
@@ -1135,12 +1135,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-03",
     "day_name": "الإثنين",
-    "check_in": "2026-08-03T07:55:00",
-    "check_out": "2026-08-03T20:15:00",
+    "check_in": "2026-08-03T07:42:00",
+    "check_out": "2026-08-03T21:01:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
-    "punches_raw": "07:55, 12:08, 16:05, 20:15"
-  },
+    "timestamp_raw": "07:42:00 -- 12:23:00 & 17:41:00 -- 21:01:00",
+    "punches_raw": "07:42, 12:23, 17:41, 21:01"
+},
   {
     "id": "att_1002_2026-08-03",
     "user_id": "emp_1002",
@@ -1382,12 +1382,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-04",
     "day_name": "الثلاثاء",
-    "check_in": "2026-08-04T07:55:00",
-    "check_out": "2026-08-04T20:15:00",
+    "check_in": "2026-08-04T07:54:00",
+    "check_out": "2026-08-04T12:10:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
-    "punches_raw": "07:55, 12:08, 16:05, 20:15"
-  },
+    "timestamp_raw": "07:54:00 -- 12:10:00",
+    "punches_raw": "07:54, 12:10"
+},
   {
     "id": "att_1002_2026-08-04",
     "user_id": "emp_1002",
@@ -1629,12 +1629,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-05",
     "day_name": "الأربعاء",
-    "check_in": "2026-08-05T07:55:00",
-    "check_out": "2026-08-05T20:15:00",
+    "check_in": "2026-08-05T08:17:00",
+    "check_out": "2026-08-05T21:07:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
-    "punches_raw": "07:55, 12:08, 16:05, 20:15"
-  },
+    "timestamp_raw": "08:17:00 -- 12:40:00 & 17:48:00 -- 21:07:00",
+    "punches_raw": "08:17, 12:40, 17:48, 21:07"
+},
   {
     "id": "att_1002_2026-08-05",
     "user_id": "emp_1002",
@@ -1876,12 +1876,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-06",
     "day_name": "الخميس",
-    "check_in": "2026-08-06T07:55:00",
-    "check_out": "2026-08-06T20:15:00",
+    "check_in": "2026-08-06T08:20:00",
+    "check_out": "2026-08-06T12:46:00",
     "status": "present",
-    "timestamp_raw": "07:55:00 -- 12:08:00 & 16:05:00 -- 20:15:00",
-    "punches_raw": "07:55, 12:08, 16:05, 20:15"
-  },
+    "timestamp_raw": "08:20:00 -- 12:46:00",
+    "punches_raw": "08:20, 12:46"
+},
   {
     "id": "att_1002_2026-08-06",
     "user_id": "emp_1002",
@@ -2123,12 +2123,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-07",
     "day_name": "الجمعة",
-    "check_in": "2026-08-07T16:07:00",
-    "check_out": "2026-08-07T20:15:00",
-    "status": "weekend",
-    "timestamp_raw": "16:07:00 -- 20:15:00",
-    "punches_raw": "16:07, 20:15"
-  },
+    "check_in": null,
+    "check_out": null,
+    "status": "exempt",
+    "timestamp_raw": "",
+    "punches_raw": ""
+},
   {
     "id": "att_1002_2026-08-07",
     "user_id": "emp_1002",
@@ -3852,12 +3852,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-14",
     "day_name": "الجمعة",
-    "check_in": "2026-08-14T16:07:00",
-    "check_out": "2026-08-14T20:15:00",
+    "check_in": null,
+    "check_out": null,
     "status": "weekend",
-    "timestamp_raw": "16:07:00 -- 20:15:00",
-    "punches_raw": "16:07, 20:15"
-  },
+    "timestamp_raw": "عطلة رسمية",
+    "punches_raw": ""
+},
   {
     "id": "att_1002_2026-08-14",
     "user_id": "emp_1002",
@@ -5581,12 +5581,12 @@ export const initialData = {
     "employee_name": "هشام ابوالفضل زغلول",
     "log_date": "2026-08-21",
     "day_name": "الجمعة",
-    "check_in": "2026-08-21T16:07:00",
-    "check_out": "2026-08-21T20:15:00",
+    "check_in": null,
+    "check_out": null,
     "status": "weekend",
-    "timestamp_raw": "16:07:00 -- 20:15:00",
-    "punches_raw": "16:07, 20:15"
-  },
+    "timestamp_raw": "عطلة رسمية",
+    "punches_raw": ""
+},
   {
     "id": "att_1002_2026-08-21",
     "user_id": "emp_1002",

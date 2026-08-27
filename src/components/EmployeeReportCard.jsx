@@ -207,7 +207,15 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
         lateHours = 0;
       }
 
-      if (st === 'present' || st === 'exempt' || st === 'weekend') present++;
+      const isDualShift = shift?.type === 'multi' || shift?.working_hours >= 8;
+      const isPartial = isDualShift && !isFriday && st !== 'exempt' && st !== 'absent' && st !== 'weekend' && 
+                        ((splitInfo.morningIn && !splitInfo.eveningIn) || (!splitInfo.morningIn && splitInfo.eveningIn));
+      
+      if (isPartial) {
+        st = 'partial';
+      }
+
+      if (st === 'present' || st === 'partial') present++;
       else if (st === 'late') { lateC++; present++; }
       else if (st === 'absent') absent++;
 
@@ -242,15 +250,24 @@ export default function EmployeeReportCard({ empId, from, to, logs, employees, s
 
   const { totals, daily, rows } = data;
 
-  const getStatusBadge = (status, isFriday) => {
+  const getStatusBadge = (status, isFriday, hasPunches) => {
     if (isFriday || status === 'weekend') {
+      if (hasPunches) {
+        return (
+          <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 gap-1 font-bold">
+            <span>عطلة الأسبوع (+50 ر.س جمعة)</span>
+          </Badge>
+        );
+      }
       return (
-        <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 gap-1">
-          <span>عطلة الأسبوع (+50 ر.س جمعة)</span>
+        <Badge className="bg-slate-100 text-slate-600 border-slate-200 gap-1">
+          <span>عطلة الأسبوع (معفى)</span>
         </Badge>
       );
     }
     switch (status) {
+      case 'partial':
+        return <Badge className="bg-orange-100 text-orange-800 border-orange-300 font-bold">عجز / دوام جزئي</Badge>;
       case 'present':
         return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">حاضر</Badge>;
       case 'late':
