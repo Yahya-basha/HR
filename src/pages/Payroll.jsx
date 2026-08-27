@@ -410,130 +410,93 @@ export default function Payroll() {
       {mainView === 'wizard' && (
         <div className="space-y-6">
           
-          {/* ─── 5-STAGE STEPPER BAR ───────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {/* ─── DYNAMIC EYE-PLEASING PROGRESS TIMELINE BAR ──────────────── */}
+          <Card className="p-4 sm:p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm overflow-hidden relative" dir="rtl">
             
-            {/* Step 1 */}
-            <button
-              type="button"
-              onClick={() => handleStepChange(1)}
-              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
-                currentStep === 1
-                  ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-500/20 scale-[1.02]'
-                  : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
-                  currentStep === 1 ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                }`}>
-                  1
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold opacity-80">المرحلة الأولى</div>
-                  <div className="text-xs font-black">🕒 تدقيق البصمات</div>
-                </div>
+            {/* Top Bar: Title & Progress Percentage */}
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse"></div>
+                <span className="font-heading font-black text-xs sm:text-sm text-foreground">
+                  مسار دورة اعتماد الرواتب:
+                </span>
+                <span className="text-xs font-bold text-sky-600 dark:text-sky-400">
+                  {currentStep === 1 && "المرحلة الأولى: تدقيق البصمات وساعات العمل"}
+                  {currentStep === 2 && "المرحلة الثانية: اعتماد الاستقطاعات والخصومات والسلف"}
+                  {currentStep === 3 && "المرحلة الثالثة: اعتماد الاستحقاقات والمكافآت والبدلات"}
+                  {currentStep === 4 && "المرحلة الرابعة: المراجعة العامة والإقفال السحابي النهائي"}
+                  {currentStep === 5 && "المرحلة الخامسة: أرشيف رواتب الشهور السابقة والمصادقة المالية"}
+                </span>
               </div>
-              <ChevronLeft className="w-4 h-4 opacity-50" />
-            </button>
 
-            {/* Step 2 */}
-            <button
-              type="button"
-              onClick={() => handleStepChange(2)}
-              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
-                currentStep === 2
-                  ? 'bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-500/20 scale-[1.02]'
-                  : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
-                  currentStep === 2 ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                }`}>
-                  2
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold opacity-80">المرحلة الثانية</div>
-                  <div className="text-xs font-black">⚠️ الاستقطاعات والخصم</div>
-                </div>
+              <Badge className="bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 text-xs font-mono font-bold px-3 py-1 rounded-xl shrink-0">
+                {Math.round((currentStep / 5) * 100)}% مكتمل
+              </Badge>
+            </div>
+
+            {/* Continuous Interactive Progress Track */}
+            <div className="relative pt-2 pb-1">
+              
+              {/* Background Gray Track */}
+              <div className="absolute top-1/2 start-6 end-6 -translate-y-1/2 h-2 bg-slate-100 dark:bg-slate-800 rounded-full z-0"></div>
+              
+              {/* Active Colored Progress Fill with Smooth Animation */}
+              <div
+                className="absolute top-1/2 start-6 -translate-y-1/2 h-2 bg-gradient-to-l from-sky-500 via-emerald-500 to-purple-600 rounded-full z-0 transition-all duration-700 ease-out shadow-sm shadow-sky-500/20"
+                style={{ width: `${Math.max(0, Math.min(100, ((currentStep - 1) / 4) * 90 + 5))}%` }}
+              ></div>
+
+              {/* 5 Milestone Step Nodes */}
+              <div className="relative z-10 flex items-center justify-between">
+                {[
+                  { step: 1, title: "تدقيق البصمات", icon: Clock },
+                  { step: 2, title: "الاستقطاعات", icon: AlertOctagon },
+                  { step: 3, title: "الاستحقاقات", icon: Gift },
+                  { step: 4, title: "الإقفال النهائي", icon: Lock },
+                  { step: 5, title: "أرشيف الشهور", icon: Award },
+                ].map(({ step, title, icon: Icon }) => {
+                  const isPassed = step < currentStep;
+                  const isCurrent = step === currentStep;
+                  return (
+                    <button
+                      key={step}
+                      type="button"
+                      onClick={() => handleStepChange(step)}
+                      className="flex flex-col items-center gap-1.5 group cursor-pointer focus:outline-none transition-transform hover:scale-105"
+                    >
+                      <div
+                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center font-bold text-xs transition-all duration-300 ${
+                          isPassed
+                            ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                            : isCurrent
+                            ? "bg-sky-600 text-white ring-4 ring-sky-100 dark:ring-sky-950 shadow-lg shadow-sky-600/30 scale-110"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700"
+                        }`}
+                      >
+                        {isPassed ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <Icon className="w-4 h-4" />
+                        )}
+                      </div>
+                      <span
+                        className={`text-[10px] sm:text-xs font-bold transition-colors whitespace-nowrap ${
+                          isCurrent
+                            ? "text-sky-600 dark:text-sky-400 font-black"
+                            : isPassed
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : "text-muted-foreground group-hover:text-foreground"
+                        }`}
+                      >
+                        {title}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-              <ChevronLeft className="w-4 h-4 opacity-50" />
-            </button>
+            </div>
 
-            {/* Step 3 */}
-            <button
-              type="button"
-              onClick={() => handleStepChange(3)}
-              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
-                currentStep === 3
-                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-500/20 scale-[1.02]'
-                  : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
-                  currentStep === 3 ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                }`}>
-                  3
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold opacity-80">المرحلة الثالثة</div>
-                  <div className="text-xs font-black">🎁 الاستحقاقات والمكافآت</div>
-                </div>
-              </div>
-              <ChevronLeft className="w-4 h-4 opacity-50" />
-            </button>
-
-            {/* Step 4 */}
-            <button
-              type="button"
-              onClick={() => handleStepChange(4)}
-              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
-                currentStep === 4
-                  ? 'bg-slate-900 text-white border-slate-950 shadow-md ring-2 ring-slate-700/20 scale-[1.02]'
-                  : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
-                  currentStep === 4 ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
-                }`}>
-                  4
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold opacity-80">المرحلة الرابعة</div>
-                  <div className="text-xs font-black">🔒 الإقفال النهائي</div>
-                </div>
-              </div>
-              <Lock className="w-4 h-4 text-emerald-400" />
-            </button>
-
-            {/* Step 5 */}
-            <button
-              type="button"
-              onClick={() => handleStepChange(5)}
-              className={`p-3.5 rounded-3xl border text-right transition-all flex items-center justify-between ${
-                currentStep === 5
-                  ? 'bg-purple-700 text-white border-purple-800 shadow-md ring-2 ring-purple-500/20 scale-[1.02]'
-                  : 'bg-card border-border/70 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-foreground'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-xs ${
-                  currentStep === 5 ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
-                }`}>
-                  5
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold opacity-80">المرحلة الخامسة</div>
-                  <div className="text-xs font-black">📜 رواتب الشهور السابقة</div>
-                </div>
-              </div>
-              <Award className="w-4 h-4 text-amber-400" />
-            </button>
-
-          </div>
+          </Card>
 
           {/* ═════════════════════════════════════════════════════════════════ */}
           {/* ─── STAGE 1: BIOMETRICS & TIMECARDS AUDIT ─────────────────────── */}
