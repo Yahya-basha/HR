@@ -53,7 +53,7 @@ export default function Header({ onOpenMobileMenu }) {
   };
 
   // Get user display name
-  const userName = user?.full_name || 'يحيي محمد عبدالغفار باشا';
+  const userName = user?.full_name || user?.name || (user?.email?.includes('dortal') ? 'فهد ناصر محمد الجوعي' : (user?.email?.includes('yahya') ? 'يحيي محمد عبدالغفار باشا' : 'المشرف العام'));
 
   return (
     <header 

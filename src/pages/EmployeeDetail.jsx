@@ -32,7 +32,14 @@ import {
   Printer,
   ChevronLeft,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  Upload,
+  Eye,
+  Download,
+  Trash2,
+  FilePlus,
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -87,6 +94,17 @@ const calculateDuration = (joinDate) => {
   }
 };
 
+// Parse metadata JSON safely
+const parseMetadata = (managerName) => {
+  if (!managerName) return {};
+  if (typeof managerName === 'object') return managerName;
+  try {
+    return JSON.parse(managerName);
+  } catch {
+    return {};
+  }
+};
+
 export default function EmployeeDetail() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -99,9 +117,23 @@ export default function EmployeeDetail() {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Edit Modal
+  // Edit Profile Modal
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState({});
+
+  // Document Management States
+  const [uploadDocModal, setUploadDocModal] = useState(false);
+  const [docForm, setDocForm] = useState({
+    type: 'national_id',
+    title: '',
+    docNumber: '',
+    expiryDate: '',
+    fileData: '',
+    fileName: '',
+    fileSize: ''
+  });
+  const [previewDoc, setPreviewDoc] = useState(null);
+  const [savingDoc, setSavingDoc] = useState(false);
 
   // Load all employees list
   const loadEmployees = useCallback(async () => {
@@ -115,7 +147,9 @@ export default function EmployeeDetail() {
         current = emps.find(e => String(e.id) === String(selectedEmpId) || String(e.employee_number) === String(selectedEmpId));
       }
       if (!current && emps && emps.length > 0) {
-        current = emps.find(e => String(e.employee_number) === '1022') || emps[0];
+        // Default to logged-in user or first employee
+        const defaultEmp = emps.find(e => user?.email && e.email === user.email) || emps[0];
+        current = defaultEmp;
       }
 
       setEmployee(current || null);
@@ -129,7 +163,7 @@ export default function EmployeeDetail() {
     } finally {
       setLoading(false);
     }
-  }, [selectedEmpId, toast]);
+  }, [selectedEmpId, user?.email, toast]);
 
   useEffect(() => {
     if (id) setSelectedEmpId(id);
@@ -139,7 +173,7 @@ export default function EmployeeDetail() {
     loadEmployees();
   }, [loadEmployees]);
 
-  // Handle employee selector switch
+  // Handle employee switch
   const handleSelectEmployee = (empId) => {
     setSelectedEmpId(empId);
     const found = employeesList.find(e => String(e.id) === String(empId) || String(e.employee_number) === String(empId));
@@ -149,6 +183,7 @@ export default function EmployeeDetail() {
     }
   };
 
+  // Save profile changes to DB
   const handleSaveProfile = async () => {
     try {
       if (!employee?.id) return;
@@ -176,6 +211,116 @@ export default function EmployeeDetail() {
     }
   };
 
+  // ─── DOCUMENT MANAGEMENT LOGIC ──────────────────────────────────────────
+  const employeeMetadata = useMemo(() => parseMetadata(employee?.manager_name), [employee?.manager_name]);
+  const documentsList = useMemo(() => employeeMetadata.documents || [], [employeeMetadata]);
+
+  // Handle File Input Change (Read as Data URL)
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size limit (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'حجم الملف كبير جداً', description: 'الحد الأقصى هو 5 ميجابايت', variant: 'destructive' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      setDocForm(prev => ({
+        ...prev,
+        fileData: evt.target.result,
+        fileName: file.name,
+        fileSize: `${(file.size / 1024).toFixed(1)} KB`
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Save / Upload Document to Supabase
+  const handleSaveDocument = async () => {
+    if (!docForm.fileData) {
+      toast({ title: 'الرجاء اختيار ملف لرفعه أولاً', variant: 'destructive' });
+      return;
+    }
+
+    setSavingDoc(true);
+    try {
+      const typeLabels = {
+        national_id: 'صورة الهوية / الإقامة',
+        contract: 'عقد العمل الموثق',
+        license: 'رخصة القيادة',
+        passport: 'جواز السفر',
+        other: 'مستند رسمي'
+      };
+
+      const newDoc = {
+        id: `doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        type: docForm.type,
+        title: docForm.title || typeLabels[docForm.type] || 'مستند موثق',
+        docNumber: docForm.docNumber || employee.national_id || '',
+        expiryDate: docForm.expiryDate || employee.id_expiry_date || '',
+        fileData: docForm.fileData,
+        fileName: docForm.fileName,
+        fileSize: docForm.fileSize,
+        uploadedAt: new Date().toISOString().split('T')[0]
+      };
+
+      // Filter out existing doc of same type if replacing hero doc
+      const existingDocs = documentsList.filter(d => d.type !== docForm.type || docForm.type === 'other');
+      const updatedDocs = [newDoc, ...existingDocs];
+
+      const currentMeta = parseMetadata(employee.manager_name);
+      const updatedMeta = { ...currentMeta, documents: updatedDocs };
+
+      const updated = await base44.entities.Employee.update(employee.id, {
+        manager_name: JSON.stringify(updatedMeta)
+      });
+
+      setEmployee(updated);
+      toast({ title: '✓ تم حفظ المستند في قاعدة البيانات السحابية بنجاح' });
+      setUploadDocModal(false);
+      setDocForm({
+        type: 'national_id',
+        title: '',
+        docNumber: '',
+        expiryDate: '',
+        fileData: '',
+        fileName: '',
+        fileSize: ''
+      });
+    } catch (e) {
+      console.error('Error saving document:', e);
+      toast({ title: 'خطأ في حفظ المستند', description: e.message, variant: 'destructive' });
+    } finally {
+      setSavingDoc(false);
+    }
+  };
+
+  // Delete Document
+  const handleDeleteDocument = async (docId) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المستند؟')) return;
+    try {
+      const updatedDocs = documentsList.filter(d => d.id !== docId);
+      const currentMeta = parseMetadata(employee.manager_name);
+      const updatedMeta = { ...currentMeta, documents: updatedDocs };
+
+      const updated = await base44.entities.Employee.update(employee.id, {
+        manager_name: JSON.stringify(updatedMeta)
+      });
+
+      setEmployee(updated);
+      toast({ title: '✓ تم حذف المستند بنجاح' });
+    } catch (e) {
+      toast({ title: 'خطأ في الحذف', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  // Find Specific Hero Docs
+  const nationalIdDoc = documentsList.find(d => d.type === 'national_id');
+  const contractDoc = documentsList.find(d => d.type === 'contract');
+
   if (loading) {
     return (
       <div className="py-24 text-center text-muted-foreground font-bold animate-pulse">
@@ -199,6 +344,7 @@ export default function EmployeeDetail() {
   const profileSubSections = [
     { id: 'personal', label: 'التفاصيل الشخصية', icon: User },
     { id: 'company', label: 'تفاصيل الشركة', icon: Building2 },
+    { id: 'documents', label: 'المستندات ورفع العقود', icon: FolderOpen },
     { id: 'payslips', label: 'كشوف راتبي', icon: DollarSign },
     { id: 'insurance', label: 'التأمين', icon: ShieldCheck },
     { id: 'balances', label: 'رصيدي أخرى', icon: Coins },
@@ -207,7 +353,6 @@ export default function EmployeeDetail() {
     { id: 'leave_history', label: 'سجل الإجازات', icon: Calendar },
     { id: 'training', label: 'الدورات التدريبية', icon: BookOpen },
     { id: 'evaluations', label: 'التقييم', icon: Award },
-    { id: 'documents', label: 'المستندات', icon: FolderOpen },
     { id: 'dependents', label: 'التابعين', icon: User },
     { id: 'custody', label: 'العهود المقيدة', icon: Package },
     { id: 'penalties', label: 'الجزاءات', icon: AlertOctagon },
@@ -293,11 +438,14 @@ export default function EmployeeDetail() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => toast({ title: `تم إرسال رابط إعادة تعيين كلمة المرور إلى ${employee.email || employee.phone}` })}
-              className="rounded-xl text-xs font-bold gap-1.5 h-9"
+              onClick={() => {
+                setActiveTab('documents');
+                setUploadDocModal(true);
+              }}
+              className="rounded-xl text-xs font-bold gap-1.5 h-9 bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
             >
-              <KeyRound className="w-3.5 h-3.5" />
-              <span>تغيير كلمة المرور</span>
+              <Upload className="w-3.5 h-3.5 text-emerald-600" />
+              <span>رفع صورة الهوية / العقد</span>
             </Button>
 
             <Button
@@ -315,7 +463,6 @@ export default function EmployeeDetail() {
         {/* ─── 4 INFO CARDS ROW ────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-6 border-t border-border/70 text-xs">
           
-          {/* 1. Employee Number */}
           <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border flex items-center justify-between">
             <div>
               <div className="text-[10px] text-muted-foreground font-bold">الرقم الوظيفي</div>
@@ -326,7 +473,6 @@ export default function EmployeeDetail() {
             </div>
           </div>
 
-          {/* 2. Department */}
           <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border flex items-center justify-between">
             <div>
               <div className="text-[10px] text-muted-foreground font-bold">الإدارة</div>
@@ -337,7 +483,6 @@ export default function EmployeeDetail() {
             </div>
           </div>
 
-          {/* 3. Branch */}
           <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border flex items-center justify-between">
             <div>
               <div className="text-[10px] text-muted-foreground font-bold">الفرع</div>
@@ -348,7 +493,6 @@ export default function EmployeeDetail() {
             </div>
           </div>
 
-          {/* 4. Shift */}
           <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border flex items-center justify-between">
             <div>
               <div className="text-[10px] text-muted-foreground font-bold">الفترة الحالية</div>
@@ -359,7 +503,6 @@ export default function EmployeeDetail() {
             </div>
           </div>
 
-          {/* 5. Email */}
           <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border flex items-center justify-between">
             <div>
               <div className="text-[10px] text-muted-foreground font-bold">الإيميل</div>
@@ -370,7 +513,6 @@ export default function EmployeeDetail() {
             </div>
           </div>
 
-          {/* 6. Phone */}
           <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border flex items-center justify-between">
             <div>
               <div className="text-[10px] text-muted-foreground font-bold">رقم الجوال</div>
@@ -583,6 +725,290 @@ export default function EmployeeDetail() {
             </div>
           )}
 
+          {/* TAB: DOCUMENTS (نظام مستنداتي ورفع صورة الهوية وعقد العمل) */}
+          {activeTab === 'documents' && (
+            <div className="space-y-5">
+              
+              {/* Header Action Bar */}
+              <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-3xl border shadow-sm">
+                <div>
+                  <h3 className="font-heading font-black text-base text-foreground flex items-center gap-2">
+                    <FolderOpen className="w-5 h-5 text-sky-600" />
+                    نظام مستنداتي للموظف ({employee.full_name})
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    إدارة وأرشفة صورة الهوية الوطنية، عقود العمل الرسمية، ورخص القيادة في السحابة
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => setUploadDocModal(true)}
+                  className="bg-sky-600 hover:bg-sky-500 text-white rounded-2xl text-xs font-bold gap-2 shadow-sm"
+                >
+                  <FilePlus className="w-4 h-4" />
+                  <span>رفع مستند جديد</span>
+                </Button>
+              </div>
+
+              {/* TWO HERO UPLOAD SLOTS: 1. National ID | 2. Contract */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* SLOT 1: NATIONAL ID / IQAMA */}
+                <Card className="p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 flex items-center justify-center font-bold">
+                          <IdCard className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-foreground">صورة الهوية الوطنية / الإقامة</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">
+                            {employee.national_id ? `رقم: ${employee.national_id}` : 'لم يتم تسجيل رقم الهوية'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {nationalIdDoc ? (
+                        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold">
+                          ✓ موثقة ومرفوعة
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 text-[10px]">
+                          غير مرفوعة
+                        </Badge>
+                      )}
+                    </div>
+
+                    {nationalIdDoc ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 aspect-[16/9] flex items-center justify-center my-2">
+                        <img
+                          src={nationalIdDoc.fileData}
+                          alt="National ID"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                          <Button
+                            size="sm"
+                            onClick={() => setPreviewDoc(nationalIdDoc)}
+                            className="bg-white text-slate-900 rounded-xl text-xs font-bold gap-1 shadow-lg"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> معاينة
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => {
+                          setDocForm(prev => ({ ...prev, type: 'national_id', title: 'صورة الهوية / الإقامة' }));
+                          setUploadDocModal(true);
+                        }}
+                        className="border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-2xl p-6 text-center cursor-pointer hover:bg-sky-50/50 dark:hover:bg-sky-950/20 transition-colors my-2"
+                      >
+                        <Upload className="w-8 h-8 text-sky-500 mx-auto mb-2 opacity-80" />
+                        <div className="text-xs font-bold text-sky-900 dark:text-sky-300">اضغط لرفع صورة الهوية الوطنية</div>
+                        <div className="text-[10px] text-muted-foreground mt-1">يدعم JPG, PNG (حد أقصى 5MB)</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border/60 text-xs">
+                    <span className="text-[10px] text-muted-foreground">
+                      تاريخ الانتهاء: <strong className="text-foreground">{employee.id_expiry_date || '—'}</strong>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setDocForm(prev => ({ ...prev, type: 'national_id', title: 'صورة الهوية / الإقامة' }));
+                        setUploadDocModal(true);
+                      }}
+                      className="h-7 text-xs text-sky-600 font-bold"
+                    >
+                      {nationalIdDoc ? 'استبدال الصورة' : 'رفع الآن'}
+                    </Button>
+                  </div>
+                </Card>
+
+                {/* SLOT 2: EMPLOYMENT CONTRACT */}
+                <Card className="p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center font-bold">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs text-foreground">صورة / ملف عقد العمل الرسمي</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">
+                            تاريخ المباشرة: {employee.join_date || '2024-01-01'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {contractDoc ? (
+                        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold">
+                          ✓ موثق ومرفوع
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300 text-[10px]">
+                          غير مرفوع
+                        </Badge>
+                      )}
+                    </div>
+
+                    {contractDoc ? (
+                      <div className="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 aspect-[16/9] flex items-center justify-center my-2">
+                        {contractDoc.fileData.startsWith('data:image') ? (
+                          <img
+                            src={contractDoc.fileData}
+                            alt="Contract"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="text-center p-4">
+                            <FileText className="w-12 h-12 text-emerald-600 mx-auto mb-2" />
+                            <div className="text-xs font-bold">{contractDoc.fileName}</div>
+                            <div className="text-[10px] text-muted-foreground font-mono">{contractDoc.fileSize}</div>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                          <Button
+                            size="sm"
+                            onClick={() => setPreviewDoc(contractDoc)}
+                            className="bg-white text-slate-900 rounded-xl text-xs font-bold gap-1 shadow-lg"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> معاينة العقد
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => {
+                          setDocForm(prev => ({ ...prev, type: 'contract', title: 'عقد العمل الموثق' }));
+                          setUploadDocModal(true);
+                        }}
+                        className="border-2 border-dashed border-emerald-300 dark:border-emerald-800 rounded-2xl p-6 text-center cursor-pointer hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-colors my-2"
+                      >
+                        <FilePlus className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
+                        <div className="text-xs font-bold text-emerald-900 dark:text-emerald-300">اضغط لرفع نسخة عقد العمل المعتمد</div>
+                        <div className="text-[10px] text-muted-foreground mt-1">يدعم PDF, JPG, PNG (حد أقصى 5MB)</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border/60 text-xs">
+                    <span className="text-[10px] text-muted-foreground">
+                      انتهاء العقد: <strong className="text-foreground">{employee.contract_end_date || '2026-12-31'}</strong>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setDocForm(prev => ({ ...prev, type: 'contract', title: 'عقد العمل الموثق' }));
+                        setUploadDocModal(true);
+                      }}
+                      className="h-7 text-xs text-emerald-600 font-bold"
+                    >
+                      {contractDoc ? 'استبدال العقد' : 'رفع الآن'}
+                    </Button>
+                  </div>
+                </Card>
+
+              </div>
+
+              {/* ALL UPLOADED DOCUMENTS ARCHIVE */}
+              <Card className="p-6 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b pb-3">
+                  <h4 className="font-heading font-black text-sm text-foreground">
+                    أرشيف وثائق ومستندات الموظف ({documentsList.length})
+                  </h4>
+                </div>
+
+                {documentsList.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground">
+                    <FolderOpen className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-bold">لا توجد مستندات إضافية مرفوعة حالياً لهذا الموظف</p>
+                    <Button
+                      onClick={() => setUploadDocModal(true)}
+                      size="sm"
+                      variant="outline"
+                      className="mt-3 text-xs font-bold rounded-xl"
+                    >
+                      رفع أول مستند ➔
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {documentsList.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 flex flex-col justify-between gap-3 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-bold text-xs text-foreground truncate">{doc.title}</div>
+                              <div className="text-[10px] text-muted-foreground font-mono">{doc.fileSize || '—'}</div>
+                            </div>
+                          </div>
+
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="h-7 w-7 text-rose-500 hover:bg-rose-50 rounded-lg"
+                            title="حذف المستند"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+
+                        {/* Thumbnail if image */}
+                        {doc.fileData?.startsWith('data:image') && (
+                          <div
+                            onClick={() => setPreviewDoc(doc)}
+                            className="h-28 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 cursor-pointer relative group"
+                          >
+                            <img src={doc.fileData} alt={doc.title} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
+                              <Eye className="w-4 h-4 me-1" /> تكبير
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2 border-t border-border/50 text-[10px] text-muted-foreground">
+                          <span>تاريخ الرفع: {doc.uploadedAt}</span>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPreviewDoc(doc)}
+                              className="h-6 px-2 text-[10px] font-bold rounded-lg"
+                            >
+                              معاينة
+                            </Button>
+                            <a
+                              href={doc.fileData}
+                              download={doc.fileName || `${doc.title}.png`}
+                              className="h-6 px-2 text-[10px] font-bold rounded-lg border bg-background hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center gap-1"
+                            >
+                              <Download className="w-3 h-3 text-sky-600" />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+            </div>
+          )}
+
           {/* TAB 2: COMPANY DETAILS */}
           {activeTab === 'company' && (
             <Card className="p-6 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm space-y-4">
@@ -630,7 +1056,7 @@ export default function EmployeeDetail() {
           )}
 
           {/* OTHER TABS */}
-          {activeTab !== 'personal' && activeTab !== 'company' && activeTab !== 'payslips' && (
+          {activeTab !== 'personal' && activeTab !== 'company' && activeTab !== 'payslips' && activeTab !== 'documents' && (
             <Card className="p-12 text-center rounded-3xl border bg-white dark:bg-slate-900 text-muted-foreground">
               <div className="font-heading font-black text-sm text-foreground mb-1">
                 قسم: {profileSubSections.find(s => s.id === activeTab)?.label}
@@ -642,6 +1068,154 @@ export default function EmployeeDetail() {
         </div>
 
       </div>
+
+      {/* ─── UPLOAD DOCUMENT MODAL ────────────────────────────────────────── */}
+      <Dialog open={uploadDocModal} onOpenChange={setUploadDocModal}>
+        <DialogContent className="sm:max-w-lg rounded-3xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-black text-base flex items-center gap-2">
+              <Upload className="w-5 h-5 text-sky-600" />
+              رفع مستند رسمي للموظف: {employee.full_name}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-xs">
+            
+            {/* Document Type */}
+            <div className="space-y-1">
+              <Label className="font-bold">نوع المستند:</Label>
+              <Select value={docForm.type} onValueChange={(val) => setDocForm(prev => ({ ...prev, type: val }))}>
+                <SelectTrigger className="rounded-xl text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="national_id">صورة الهوية الوطنية / الإقامة</SelectItem>
+                  <SelectItem value="contract">صورة / ملف عقد العمل الموثق</SelectItem>
+                  <SelectItem value="license">رخصة القيادة</SelectItem>
+                  <SelectItem value="passport">جواز السفر</SelectItem>
+                  <SelectItem value="other">مستند رسمي / شهادة أخرى</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Custom Title if other */}
+            {docForm.type === 'other' && (
+              <div className="space-y-1">
+                <Label className="font-bold">اسم / عنوان المستند:</Label>
+                <Input
+                  value={docForm.title}
+                  onChange={(e) => setDocForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="مثال: شهادة الفحص الطبي، عقد إيجار..."
+                  className="rounded-xl"
+                />
+              </div>
+            )}
+
+            {/* File Input Box */}
+            <div className="space-y-1">
+              <Label className="font-bold">اختيار الملف (صورة أو PDF):</Label>
+              <div className="border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-2xl p-4 text-center bg-sky-50/40 dark:bg-sky-950/20">
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="doc-file-input"
+                />
+                <label htmlFor="doc-file-input" className="cursor-pointer block">
+                  <Upload className="w-7 h-7 text-sky-600 mx-auto mb-1.5" />
+                  {docForm.fileName ? (
+                    <div>
+                      <div className="font-bold text-sky-900 dark:text-sky-200 text-xs truncate max-w-[280px] mx-auto">
+                        ✓ {docForm.fileName}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{docForm.fileSize}</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="font-bold text-sky-900 dark:text-sky-200 text-xs">اضغط هنا لتحديد الملف من جهازك</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">JPG, PNG, WebP أو PDF (أقصى حجم 5MB)</div>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
+
+            {/* Image Live Preview */}
+            {docForm.fileData && docForm.fileData.startsWith('data:image') && (
+              <div className="rounded-xl overflow-hidden border max-h-40 bg-slate-100 flex items-center justify-center">
+                <img src={docForm.fileData} alt="Preview" className="max-h-40 object-contain" />
+              </div>
+            )}
+
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setUploadDocModal(false)} className="rounded-xl font-bold">
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleSaveDocument}
+              disabled={savingDoc || !docForm.fileData}
+              className="bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold gap-1.5"
+            >
+              {savingDoc ? 'جاري الحفظ في السحابة...' : 'حفظ المستند بالسحابة'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── FULL DOCUMENT PREVIEW LIGHTBOX MODAL ────────────────────────── */}
+      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+        <DialogContent className="sm:max-w-2xl rounded-3xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-black text-base flex items-center justify-between">
+              <span>{previewDoc?.title || 'معاينة المستند'}</span>
+              <span className="text-xs text-muted-foreground font-normal">{previewDoc?.fileName}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-2 text-center">
+            {previewDoc?.fileData?.startsWith('data:image') ? (
+              <div className="max-h-[70vh] overflow-auto rounded-2xl border bg-slate-900/5 p-2 flex items-center justify-center">
+                <img src={previewDoc.fileData} alt={previewDoc.title} className="max-h-[65vh] object-contain rounded-lg shadow-sm" />
+              </div>
+            ) : (
+              <div className="p-8 border rounded-2xl bg-slate-50 dark:bg-slate-800 text-center">
+                <FileText className="w-16 h-16 text-sky-600 mx-auto mb-3" />
+                <div className="font-bold text-sm">{previewDoc?.fileName}</div>
+                <div className="text-xs text-muted-foreground mt-1">مستند PDF رسمي</div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="justify-between items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+              className="rounded-xl text-xs font-bold gap-1"
+            >
+              <Printer className="w-3.5 h-3.5" /> طباعة
+            </Button>
+
+            <div className="flex items-center gap-2">
+              {previewDoc && (
+                <a
+                  href={previewDoc.fileData}
+                  download={previewDoc.fileName || 'document.png'}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800"
+                >
+                  <Download className="w-3.5 h-3.5" /> تحميل الملف
+                </a>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(null)} className="rounded-xl text-xs font-bold">
+                إغلاق
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ─── EDIT MODAL ──────────────────────────────────────────────────── */}
       <Dialog open={editModal} onOpenChange={setEditModal}>
