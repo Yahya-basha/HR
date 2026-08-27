@@ -6,7 +6,7 @@ const STORAGE_KEY = 'nexus-hr-lang';
 
 export function I18nProvider({ children }) {
   const [lang, setLang] = useState(() => {
-    try { return localStorage.getItem(STORAGE_KEY) || 'en'; } catch { return 'en'; }
+    try { return localStorage.getItem(STORAGE_KEY) || 'ar'; } catch { return 'ar'; }
   });
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';

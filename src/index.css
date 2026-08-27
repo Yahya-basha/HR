@@ -129,3 +129,8 @@
   scrollbar-width: none !important;
   -webkit-overflow-scrolling: touch;
 }
+
+html, body {
+  direction: rtl;
+  text-align: right;
+}
