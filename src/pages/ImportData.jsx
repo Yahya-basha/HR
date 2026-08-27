@@ -105,29 +105,69 @@ export default function ImportData() {
       .replace(/[\s-_\.#]/g, '');
   };
 
-  // Helper to parse dates
+  // Helper to format local date without UTC offset subtraction
+  const getLocalDateStr = (d = new Date()) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Bulletproof Excel Date Parser (ZERO timezone shift, handles M/D/YYYY, D/M/YYYY, serials, and Date objects)
   const parseExcelDate = (val) => {
     if (val === undefined || val === null || val === '') return null;
-    if (val instanceof Date) return val.toISOString().split('T')[0];
+
+    // 1. Text String
+    if (typeof val === 'string') {
+      const s = val.trim();
+      if (!s) return null;
+
+      // Format: YYYY-MM-DD or YYYY/MM/DD
+      if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(s)) {
+        const parts = s.split(/[-/]/);
+        return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      }
+
+      // Format: M/D/YYYY or D/M/YYYY or DD/MM/YYYY
+      const slashParts = s.split(/[/.-]/);
+      if (slashParts.length === 3) {
+        let p1 = parseInt(slashParts[0], 10);
+        let p2 = parseInt(slashParts[1], 10);
+        let y = slashParts[2].trim();
+        if (y.length === 2) y = '20' + y;
+
+        // In Ektefa biometric exports, dates are standard M/D/YYYY (e.g. 8/1/2026 = Aug 1, 8/26/2026 = Aug 26)
+        let month = p1;
+        let day = p2;
+        if (p1 > 12 && p2 <= 12) {
+          day = p1;
+          month = p2;
+        }
+
+        return `${y}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
+    }
+
+    // 2. JavaScript Date Object (Add 12 hours to safely cancel UTC midnight backward-shift)
+    if (val instanceof Date) {
+      const shifted = new Date(val.getTime() + 12 * 60 * 60 * 1000);
+      const y = shifted.getUTCFullYear();
+      const m = String(shifted.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(shifted.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    // 3. Excel Numeric Serial Date (e.g. 46235 for 2026-08-01)
     if (typeof val === 'number') {
-      const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+      const ms = Math.round((val - 25569) * 86400 * 1000);
+      const d = new Date(ms);
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     }
-    const str = val.toString().trim();
-    const slashParts = str.split('/');
-    if (slashParts.length === 3) {
-      const p1 = slashParts[0].padStart(2, '0');
-      const p2 = slashParts[1].padStart(2, '0');
-      let p3 = slashParts[2].trim();
-      if (p3.length === 2) p3 = '20' + p3;
-      return `${p3}-${p1}-${p2}`;
-    }
-    if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(str)) {
-      const parts = str.split(/[-/]/);
-      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-    }
-    const parsed = new Date(str);
-    return isNaN(parsed.getTime()) ? str : parsed.toISOString().split('T')[0];
+
+    return String(val);
   };
 
   // Helper to extract all time values from a text string
@@ -168,7 +208,7 @@ export default function ImportData() {
     reader.onload = (evt) => {
       try {
         const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: false, raw: false });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
@@ -430,7 +470,7 @@ export default function ImportData() {
         isNewEmpAuto,
         rawEmpNum,
         rawName: rawName || matchedEmp?.full_name || 'موظف غير مسجل',
-        date: rawDate || new Date().toISOString().split('T')[0],
+        date: rawDate || getLocalDateStr(),
         dayName: dayName || 'السبت',
         shiftName: shiftName || matchedEmp?.shift || 'فترة العمل المعتمدة',
         shiftTime: shiftTime || '08:00 -- 17:00',
