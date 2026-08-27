@@ -1,3 +1,11 @@
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL) || 'https://omnvdvmmmarwsobadlsb.supabase.co';
+const SUPABASE_ANON_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_ANON_KEY) || 'sb_publishable_nUzUqD6WBgXey6SRU76zUA_Q5mlC1B5';
+
+const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+export const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
 
 // Auto normalize branch names on load
 function normalizeEmployeeBranches(list) {
