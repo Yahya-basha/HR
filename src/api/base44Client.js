@@ -685,36 +685,148 @@ function saveLocalItems(entityName, items) {
   }
 }
 
+
+const ENTITY_TABLE_MAP = {
+  AttendanceLog: 'attendance_logs',
+  Employee: 'employees',
+  Company: 'companies',
+  Branch: 'branches',
+  Department: 'departments',
+  Shift: 'shifts',
+  LeavePolicy: 'leave_policies',
+  EmploymentContract: 'employment_contracts',
+};
+
+function getTableName(entityName) {
+  return ENTITY_TABLE_MAP[entityName] || (entityName.toLowerCase() + 's');
+}
+
+function toDbRecord(entityName, item) {
+  if (!item) return item;
+  if (entityName === 'AttendanceLog') {
+    return {
+      id: item.id || ('att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+      employee_id: item.user_id || item.employee_id || item.employee_number || null,
+      employee_name: item.employee_name || '',
+      log_date: item.log_date || null,
+      check_in: item.check_in || null,
+      check_out: item.check_out || null,
+      status: item.status || 'present',
+      notes: JSON.stringify({
+        employee_number: item.employee_number || item.user_id,
+        user_id: item.user_id || item.employee_id,
+        timestamp_raw: item.timestamp_raw || '',
+        total_hours: item.total_hours || 0,
+        period_1_in: item.period_1_in || '',
+        period_1_out: item.period_1_out || '',
+        period_2_in: item.period_2_in || '',
+        period_2_out: item.period_2_out || '',
+        required_hours: item.required_hours || 8,
+        note: item.notes || ''
+      }),
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+  return item;
+}
+
+function fromDbRecord(entityName, row) {
+  if (!row) return row;
+  if (entityName === 'AttendanceLog') {
+    let extra = {};
+    if (row.notes) {
+      try {
+        extra = JSON.parse(row.notes);
+      } catch (e) {
+        extra = { note: row.notes };
+      }
+    }
+    return {
+      ...extra,
+      id: row.id,
+      user_id: extra.user_id || row.employee_id,
+      employee_id: row.employee_id,
+      employee_number: extra.employee_number || row.employee_id,
+      employee_name: row.employee_name,
+      log_date: row.log_date,
+      check_in: row.check_in,
+      check_out: row.check_out,
+      status: row.status || 'present',
+      timestamp_raw: extra.timestamp_raw || (row.check_in ? (row.check_in + ' ' + (row.check_out || '')).trim() : ''),
+      total_hours: extra.total_hours || 0,
+      created_at: row.created_at
+    };
+  }
+  return row;
+}
+
 function createEntityHandler(entityName) {
+  const tableName = getTableName(entityName);
+
   return {
-    async list(params = {}) {
+    async list(orderBy = null, limit = 2000) {
       if (isSupabaseConfigured) {
-        const table = entityName.toLowerCase() + 's';
-        const { data, error } = await supabase.from(table).select('*');
-        if (!error && data) return data;
+        try {
+          let query = supabase.from(tableName).select('*');
+          
+          if (entityName === 'AttendanceLog') {
+            query = query.order('log_date', { ascending: false });
+          } else if (orderBy) {
+            const isDesc = orderBy.startsWith('-');
+            const col = isDesc ? orderBy.slice(1) : orderBy;
+            query = query.order(col, { ascending: !isDesc });
+          }
+
+          if (limit) {
+            query = query.limit(limit);
+          }
+
+          const { data, error } = await query;
+          if (!error && Array.isArray(data) && data.length > 0) {
+            const mapped = data.map(r => fromDbRecord(entityName, r));
+            saveLocalItems(entityName, mapped);
+            return mapped;
+          }
+        } catch (e) {
+          console.warn('Supabase fetch error for ' + entityName + ':', e);
+        }
       }
       return getLocalItems(entityName);
     },
+
     async filter(criteria = {}) {
       const items = await this.list();
       return items.filter(item => {
         return Object.entries(criteria).every(([k, v]) => item[k] === v);
       });
     },
+
     async get(id) {
       if (isSupabaseConfigured) {
-        const table = entityName.toLowerCase() + 's';
-        const { data, error } = await supabase.from(table).select('*').eq('id', id).single();
-        if (!error && data) return data;
+        try {
+          const { data, error } = await supabase.from(tableName).select('*').eq('id', id).single();
+          if (!error && data) return fromDbRecord(entityName, data);
+        } catch (e) {}
       }
       const items = getLocalItems(entityName);
       return items.find(item => item.id === id || item.employee_number === id) || null;
     },
+
     async create(data) {
+      const itemToSave = toDbRecord(entityName, data);
       if (isSupabaseConfigured) {
-        const table = entityName.toLowerCase() + 's';
-        const { data: created, error } = await supabase.from(table).insert([data]).select().single();
-        if (!error && created) return created;
+        try {
+          const { data: created, error } = await supabase.from(tableName).insert([itemToSave]).select().single();
+          if (!error && created) {
+            const parsed = fromDbRecord(entityName, created);
+            const items = getLocalItems(entityName);
+            items.unshift(parsed);
+            saveLocalItems(entityName, items);
+            return parsed;
+          }
+        } catch (e) {
+          console.warn('Supabase insert error for ' + entityName + ':', e);
+        }
       }
       const items = getLocalItems(entityName);
       const newItem = {
@@ -726,11 +838,23 @@ function createEntityHandler(entityName) {
       saveLocalItems(entityName, items);
       return newItem;
     },
+
     async update(id, data) {
+      const itemToSave = toDbRecord(entityName, data);
       if (isSupabaseConfigured) {
-        const table = entityName.toLowerCase() + 's';
-        const { data: updated, error } = await supabase.from(table).update(data).eq('id', id).select().single();
-        if (!error && updated) return updated;
+        try {
+          const { data: updated, error } = await supabase.from(tableName).update(itemToSave).eq('id', id).select().single();
+          if (!error && updated) {
+            const parsed = fromDbRecord(entityName, updated);
+            const items = getLocalItems(entityName);
+            const idx = items.findIndex(i => i.id === id || i.employee_number === id);
+            if (idx !== -1) items[idx] = parsed;
+            saveLocalItems(entityName, items);
+            return parsed;
+          }
+        } catch (e) {
+          console.warn('Supabase update error for ' + entityName + ':', e);
+        }
       }
       const items = getLocalItems(entityName);
       const index = items.findIndex(item => item.id === id || item.employee_number === id);
@@ -741,38 +865,50 @@ function createEntityHandler(entityName) {
       }
       return data;
     },
+
     async delete(id) {
       if (isSupabaseConfigured) {
-        const table = entityName.toLowerCase() + 's';
-        await supabase.from(table).delete().eq('id', id);
+        try {
+          await supabase.from(tableName).delete().eq('id', id);
+        } catch (e) {}
       }
       let items = getLocalItems(entityName);
       items = items.filter(item => item.id !== id && item.employee_number !== id);
       saveLocalItems(entityName, items);
       return { success: true };
     },
+
     async clearAll() {
       if (isSupabaseConfigured) {
         try {
-          const table = entityName.toLowerCase() + 's';
-          await supabase.from(table).delete().neq('id', '___none___');
+          await supabase.from(tableName).delete().neq('id', '___none___');
         } catch (e) {
-          console.warn('Supabase clear error:', e);
+          console.warn('Supabase clear error for ' + tableName + ':', e);
         }
       }
       saveLocalItems(entityName, []);
       return { success: true };
     },
+
     async bulkCreate(records) {
       if (!Array.isArray(records) || records.length === 0) return [];
+      
       if (isSupabaseConfigured) {
         try {
-          const table = entityName.toLowerCase() + 's';
-          await supabase.from(table).insert(records);
+          const dbRows = records.map(r => toDbRecord(entityName, r));
+          const chunkSize = 150;
+          for (let i = 0; i < dbRows.length; i += chunkSize) {
+            const chunk = dbRows.slice(i, i + chunkSize);
+            const { error } = await supabase.from(tableName).insert(chunk);
+            if (error) {
+              console.warn('Supabase batch insert error on ' + tableName + ':', error);
+            }
+          }
         } catch (e) {
-          console.warn('Supabase bulkCreate error:', e);
+          console.warn('Supabase bulkCreate exception:', e);
         }
       }
+
       const items = getLocalItems(entityName);
       const newItems = [...records, ...items];
       saveLocalItems(entityName, newItems);

@@ -97,7 +97,7 @@ export default function Payroll() {
     setLoading(true);
     Promise.all([
       base44.entities.Employee.list(),
-      base44.entities.AttendanceLog.list('-log_date', 800),
+      base44.entities.AttendanceLog.list('-log_date', 2000),
       base44.entities.Shift.list(),
     ]).then(([emps, logs, shfs]) => {
       setEmployees(emps || []);
@@ -195,7 +195,7 @@ export default function Payroll() {
 
     // Refresh attendance logs to trigger recalculation
     setLoading(true);
-    base44.entities.AttendanceLog.list('-log_date', 800).then(logs => {
+    base44.entities.AttendanceLog.list('-log_date', 2000).then(logs => {
       setAttendanceLogs(logs || []);
     }).finally(() => setLoading(false));
   }, [approvalEmp, approvalAction, approvalCustomAmt, approvalNote, month, user]);

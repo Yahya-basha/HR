@@ -539,18 +539,14 @@ export default function ImportData() {
       if (cleanWipeBeforeImport && base44.entities.AttendanceLog?.clearAll) {
         await base44.entities.AttendanceLog.clearAll();
       }
-      // 2. Save Attendance Records
-      let savedCount = 0;
-      const total = parsedRecords.length;
-
-      for (let i = 0; i < parsedRecords.length; i++) {
-        const rec = parsedRecords[i];
+      // 2. Save Attendance Records via High-Speed Cloud Batch Sync (bulkCreate)
+      const recordsToSave = parsedRecords.map(rec => {
         const emp = rec.employee;
-
         const checkInIso = rec.checkIn !== '—' && rec.date ? `${rec.date}T${rec.checkIn}` : null;
         const checkOutIso = rec.checkOut !== '—' && rec.date ? `${rec.date}T${rec.checkOut}` : null;
 
-        await base44.entities.AttendanceLog.create({
+        return {
+          id: 'att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
           user_id: emp?.id || ('usr_' + (rec.rawEmpNum || 'temp')),
           employee_number: emp?.employee_number || rec.rawEmpNum,
           national_id: emp?.national_id || '',
@@ -565,12 +561,21 @@ export default function ImportData() {
           status: rec.status,
           timestamp_raw: rec.timestampStr,
           punches_raw: rec.rawPunchesStr,
-          source: 'excel_biometric_import'
-        });
+          source: 'excel_biometric_import',
+          created_at: new Date().toISOString()
+        };
+      });
 
-        savedCount++;
-        setImportProgress(Math.round((savedCount / total) * 80) + 20);
+      setImportProgress(60);
+      if (base44.entities.AttendanceLog?.bulkCreate) {
+        await base44.entities.AttendanceLog.bulkCreate(recordsToSave);
+      } else {
+        for (const r of recordsToSave) {
+          await base44.entities.AttendanceLog.create(r);
+        }
       }
+      setImportProgress(100);
+      const savedCount = recordsToSave.length;
 
       await loadEmployees();
       setImportedSuccess(true);
