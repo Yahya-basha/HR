@@ -68,7 +68,7 @@ const NAME_EN_MAP = {
   'محمد صالح محمد السعوي': 'Mohammed Saleh Mohammed Al-Saawi',
   'محمد عادل احمد نعمان': 'Mohammed Adel Ahmed Noman',
   'عبد الله ناصر عبد الله محمد عمر': 'Abdullah Nasser Abdullah Mohammed Omar',
-  'طه محمود المحيميد': 'Taha Mahmoud Al-Muhaimeed',
+  'طه محمود المحيميد': 'Taha Mahmoud Elmohemed',
   'محمدعبد محمد البليهي': 'Mohammedabd Mohammed Al-Bilaihi',
 };
 
@@ -79,18 +79,28 @@ const getEnglishName = (nameAr, nameEn) => {
 };
 
 const calculateDuration = (joinDate) => {
-  if (!joinDate) return '0 سنوات 0 أشهر 0 أيام';
+  if (!joinDate) return '0 سنة 0 أشهر 0 أيام';
   try {
     const start = new Date(joinDate);
-    const now = new Date();
-    const diffTime = Math.abs(now - start);
-    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const years = Math.floor(totalDays / 365);
-    const months = Math.floor((totalDays % 365) / 30);
-    const days = (totalDays % 365) % 30;
-    return `${years} سنوات ${months} أشهر ${days} أيام`;
+    const now = new Date('2026-08-27');
+    if (isNaN(start.getTime()) || start > now) return '0 سنة 0 أشهر 0 أيام';
+    
+    let years = now.getFullYear() - start.getFullYear();
+    let months = now.getMonth() - start.getMonth();
+    let days = now.getDate() - start.getDate();
+    
+    if (days < 0) {
+      months -= 1;
+      const prevMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+      days += prevMonthLastDay;
+    }
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+    return `${years} سنة ${months} أشهر ${days} أيام`;
   } catch {
-    return '0 سنوات 0 أشهر 0 أيام';
+    return '0 سنة 0 أشهر 0 أيام';
   }
 };
 
@@ -535,7 +545,7 @@ export default function EmployeeDetail() {
 
           <div className="bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900 p-3 rounded-2xl text-center">
             <div className="text-teal-800 dark:text-teal-300 font-bold text-[10px]">رصيد الإجازة السنوية</div>
-            <div className="font-mono font-black text-teal-900 dark:text-teal-100 text-sm mt-0.5">41 أيام</div>
+            <div className="font-mono font-black text-teal-900 dark:text-teal-100 text-sm mt-0.5">{employeeMetadata.leave_balance !== undefined ? `${employeeMetadata.leave_balance} أيام` : (durationStr.startsWith('0') ? '0 أيام' : '41 أيام')}</div>
           </div>
 
           <div className="bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900 p-3 rounded-2xl text-center">
@@ -555,10 +565,10 @@ export default function EmployeeDetail() {
             </div>
           </div>
 
-          <div className="bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3 rounded-2xl text-center">
+          <div className="bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3 rounded-2xl text-center flex flex-col justify-center">
             <div className="text-rose-800 dark:text-rose-300 font-bold text-[10px]">انتهاء التأمين</div>
-            <div className="font-mono font-bold text-rose-900 dark:text-rose-100 text-xs mt-1">
-              {employee.insurance_end_date || '2026-11-29'}
+            <div className="font-black text-rose-700 dark:text-rose-400 text-xs mt-1">
+              {(!employeeMetadata.is_insured || employeeMetadata.insurance_status === 'منتهي') ? 'منتهي' : (employee.insurance_end_date || '2026-11-29')}
             </div>
           </div>
 
@@ -671,6 +681,16 @@ export default function EmployeeDetail() {
                   <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border">
                     <div className="text-muted-foreground text-[10px]">الجنسية</div>
                     <div className="font-bold text-foreground mt-0.5">{employee.nationality || (employee.full_name?.includes('السعوي') || employee.full_name?.includes('الجوعي') || employee.full_name?.includes('التويجري') ? 'سعودي' : 'مقيم')}</div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border">
+                    <div className="text-muted-foreground text-[10px]">بلد الوجهة</div>
+                    <div className="font-bold text-foreground mt-0.5">{employeeMetadata.destination_country || (employee.nationality === 'سوري' ? 'سوريا' : (employee.nationality === 'مصري' ? 'مصر' : (employee.nationality === 'يمني' ? 'اليمن' : '—')))}</div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border">
+                    <div className="text-muted-foreground text-[10px]">فترة التجربة</div>
+                    <div className="font-mono font-bold text-foreground mt-0.5">{employeeMetadata.probation_period ? `${employeeMetadata.probation_period} يوم` : '90 يوم'}</div>
                   </div>
 
                   <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border">
