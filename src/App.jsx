@@ -70,7 +70,8 @@ const AuthenticatedApp = () => {
           
           {/* Admin Protected Pages */}
           <Route path="/employees" element={isEmployee ? <Navigate to="/portal" replace /> : <Employees />} />
-          <Route path="/employees/:id" element={isEmployee ? <Navigate to="/portal" replace /> : <EmployeeDetail />} />
+          <Route path="/employees/:id" element={<EmployeeDetail />} />
+          <Route path="/employee-profile" element={<EmployeeDetail />} />
           <Route path="/attendance" element={isEmployee ? <Navigate to="/portal" replace /> : <Attendance />} />
           <Route path="/leave" element={isEmployee ? <Navigate to="/portal" replace /> : <Leave />} />
           <Route path="/departments" element={isEmployee ? <Navigate to="/portal" replace /> : <Departments />} />
