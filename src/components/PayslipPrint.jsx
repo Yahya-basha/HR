@@ -156,6 +156,7 @@ export default function PayslipPrint({ payrollResult, month }) {
                 ['الفرع', emp.branch_name || emp.branch || '—', 'font-semibold'],
                 ['الوردية المعتمدة', shiftName || '—', 'font-semibold'],
                 ['ساعات الوردية', shiftHours + ' ساعات / يوم', 'font-mono'],
+                ['حالة التأمينات (GOSI)', (emp.is_insured !== false && emp.is_insured !== 'false') ? 'مؤمن عليه 🛡️' + (emp.gosi_number ? ' (#' + emp.gosi_number + ')' : '') : 'غير مسجل', 'font-semibold text-blue-700'],
                 ['الراتب الأساسي', fmtSAR(basicSalary) + ' ر.س', 'font-mono font-bold text-emerald-800'],
               ].map(([lbl, val, cls]) => (
                 <div key={lbl} style={{ display: 'flex', flexDirection: 'column' }}>
@@ -243,9 +244,12 @@ export default function PayslipPrint({ payrollResult, month }) {
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                 <tbody>
-                  <tr style={{ background: '#fff', borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '6px 8px' }}>التأمينات الاجتماعية (GOSI)</td>
-                    <td style={{ padding: '6px 8px', fontWeight: '700', textAlign: 'left', color: '#dc2626', fontFamily: 'monospace' }}>-{fmtSAR(gosiDeduction)} ر.س</td>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '6px 8px', color: '#64748b' }}>
+                      التأمينات الاجتماعية (GOSI)
+                      <span style={{ fontSize: '9px', color: '#2563eb', display: 'block' }}>تحمل المنشأة بالكامل (0% على الموظف)</span>
+                    </td>
+                    <td style={{ padding: '6px 8px', fontWeight: '600', textAlign: 'left', color: '#64748b', fontFamily: 'monospace' }}>0.00 ر.س</td>
                   </tr>
                   {proposedShortfallDeduction > 0 && <tr style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
                     <td style={{ padding: '6px 8px', color: '#991b1b' }}>

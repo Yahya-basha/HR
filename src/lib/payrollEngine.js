@@ -216,8 +216,11 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const fridayNote = fridayDays > 0 ? fridayDays + ' أيام جمعة × ' + fridayDailyRate + ' = ' + fridayAllowance + ' ريال' : null;
   const dailyOvertimeAllowance = overtimeDays * overtimeDailyRate;
   const dailyOvertimeNote = overtimeDays > 0 ? overtimeDays + ' يوم × ' + overtimeDailyRate + ' = ' + dailyOvertimeAllowance + ' ريال' : null;
+  // GOSI (Social Insurance) is 100% employer-covered — ZERO deduction on employee salary
   const isSaudi = (emp.nationality || '').includes('سعودي');
-  const gosiDeduction = Math.round(basicSalary * (isSaudi ? 0.0975 : 0.02));
+  const isInsured = emp.is_insured !== false && emp.is_insured !== 'false';
+  const gosiNumber = emp.gosi_number || emp.gosi_subscription_number || (isInsured ? ('GSI-' + (emp.employee_number || '0000')) : '');
+  const gosiDeduction = 0; // ZERO deduction from employee salary
 
   let approvedShortfallDeduction = 0, shortfallApprovalStatus = 'pending', shortfallApprovalNote = '';
   try {
@@ -231,7 +234,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   } catch {}
 
   const totalAdditions = housing + transport + fridayAllowance + dailyOvertimeAllowance;
-  const totalDeductions = gosiDeduction + approvedShortfallDeduction;
+  const totalDeductions = approvedShortfallDeduction;
   const netSalary = basicSalary + totalAdditions - totalDeductions;
 
   return {
@@ -243,7 +246,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     basicSalary, housing, transport,
     fridayAllowance, fridayNote, fridayDailyRate,
     dailyOvertimeAllowance, dailyOvertimeNote,
-    totalAdditions, gosiDeduction,
+    totalAdditions, gosiDeduction, isInsured, gosiNumber,
     proposedShortfallDeduction, approvedShortfallDeduction,
     shortfallApprovalStatus, shortfallApprovalNote,
     totalDeductions, netSalary,

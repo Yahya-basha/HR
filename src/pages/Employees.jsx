@@ -133,6 +133,7 @@ export default function Employees() {
               <TableHead className="font-bold text-xs">الفرع / القسم</TableHead>
               <TableHead className="font-bold text-xs">فترة العمل (الوردية)</TableHead>
               <TableHead className="font-bold text-xs">الراتب والبدلات</TableHead>
+              <TableHead className="font-bold text-xs">التأمينات (GOSI)</TableHead>
               <TableHead className="font-bold text-xs">الجنسية</TableHead>
               <TableHead className="font-bold text-xs text-center">الإجراءات</TableHead>
             </TableRow>
@@ -141,12 +142,12 @@ export default function Employees() {
             {loading ? (
               [...Array(6)].map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={8} className="h-14 bg-secondary/20 animate-pulse" />
+                  <TableCell colSpan={9} className="h-14 bg-secondary/20 animate-pulse" />
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground font-medium">
+                <TableCell colSpan={9} className="text-center py-12 text-muted-foreground font-medium">
                   لا توجد نتائج مطابقة لبحثك
                 </TableCell>
               </TableRow>

@@ -442,7 +442,7 @@ export default function Payroll() {
                     <TableHead className="text-right w-[160px] text-emerald-700 dark:text-emerald-400 font-black">بدل الجمعة (فعلي بالبصمة)</TableHead>
                     <TableHead className="text-right w-[130px] text-amber-700 dark:text-amber-400 font-black">إضافي يومي</TableHead>
                     <TableHead className="text-right w-[190px] text-red-700 dark:text-red-400 font-black">عجز الحضور / الخصم</TableHead>
-                    <TableHead className="text-right w-[110px] text-slate-600 dark:text-slate-400">التأمينات (GOSI)</TableHead>
+                    <TableHead className="text-right w-[125px] text-blue-700 dark:text-blue-400 font-extrabold">التأمينات (GOSI)</TableHead>
                     <TableHead className="text-center w-[150px] text-emerald-700 dark:text-emerald-400 font-black">صافي الراتب المستحق</TableHead>
                     <TableHead className="text-center w-[150px] pl-4">الإجراءات</TableHead>
                   </TableRow>
@@ -573,12 +573,22 @@ export default function Payroll() {
                           )}
                         </TableCell>
 
-                        {/* 7. GOSI DEDUCTION */}
+                        {/* 7. GOSI INSURANCE STATUS (NO DEDUCTION) */}
                         <TableCell className="py-3">
-                          <div className="font-mono font-bold text-xs text-slate-700 dark:text-slate-300">
-                            -{fmtNum(pr.gosiDeduction)}
-                            <span className="text-[9px] font-sans text-muted-foreground mr-1">ر.س</span>
-                          </div>
+                          {pr.emp.is_insured !== false && pr.emp.is_insured !== 'false' ? (
+                            <div className="space-y-0.5">
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-bold text-[10px]">
+                                <span>🛡️ مؤمن عليه</span>
+                              </div>
+                              <p className="text-[9px] text-muted-foreground font-mono truncate max-w-[100px]" title={pr.gosiNumber || 'اشتراك نشط'}>
+                                {pr.emp.gosi_number ? '#' + pr.emp.gosi_number : 'تحمل المنشأة'}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-medium border border-slate-200 dark:border-slate-700">
+                              <span>غير مسجل</span>
+                            </div>
+                          )}
                         </TableCell>
 
                         {/* 8. NET SALARY (PROMINENT LUXURY BADGE) */}

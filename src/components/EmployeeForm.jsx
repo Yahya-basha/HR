@@ -70,7 +70,9 @@ const empty = {
   id_expiry_date: '',
   nationality: 'سعودي',
   gender: 'male',
-  company: 'درة السيارة لقطع غيار السيارات'
+  company: 'درة السيارة لقطع غيار السيارات',
+  is_insured: true,
+  gosi_number: ''
 };
 
 export default function EmployeeForm({ open, onOpenChange, employee, departments: propsDepts, onSaved }) {
@@ -149,6 +151,8 @@ export default function EmployeeForm({ open, onOpenChange, employee, departments
         salary: Number(form.salary) || 0,
         housing_allowance: Number(form.housing_allowance) || 0,
         transport_allowance: Number(form.transport_allowance) || 0,
+        is_insured: form.is_insured !== false && form.is_insured !== 'false',
+        gosi_number: form.gosi_number || '',
         employee_number: String(form.employee_number || form.employee_id || '1000'),
         employee_id: String(form.employee_number || form.employee_id || '1000'),
         join_date: form.join_date || form.hire_date || new Date().toISOString().split('T')[0]
@@ -315,6 +319,40 @@ export default function EmployeeForm({ open, onOpenChange, employee, departments
 
         {showIdentity && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-border/60 text-xs">
+            {/* GOSI Insurance Fields */}
+            <div className="sm:col-span-2 p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="font-bold text-xs text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                  <span>🛡️ بيانات التأمينات الاجتماعية (GOSI)</span>
+                </Label>
+                <span className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold">تحمل المنشأة 100% (بدون استقطاع من الراتب)</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">حالة التأمين الاجتماعي</Label>
+                  <Select value={form.is_insured ? 'true' : 'false'} onValueChange={(v) => set('is_insured', v === 'true')}>
+                    <SelectTrigger className="bg-white dark:bg-slate-900">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">مؤمن عليه في التأمينات (نشط)</SelectItem>
+                      <SelectItem value="false">غير مسجل بالتأمينات</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">رقم الاشتراك في التأمينات</Label>
+                  <Input
+                    value={form.gosi_number || ''}
+                    onChange={(e) => set('gosi_number', e.target.value)}
+                    placeholder="مثال: 100578945"
+                    className="font-mono bg-white dark:bg-slate-900"
+                    disabled={!form.is_insured}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <Label>رقم الهوية الوطنية / الإقامة</Label>
               <Input value={form.national_id} onChange={(e) => set('national_id', e.target.value)} className="font-mono" />
