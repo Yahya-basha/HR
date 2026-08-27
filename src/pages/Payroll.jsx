@@ -331,6 +331,18 @@ export default function Payroll() {
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-24" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
       
+      {/* ─── DEDICATED ADVANCES & LOANS MANAGEMENT HUB (?tab=advances) ──────── */}
+      {tabParam === 'advances' ? (
+        <AdvancesManagementHub
+          employees={employees}
+          advancesList={advancesList}
+          onRefresh={() => setAdvancesList(getAdvances())}
+          onOpenNewAdvance={() => setNewAdvanceModal(true)}
+          onPrintAdvance={(adv) => setSelectedAdvanceForPrint(adv)}
+          fmtNum={fmtNum}
+        />
+      ) : (
+        <>
       {/* ─── 1. TOP EXECUTIVE HEADER ────────────────────────────────────────── */}
       <div className="bg-card border border-border/80 p-6 rounded-3xl shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -1342,6 +1354,8 @@ export default function Payroll() {
         </div>
       )}
 
+        </>
+      )}
       {/* ─── MODAL: LOCK CONFIRMATION ──────────────────────────────────────── */}
       <Dialog open={lockConfirmModal} onOpenChange={setLockConfirmModal}>
         <DialogContent className="sm:max-w-md rounded-3xl" dir="rtl">

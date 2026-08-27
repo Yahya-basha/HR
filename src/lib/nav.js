@@ -98,7 +98,6 @@ export const navigationModules = [
     activeBg: 'bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200',
     items: [
       { to: '/leave', label: 'الإجازات', icon: CalendarDays },
-      { to: '/reports', label: 'التقارير', icon: FileSpreadsheet, admin: true },
       { to: '/leave-policies', label: 'سياسات الإجازات', icon: BookOpen, admin: true },
       { to: '/rewards-penalties', label: 'المكافآت والجزاءات', icon: Award, admin: true },
     ]
@@ -118,6 +117,22 @@ export const navigationModules = [
       { to: '/payroll?stage=5', label: '5. رواتب الشهور السابقة والمصادقة', icon: FileText, admin: true },
       { to: '/payroll?tab=advances', label: 'نظام السلف والقروض', icon: CreditCard, admin: true },
       { to: '/end-of-service', label: 'حاسبة مكافأة نهاية الخدمة', icon: Calculator, admin: true },
+    ]
+  },
+  {
+    id: 'reports',
+    label: 'التقارير',
+    icon: FileSpreadsheet,
+    color: '#f43f5e', // Rose/Coral Ektefa Color
+    badgeColor: 'bg-rose-500 text-white',
+    activeBg: 'bg-rose-50 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200',
+    items: [
+      { to: '/reports', label: 'مركز التقارير الشامل', icon: FileSpreadsheet, admin: true },
+      { to: '/reports?report=daily_biometrics', label: 'تقرير البصمات اليومي', icon: Clock, admin: true },
+      { to: '/reports?report=payroll_details', label: 'تفاصيل الرواتب', icon: Wallet, admin: true },
+      { to: '/reports?report=employee_master_data', label: 'بيانات الموظفين', icon: Users, admin: true },
+      { to: '/reports?report=leave_report', label: 'تقرير الإجازات', icon: CalendarDays, admin: true },
+      { to: '/reports?report=advances_and_loans', label: 'تقرير السلف والقروض', icon: CreditCard, admin: true },
     ]
   },
   {
