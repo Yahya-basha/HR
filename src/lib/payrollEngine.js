@@ -591,3 +591,88 @@ export function formatTimeDisplay(timeStr) {
     return timeStr;
   }
 }
+
+
+// ============================================================================
+// LOCKED MONTHLY PAYROLLS (ARCHIVE & CLOUD SNAPSHOTS)
+// ============================================================================
+
+export function getLockedMonthlyPayrolls() {
+  try {
+    return JSON.parse(localStorage.getItem('hr_flow_locked_payrolls_list') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+export function isMonthLocked(monthPrefix) {
+  const list = getLockedMonthlyPayrolls();
+  return list.some(m => m.month_prefix === monthPrefix && m.status === 'locked');
+}
+
+export function getLockedMonthlyPayroll(monthPrefix) {
+  try {
+    const data = localStorage.getItem('hr_flow_locked_payroll_' + monthPrefix);
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLockedMonthlyPayroll(monthPrefix, snapshotData, approvedBy = 'فهد ناصر محمد الجوعي (المدير العام)') {
+  const record = {
+    id: 'lock_' + monthPrefix.replace('-', '_'),
+    month_prefix: monthPrefix,
+    title: 'مسير رواتب شهر ' + (parseInt(monthPrefix.split('-')[1], 10)) + ' (' + monthPrefix + ')',
+    totals: snapshotData.totals || {},
+    payrolls: snapshotData.payrolls || [],
+    employee_count: snapshotData.payrolls?.length || 0,
+    status: 'locked',
+    locked_at: new Date().toISOString(),
+    locked_by: approvedBy,
+  };
+
+  // 1. Save specific snapshot
+  localStorage.setItem('hr_flow_locked_payroll_' + monthPrefix, JSON.stringify(record));
+
+  // 2. Update master locked list
+  let list = getLockedMonthlyPayrolls();
+  list = list.filter(m => m.month_prefix !== monthPrefix);
+  list.unshift({
+    month_prefix: record.month_prefix,
+    title: record.title,
+    totals: record.totals,
+    employee_count: record.employee_count,
+    status: 'locked',
+    locked_at: record.locked_at,
+    locked_by: record.locked_by
+  });
+  localStorage.setItem('hr_flow_locked_payrolls_list', JSON.stringify(list));
+
+  // 3. Audit trail
+  appendAuditLog({
+    action: 'monthly_payroll_locked',
+    monthPrefix,
+    title: record.title,
+    totalNet: record.totals?.net,
+    employeeCount: record.employee_count,
+    approvedBy,
+  });
+
+  return record;
+}
+
+export function unlockMonthlyPayroll(monthPrefix, reason = 'تعديل طارئ', unlockedBy = 'مدير النظام العام') {
+  localStorage.removeItem('hr_flow_locked_payroll_' + monthPrefix);
+  
+  let list = getLockedMonthlyPayrolls();
+  list = list.filter(m => m.month_prefix !== monthPrefix);
+  localStorage.setItem('hr_flow_locked_payrolls_list', JSON.stringify(list));
+
+  appendAuditLog({
+    action: 'monthly_payroll_unlocked',
+    monthPrefix,
+    note: reason,
+    approvedBy: unlockedBy,
+  });
+}
