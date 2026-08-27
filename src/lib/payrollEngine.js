@@ -1,153 +1,334 @@
-// payrollEngine.js - Green Arrow HR Payroll Engine
-export const PAYROLL_DEFAULTS = {
-  FRIDAY_DAILY_RATE: 50,
-  OVERTIME_DAILY_RATE: 100,
-  DAYS_PER_MONTH: 30,
-  GOSI_SAUDI_RATE: 0.0975,
-  GOSI_NONSAUDI_RATE: 0.02,
-};
-
-const EXEMPT_STATUSES_SET = new Set([
-  'on_leave','leave','holiday','public_holiday','weekend',
-  'not_started','exempt','approved_absence','mission',
-  'on leave','annual leave'
-]);
+// ============================================================================
+// PAYROLL ENGINE - FINANCIAL CALCULATIONS & BUSINESS LOGIC
+// Includes: Shortfall hours, Friday overtime, Daily overtime, GOSI,
+// Penalties & Disciplinary deductions, Bonuses & Sales incentives,
+// Employee Advances & Loans with Debt Protection & Audit trail.
+// ============================================================================
 
 export function getPayrollSettings() {
   try {
     const saved = localStorage.getItem('hr_flow_payroll_settings');
-    if (saved) {
-      const p = JSON.parse(saved);
-      return {
-        fridayDailyRate: Number(p.friday_daily_rate) || 50,
-        overtimeDailyRate: Number(p.overtime_daily_rate) || 100,
-        daysPerMonth: Number(p.days_per_month) || 30,
-      };
-    }
+    if (saved) return JSON.parse(saved);
   } catch {}
-  return { fridayDailyRate: 50, overtimeDailyRate: 100, daysPerMonth: 30 };
+  return {
+    fridayDailyRate: 50,
+    overtimeDailyRate: 100,
+    daysPerMonth: 30,
+    lateGraceMinutes: 15,
+  };
 }
 
 export function savePayrollSettings(settings) {
   try {
-    localStorage.setItem('hr_flow_payroll_settings', JSON.stringify({
-      friday_daily_rate: settings.fridayDailyRate ?? 50,
-      overtime_daily_rate: settings.overtimeDailyRate ?? 100,
-      days_per_month: settings.daysPerMonth ?? 30,
-    }));
-  } catch {}
+    localStorage.setItem('hr_flow_payroll_settings', JSON.stringify(settings));
+    appendAuditLog({
+      action: 'settings_updated',
+      details: settings,
+      user: 'المدير العام',
+      timestamp: new Date().toISOString()
+    });
+  } catch (e) {
+    console.error('Failed to save payroll settings:', e);
+  }
 }
 
-export function timeToMinutes(timeStr) {
-  if (!timeStr) return null;
-  const clean = timeStr.toString().trim().replace(/\./g, ':');
-  const parts = clean.split(':');
-  if (parts.length < 2) return null;
-  const h = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10);
-  if (isNaN(h) || isNaN(m)) return null;
-  return h * 60 + m;
-}
-
-export function extractPunchTimes(rawStr) {
-  if (!rawStr) return [];
-  const matches = rawStr.toString().match(/\d{1,2}[:.][0-9]{2}(?:[:.][0-9]{2})?/g) || [];
-  return matches.map(t => {
-    const parts = t.replace(/\./g, ':').split(':');
-    return (parts[0]||'00').padStart(2,'0') + ':' + (parts[1]||'00').padStart(2,'0');
-  });
-}
-
-export function hasRealBiometricPunches(log) {
-  if (!log) return false;
-  const candidates = [log.timestamp_raw, log.punches_raw, log.check_in].filter(Boolean);
-  return candidates.some(str => {
-    const s = str.toString().trim();
-    if (!s || s === '—' || s === '-') return false;
-    if (s.includes('\u0639\u0637\u0644\u0629')) return false;
-    if (s.includes('\u0644\u0645 \u064a\u0628\u0627\u0634\u0631')) return false;
-    return /\d{1,2}[:.][0-9]{2}/.test(s);
-  });
-}
-
-export function isDayExempt(log) {
-  if (!log) return true;
-  const status = (log.status || '').trim().toLowerCase();
-  if (EXEMPT_STATUSES_SET.has(status)) return true;
-  if (status.includes('\u0625\u062c\u0627\u0632\u0629')) return true;
-  if (status.includes('\u0639\u0637\u0644\u0629')) return true;
-  if (status.includes('\u0645\u0647\u0645\u0629')) return true;
-  return false;
+export function calcHourlyRate(basicSalary, shiftRequiredHours, daysPerMonth = 30) {
+  if (!basicSalary || basicSalary <= 0 || !shiftRequiredHours || shiftRequiredHours <= 0) return 0;
+  return basicSalary / daysPerMonth / shiftRequiredHours;
 }
 
 export function getShiftRequiredHours(shift) {
   if (!shift) return 8;
-  if (shift.working_hours && Number(shift.working_hours) > 0) return Number(shift.working_hours);
-  if (shift.start_time && shift.end_time) {
-    const start = timeToMinutes(shift.start_time);
-    const end = timeToMinutes(shift.end_time);
-    if (start !== null && end !== null) {
-      let diff = end - start;
-      if (diff < 0) diff += 1440;
-      if (shift.break_start && shift.break_end) {
-        const bs = timeToMinutes(shift.break_start);
-        const be = timeToMinutes(shift.break_end);
-        if (bs !== null && be !== null) {
-          let bd = be - bs; if (bd < 0) bd += 1440; diff -= bd;
-        }
-      }
-      return Math.max(0, diff / 60);
-    }
+  const directHours = Number(shift.working_hours || shift.hours || shift.required_hours);
+  if (directHours > 0) return directHours;
+
+  const type = (shift.type || '').toLowerCase();
+  const name = (shift.name || '').toLowerCase();
+
+  if (type === 'dual' || name.includes('فترت') || name.includes('غير سعودي') || name.includes('dual')) {
+    return 8;
+  }
+  if (type === 'single' || name.includes('صباح') || name.includes('مساء') || name.includes('سعودي')) {
+    return 8;
+  }
+  if (name.includes('مدير') || name.includes('مرن') || type === 'flexible') {
+    return 8;
   }
   return 8;
 }
 
+export function parseTimeToMinutes(timeStr) {
+  if (!timeStr) return null;
+  try {
+    if (timeStr.includes('T')) {
+      const d = new Date(timeStr);
+      if (isNaN(d.getTime())) return null;
+      return d.getHours() * 60 + d.getMinutes();
+    }
+    const clean = timeStr.replace(/[^0-9:]/g, '');
+    const parts = clean.split(':');
+    if (parts.length >= 2) {
+      const h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      if (!isNaN(h) && !isNaN(m)) return h * 60 + m;
+    }
+  } catch {}
+  return null;
+}
+
+export function extractTimes(str) {
+  if (!str || typeof str !== 'string') return [];
+  const matches = str.match(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g) || [];
+  return matches.map(t => {
+    const parts = t.split(':');
+    return parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+  });
+}
+
 export function calcActualMinutes(log) {
   if (!log) return 0;
-  if (isDayExempt(log)) return null;
-  const rawStr = (log.timestamp_raw || log.punches_raw || '').toString();
-  if (rawStr.includes('&')) {
-    let total = 0;
-    rawStr.split('&').forEach(part => {
-      const times = extractPunchTimes(part);
-      if (times.length >= 2) {
-        const s = timeToMinutes(times[0]);
-        const e = timeToMinutes(times[times.length - 1]);
-        if (s !== null && e !== null) { let d = e - s; if (d < 0) d += 1440; total += Math.max(0, d); }
-      }
-    });
-    return total;
+
+  if (log.total_hours && Number(log.total_hours) > 0) {
+    return Math.round(Number(log.total_hours) * 60);
   }
-  const times = extractPunchTimes(rawStr);
-  if (times.length >= 2) {
-    const s = timeToMinutes(times[0]);
-    const e = timeToMinutes(times[times.length - 1]);
-    if (s !== null && e !== null) { let d = e - s; if (d < 0) d += 1440; return Math.max(0, d); }
+
+  const raw = log.timestamp_raw || log.punches_raw || '';
+  const times = extractTimes(raw);
+
+  if (times.length >= 4) {
+    const m1In = parseTimeToMinutes(times[0]);
+    const m1Out = parseTimeToMinutes(times[1]);
+    const m2In = parseTimeToMinutes(times[2]);
+    const m2Out = parseTimeToMinutes(times[3]);
+
+    let dur1 = 0;
+    if (m1In !== null && m1Out !== null) {
+      dur1 = m1Out >= m1In ? m1Out - m1In : (m1Out + 1440) - m1In;
+    }
+    let dur2 = 0;
+    if (m2In !== null && m2Out !== null) {
+      dur2 = m2Out >= m2In ? m2Out - m2In : (m2Out + 1440) - m2In;
+    }
+    const total = dur1 + dur2;
+    if (total > 0 && total <= 1440) return total;
   }
+
+  if (times.length === 2) {
+    const inM = parseTimeToMinutes(times[0]);
+    const outM = parseTimeToMinutes(times[1]);
+    if (inM !== null && outM !== null) {
+      const dur = outM >= inM ? outM - inM : (outM + 1440) - inM;
+      if (dur > 0 && dur <= 1440) return dur;
+    }
+  }
+
   if (log.check_in && log.check_out) {
-    try { return Math.max(0, (new Date(log.check_out) - new Date(log.check_in)) / 60000); } catch {}
+    const inM = parseTimeToMinutes(log.check_in);
+    const outM = parseTimeToMinutes(log.check_out);
+    if (inM !== null && outM !== null) {
+      const dur = outM >= inM ? outM - inM : (outM + 1440) - inM;
+      if (dur > 0 && dur <= 1440) return dur;
+    }
   }
+
   return 0;
 }
 
-export function calcHourlyRate(salary, shiftHours, daysPerMonth = 30) {
-  if (!salary || salary <= 0 || !shiftHours || shiftHours <= 0) return 0;
-  return (salary / daysPerMonth) / shiftHours;
+export function hasRealBiometricPunches(log) {
+  if (!log) return false;
+  const raw = (log.timestamp_raw || log.punches_raw || '').trim();
+  if (raw && extractTimes(raw).length > 0) return true;
+  if (log.check_in && log.check_in !== '—' && log.check_in !== '') return true;
+  if (log.check_out && log.check_out !== '—' && log.check_out !== '') return true;
+  return false;
+}
+
+export function isDayExempt(log) {
+  if (!log) return false;
+  const status = (log.status || '').toLowerCase();
+  const label = (log.statusLabel || log.status_label || '').toLowerCase();
+  if (status === 'exempt' || status === 'معفى' || status.includes('عطلة') || status === 'weekend') return true;
+  if (label.includes('معفى') || label.includes('عطلة')) return true;
+  if (status === 'on_leave' || status === 'leave' || label.includes('إجازة') || label.includes('اجاز')) return true;
+  return false;
 }
 
 export function isFridayAttendance(log) {
-  if (!log || !log.log_date) return false;
-  const date = new Date(log.log_date + 'T12:00:00');
-  if (date.getDay() !== 5) return false;
+  if (!log) return false;
+  const isFri = (log.day_name && (log.day_name.includes('جمع') || log.day_name.toLowerCase().includes('fri'))) ||
+                (log.log_date && new Date(log.log_date).getDay() === 5);
+  if (!isFri) return false;
   if (!hasRealBiometricPunches(log)) return false;
   const status = (log.status || '').toLowerCase();
   if (status === 'absent' || status === 'not_started') return false;
   return true;
 }
 
+// ============================================================================
+// EMPLOYEE ADVANCES & LOANS MANAGEMENT
+// ============================================================================
+
+export function getAdvances() {
+  try {
+    return JSON.parse(localStorage.getItem('hr_flow_employee_advances') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+export function saveAdvance(advanceData) {
+  const advances = getAdvances();
+  const newAdvance = {
+    id: advanceData.id || ('adv_' + Date.now()),
+    employee_id: advanceData.employee_id || '',
+    employee_number: String(advanceData.employee_number || '').trim(),
+    employee_name: advanceData.employee_name || '',
+    total_amount: Number(advanceData.total_amount) || 0,
+    monthly_installment: Number(advanceData.monthly_installment) || 0,
+    total_installments: Number(advanceData.total_installments) || 1,
+    paid_installments: Number(advanceData.paid_installments) || 0,
+    paid_amount: Number(advanceData.paid_amount) || 0,
+    remaining_balance: Number(advanceData.remaining_balance) !== undefined ? Number(advanceData.remaining_balance) : (Number(advanceData.total_amount) || 0),
+    start_month: advanceData.start_month || '2026-08',
+    disbursement_date: advanceData.disbursement_date || new Date().toISOString().split('T')[0],
+    reason: advanceData.reason || 'سلفة شخصية',
+    status: advanceData.status || 'active', // 'active', 'completed', 'cancelled'
+    approved_by: advanceData.approved_by || 'المدير العام',
+    created_at: advanceData.created_at || new Date().toISOString(),
+    history: advanceData.history || []
+  };
+
+  const idx = advances.findIndex(a => a.id === newAdvance.id);
+  if (idx !== -1) {
+    advances[idx] = newAdvance;
+  } else {
+    advances.unshift(newAdvance);
+  }
+
+  localStorage.setItem('hr_flow_employee_advances', JSON.stringify(advances));
+  appendAuditLog({
+    action: idx !== -1 ? 'advance_updated' : 'advance_created',
+    employeeNumber: newAdvance.employee_number,
+    amount: newAdvance.total_amount,
+    installment: newAdvance.monthly_installment,
+    note: newAdvance.reason,
+    approvedBy: newAdvance.approved_by,
+  });
+
+  return newAdvance;
+}
+
+export function getEmployeeActiveAdvance(employeeNumber) {
+  const advances = getAdvances();
+  const cleanNum = String(employeeNumber || '').trim();
+  return advances.find(a => a.employee_number === cleanNum && a.status === 'active' && a.remaining_balance > 0) || null;
+}
+
+export function recordAdvanceInstallmentPayment(advanceId, monthPrefix, paidAmount) {
+  const advances = getAdvances();
+  const idx = advances.findIndex(a => a.id === advanceId);
+  if (idx === -1) return null;
+
+  const adv = advances[idx];
+  const amount = Number(paidAmount) || adv.monthly_installment;
+  
+  adv.paid_amount = (Number(adv.paid_amount) || 0) + amount;
+  adv.remaining_balance = Math.max(0, adv.total_amount - adv.paid_amount);
+  adv.paid_installments = (Number(adv.paid_installments) || 0) + 1;
+  
+  if (adv.remaining_balance <= 0) {
+    adv.status = 'completed';
+    adv.remaining_balance = 0;
+  }
+
+  if (!adv.history) adv.history = [];
+  adv.history.push({
+    month: monthPrefix,
+    amount,
+    paid_at: new Date().toISOString(),
+    remaining_after: adv.remaining_balance
+  });
+
+  localStorage.setItem('hr_flow_employee_advances', JSON.stringify(advances));
+  return adv;
+}
+
+// ============================================================================
+// PAYROLL ADJUSTMENTS (BONUSES & PENALTIES)
+// ============================================================================
+
+export function getAdjustments() {
+  try {
+    return JSON.parse(localStorage.getItem('hr_flow_payroll_adjustments') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+export function saveAdjustment(adjData) {
+  const adjustments = getAdjustments();
+  const newAdj = {
+    id: adjData.id || ('adj_' + Date.now()),
+    type: adjData.type || 'bonus', // 'bonus' or 'penalty'
+    category: adjData.category || 'general', // 'sales_incentive', 'daily_overtime', 'performance', 'delay_penalty', 'absence_penalty', 'disciplinary'
+    employee_id: adjData.employee_id || '',
+    employee_number: String(adjData.employee_number || '').trim(),
+    employee_name: adjData.employee_name || '',
+    month_prefix: adjData.month_prefix || '2026-08',
+    amount: Number(adjData.amount) || 0,
+    days_count: Number(adjData.days_count) || 0,
+    reason: adjData.reason || '',
+    status: adjData.status || 'approved', // 'approved', 'pending', 'rejected'
+    approved_by: adjData.approved_by || 'المدير العام',
+    created_at: adjData.created_at || new Date().toISOString(),
+  };
+
+  const idx = adjustments.findIndex(a => a.id === newAdj.id);
+  if (idx !== -1) {
+    adjustments[idx] = newAdj;
+  } else {
+    adjustments.unshift(newAdj);
+  }
+
+  localStorage.setItem('hr_flow_payroll_adjustments', JSON.stringify(adjustments));
+  appendAuditLog({
+    action: newAdj.type === 'bonus' ? 'bonus_approved' : 'penalty_approved',
+    employeeNumber: newAdj.employee_number,
+    monthPrefix: newAdj.month_prefix,
+    amount: newAdj.amount,
+    note: newAdj.reason,
+    approvedBy: newAdj.approved_by,
+  });
+
+  return newAdj;
+}
+
+export function deleteAdjustment(adjId) {
+  let adjustments = getAdjustments();
+  adjustments = adjustments.filter(a => a.id !== adjId);
+  localStorage.setItem('hr_flow_payroll_adjustments', JSON.stringify(adjustments));
+}
+
+export function getEmployeeAdjustments(employeeNumber, monthPrefix) {
+  const adjustments = getAdjustments();
+  const cleanNum = String(employeeNumber || '').trim();
+  return adjustments.filter(a => 
+    a.employee_number === cleanNum && 
+    (!monthPrefix || a.month_prefix === monthPrefix) &&
+    a.status === 'approved'
+  );
+}
+
+// ============================================================================
+// MAIN PAYROLL CALCULATION ENGINE
+// ============================================================================
+
 export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const {
-    fridayDailyRate = 50, overtimeDailyRate = 100, daysPerMonth = 30, monthPrefix = null,
+    fridayDailyRate = 50,
+    overtimeDailyRate = 100,
+    daysPerMonth = 30,
+    monthPrefix = '2026-08',
   } = settings;
 
   const shiftName = emp.shift || '';
@@ -169,7 +350,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   empLogs.forEach(l => {
     if (!dateMap[l.log_date] || hasRealBiometricPunches(l)) dateMap[l.log_date] = l;
   });
-  const uniqueLogs = Object.values(dateMap).sort((a, b) => (a.log_date||'').localeCompare(b.log_date||''));
+  const uniqueLogs = Object.values(dateMap).sort((a, b) => (a.log_date || '').localeCompare(b.log_date || ''));
 
   let totalRequiredMinutes = 0, totalActualMinutes = 0, totalShortfallMinutes = 0;
   let presentDays = 0, absentDays = 0, leaveDays = 0, fridayDays = 0, overtimeDays = 0;
@@ -183,25 +364,44 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     let requiredMins = 0, shortfallMins = 0;
 
     if (!exempt && !isFriday && hasAtt) {
-      requiredMins = shiftHours * 60; totalRequiredMinutes += requiredMins;
-      const actual = actualMins || 0; totalActualMinutes += actual;
-      shortfallMins = Math.max(0, requiredMins - actual); totalShortfallMinutes += shortfallMins;
+      requiredMins = shiftHours * 60;
+      totalRequiredMinutes += requiredMins;
+      const actual = actualMins || 0;
+      totalActualMinutes += actual;
+      shortfallMins = Math.max(0, requiredMins - actual);
+      totalShortfallMinutes += shortfallMins;
       presentDays++;
     } else if (!exempt && !isFriday && !hasAtt && (status === 'absent' || status === 'غائب')) {
-      absentDays++; requiredMins = shiftHours * 60; totalRequiredMinutes += requiredMins;
-      shortfallMins = requiredMins; totalShortfallMinutes += shortfallMins;
+      absentDays++;
+      requiredMins = shiftHours * 60;
+      totalRequiredMinutes += requiredMins;
+      shortfallMins = requiredMins;
+      totalShortfallMinutes += shortfallMins;
     } else if (exempt) {
       if (status.includes('إجازة') || status === 'on_leave' || status === 'leave') leaveDays++;
     }
-    if (isFriday && hasAtt) { fridayDays++; presentDays++; }
+    
+    if (isFriday && hasAtt) {
+      fridayDays++;
+      presentDays++;
+    }
+    
     const hasOT = !isFriday && !!(shift && shift.has_overtime) && hasAtt && !exempt;
     if (hasOT) overtimeDays++;
 
     return {
-      log_date: log.log_date, day_name: log.day_name||'', status: log.status||'present',
-      check_in: log.check_in||'', check_out: log.check_out||'', timestamp_raw: log.timestamp_raw||'',
-      isFriday, isExempt: exempt, hasAttendance: hasAtt,
-      requiredMinutes: requiredMins, actualMinutes: actualMins||0, shortfallMinutes: shortfallMins,
+      log_date: log.log_date,
+      day_name: log.day_name || '',
+      status: log.status || 'present',
+      check_in: log.check_in || '',
+      check_out: log.check_out || '',
+      timestamp_raw: log.timestamp_raw || '',
+      isFriday,
+      isExempt: exempt,
+      hasAttendance: hasAtt,
+      requiredMinutes: requiredMins,
+      actualMinutes: actualMins || 0,
+      shortfallMinutes: shortfallMins,
       overtimeDay: hasOT,
     };
   });
@@ -213,43 +413,98 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const shortfallHours = totalShortfallMinutes / 60;
   const proposedShortfallDeduction = Math.round(shortfallHours * hourlyRate * 100) / 100;
   const fridayAllowance = fridayDays * fridayDailyRate;
-  const fridayNote = fridayDays > 0 ? fridayDays + ' أيام جمعة × ' + fridayDailyRate + ' = ' + fridayAllowance + ' ريال' : null;
+  const fridayNote = fridayDays > 0 ? `${fridayDays} أيام جمعة × ${fridayDailyRate} = ${fridayAllowance} ريال` : null;
   const dailyOvertimeAllowance = overtimeDays * overtimeDailyRate;
-  const dailyOvertimeNote = overtimeDays > 0 ? overtimeDays + ' يوم × ' + overtimeDailyRate + ' = ' + dailyOvertimeAllowance + ' ريال' : null;
-  // GOSI (Social Insurance) is 100% employer-covered — ZERO deduction on employee salary
-  const isSaudi = (emp.nationality || '').includes('سعودي');
-  const isInsured = emp.is_insured === true || emp.is_insured === 'true';
-  const gosiNumber = emp.gosi_number || emp.gosi_subscription_number || (isInsured ? ('GSI-' + (emp.employee_number || '0000')) : '');
-  const gosiDeduction = 0; // ZERO deduction from employee salary
+  const dailyOvertimeNote = overtimeDays > 0 ? `${overtimeDays} يوم × ${overtimeDailyRate} = ${dailyOvertimeAllowance} ريال` : null;
 
+  // GOSI: 100% employer paid (zero deduction from employee)
+  const isInsured = emp.is_insured === true || emp.is_insured === 'true';
+  const gosiNumber = isInsured ? (emp.gosi_number || ('GSI-' + (emp.employee_number || '0000'))) : '';
+  const gosiDeduction = 0;
+
+  // Shortfall Approval
   let approvedShortfallDeduction = 0, shortfallApprovalStatus = 'pending', shortfallApprovalNote = '';
   try {
-    const saved = localStorage.getItem('hr_flow_approval_' + (emp.employee_number||emp.id) + '_' + (monthPrefix||'all'));
+    const saved = localStorage.getItem('hr_flow_approval_' + (emp.employee_number || emp.id) + '_' + (monthPrefix || 'all'));
     if (saved) {
       const ap = JSON.parse(saved);
       shortfallApprovalStatus = ap.status || 'pending';
-      if (ap.status === 'approved' || ap.status === 'modified') approvedShortfallDeduction = Number(ap.finalDeduction) || 0;
+      if (ap.status === 'approved' || ap.status === 'modified') {
+        approvedShortfallDeduction = Number(ap.finalDeduction) || 0;
+      }
       shortfallApprovalNote = ap.note || '';
     }
   } catch {}
 
-  const totalAdditions = housing + transport + fridayAllowance + dailyOvertimeAllowance;
-  const totalDeductions = approvedShortfallDeduction;
-  const netSalary = basicSalary + totalAdditions - totalDeductions;
+  // 1. CUSTOM APPROVED BONUSES & INCENTIVES
+  const empAdjustments = getEmployeeAdjustments(emp.employee_number || emp.id, monthPrefix);
+  const approvedBonuses = empAdjustments.filter(a => a.type === 'bonus');
+  const customBonusesTotal = approvedBonuses.reduce((acc, b) => acc + (Number(b.amount) || 0), 0);
+
+  // 2. CUSTOM APPROVED PENALTIES & DEDUCTIONS
+  const approvedPenalties = empAdjustments.filter(a => a.type === 'penalty');
+  const customPenaltiesTotal = approvedPenalties.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+
+  // 3. EMPLOYEE ADVANCE / LOAN INSTALLMENT
+  const activeAdvance = getEmployeeActiveAdvance(emp.employee_number || emp.id);
+  let advanceInstallment = 0;
+  let advanceRemaining = 0;
+  let advanceNote = '';
+
+  if (activeAdvance) {
+    advanceInstallment = Math.min(activeAdvance.monthly_installment, activeAdvance.remaining_balance);
+    advanceRemaining = Math.max(0, activeAdvance.remaining_balance - advanceInstallment);
+    advanceNote = `قسط ${(activeAdvance.paid_installments || 0) + 1}/${activeAdvance.total_installments} — متبقي بعد الخصم: ${advanceRemaining.toLocaleString('en-US')} ر.س`;
+  }
+
+  // TOTALS CALCULATION
+  const totalAdditions = housing + transport + fridayAllowance + dailyOvertimeAllowance + customBonusesTotal;
+  const totalDeductions = approvedShortfallDeduction + customPenaltiesTotal + advanceInstallment;
+  const netSalary = Math.max(0, basicSalary + totalAdditions - totalDeductions);
 
   return {
-    emp, shiftName, shift, shiftHours,
-    dailyDetails, presentDays, absentDays, leaveDays, fridayDays, overtimeDays,
-    totalRequiredMinutes, totalActualMinutes, totalShortfallMinutes,
+    emp,
+    shiftName,
+    shift,
+    shiftHours,
+    dailyDetails,
+    presentDays,
+    absentDays,
+    leaveDays,
+    fridayDays,
+    overtimeDays,
+    totalRequiredMinutes,
+    totalActualMinutes,
+    totalShortfallMinutes,
     shortfallHours: Math.round(shortfallHours * 100) / 100,
     hourlyRate: Math.round(hourlyRate * 100) / 100,
-    basicSalary, housing, transport,
-    fridayAllowance, fridayNote, fridayDailyRate,
-    dailyOvertimeAllowance, dailyOvertimeNote,
-    totalAdditions, gosiDeduction, isInsured, gosiNumber,
-    proposedShortfallDeduction, approvedShortfallDeduction,
-    shortfallApprovalStatus, shortfallApprovalNote,
-    totalDeductions, netSalary,
+    basicSalary,
+    housing,
+    transport,
+    fridayAllowance,
+    fridayNote,
+    fridayDailyRate,
+    dailyOvertimeAllowance,
+    dailyOvertimeNote,
+    isInsured,
+    gosiNumber,
+    gosiDeduction,
+    proposedShortfallDeduction,
+    approvedShortfallDeduction,
+    shortfallApprovalStatus,
+    shortfallApprovalNote,
+    // Bonuses, Penalties, Advances
+    approvedBonuses,
+    customBonusesTotal,
+    approvedPenalties,
+    customPenaltiesTotal,
+    activeAdvance,
+    advanceInstallment,
+    advanceRemaining,
+    advanceNote,
+    totalAdditions,
+    totalDeductions,
+    netSalary,
   };
 }
 
@@ -261,7 +516,9 @@ export function saveShortfallApproval(employeeNumber, monthPrefix, decision) {
     approvedBy: decision.approvedBy || 'المدير العام',
     approvedAt: new Date().toISOString(),
   };
-  try { localStorage.setItem('hr_flow_approval_' + employeeNumber + '_' + monthPrefix, JSON.stringify(record)); } catch {}
+  try {
+    localStorage.setItem('hr_flow_approval_' + employeeNumber + '_' + monthPrefix, JSON.stringify(record));
+  } catch {}
   appendAuditLog({ action: 'shortfall_' + decision.status, employeeNumber, monthPrefix, ...record });
   return record;
 }
@@ -270,20 +527,29 @@ export function getShortfallApproval(employeeNumber, monthPrefix) {
   try {
     const saved = localStorage.getItem('hr_flow_approval_' + employeeNumber + '_' + monthPrefix);
     return saved ? JSON.parse(saved) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export function appendAuditLog(entry) {
   try {
     const existing = JSON.parse(localStorage.getItem('hr_flow_audit_log') || '[]');
-    existing.unshift({ id: 'audit_' + Date.now(), timestamp: new Date().toISOString(), ...entry });
+    existing.unshift({
+      id: 'audit_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      timestamp: new Date().toISOString(),
+      ...entry
+    });
     localStorage.setItem('hr_flow_audit_log', JSON.stringify(existing.slice(0, 500)));
   } catch {}
 }
 
 export function getAuditLog() {
-  try { return JSON.parse(localStorage.getItem('hr_flow_audit_log') || '[]'); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem('hr_flow_audit_log') || '[]');
+  } catch {
+    return [];
+  }
 }
 
 export function formatMinutes(m) {

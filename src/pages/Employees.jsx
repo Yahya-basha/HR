@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import EmployeeForm from '@/components/EmployeeForm';
 import { useToast } from '@/components/ui/use-toast';
+import { getEmployeeActiveAdvance } from '@/lib/payrollEngine';
 
 const nationalityBadge = (nat) => {
   const map = {
@@ -87,6 +88,12 @@ export default function Employees() {
   const openEdit = (emp) => { setEditing(emp); setFormOpen(true); };
 
   const handleDelete = async (emp) => {
+    const activeAdvance = getEmployeeActiveAdvance(emp.employee_number || emp.id);
+    if (activeAdvance && Number(activeAdvance.remaining_balance) > 0) {
+      alert(`⛔ تنبيه أمان مالي وإداري:\n\nلا يمكن حذف الموظف أو إنهاء خدماته لوجود سلفة / مديونية قائمة غير مسددة بالكامل بمبلغ (${Number(activeAdvance.remaining_balance).toLocaleString('en-US')} ر.س).\n\nيجب تصفية وسداد كامل السلفة أولاً قبل إخلاء طرف الموظف أو حذفه من النظام.`);
+      return;
+    }
+
     if (!confirm(`هل أنت متأكد من حذف الموظف ${emp.full_name} (${emp.employee_number})؟`)) return;
     try {
       await base44.entities.Employee.delete(emp.id);
