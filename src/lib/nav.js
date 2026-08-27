@@ -27,7 +27,9 @@ import {
   UserCheck,
   FolderOpen,
   Sparkles,
-  Award
+  Award,
+  AlertOctagon,
+  Lock
 } from 'lucide-react';
 
 export const EKTEFA_MODULES = [
@@ -96,10 +98,13 @@ export const EKTEFA_MODULES = [
     badgeColor: 'bg-purple-500 text-white',
     activeBg: 'bg-purple-50 text-purple-900 dark:bg-purple-950/40 dark:text-purple-200',
     items: [
-      { to: '/payroll', label: 'مسير الرواتب (4 مراحل)', icon: Wallet, admin: true },
+      { to: '/payroll?stage=1', label: '1. مراجعة وتدقيق البصمات', icon: Clock, admin: true },
+      { to: '/payroll?stage=2', label: '2. اعتماد الاستقطاعات والخصم', icon: AlertOctagon, admin: true },
+      { to: '/payroll?stage=3', label: '3. اعتماد الاستحقاقات والمكافئات', icon: Gift, admin: true },
+      { to: '/payroll?stage=4', label: '4. المراجعة والإقفال النهائي', icon: Lock, admin: true },
+      { to: '/payroll?stage=5', label: '5. رواتب الشهور السابقة والمصادقة', icon: Award, admin: true },
       { to: '/payroll?tab=advances', label: 'نظام السلف والقروض', icon: CreditCard, admin: true },
-      { to: '/rewards-penalties', label: 'إعدادات المكافآت والجزاءات', icon: Gift, admin: true },
-      { to: '/end-of-service', label: 'حاسبة نهاية الخدمة', icon: Calculator, admin: true },
+      { to: '/end-of-service', label: 'حاسبة مكافأة نهاية الخدمة', icon: Calculator, admin: true },
     ]
   },
   {

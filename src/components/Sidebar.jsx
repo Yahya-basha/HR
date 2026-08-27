@@ -44,10 +44,13 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
     return permMatch && searchMatch;
   });
 
-  const isItemActive = (to) => {
+    const isItemActive = (to) => {
+    if (to.includes('?')) {
+      return (location.pathname + location.search) === to;
+    }
     const basePath = to.split('?')[0];
-    if (basePath === '/') return location.pathname === '/';
-    return location.pathname.startsWith(basePath);
+    if (basePath === '/') return location.pathname === '/' && !location.search;
+    return location.pathname === basePath && !location.search;
   };
 
   return (

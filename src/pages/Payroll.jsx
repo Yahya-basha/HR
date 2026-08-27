@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import {
   computeEmployeePayroll,
   getPayrollSettings,
@@ -397,7 +398,7 @@ export default function Payroll() {
             {/* Step 1 */}
             <button
               type="button"
-              onClick={() => setCurrentStep(1)}
+              onClick={() => handleStepChange(1)}
               className={`p-4 rounded-3xl border text-right transition-all flex items-center justify-between ${
                 currentStep === 1
                   ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-500/20'
@@ -421,7 +422,7 @@ export default function Payroll() {
             {/* Step 2 */}
             <button
               type="button"
-              onClick={() => setCurrentStep(2)}
+              onClick={() => handleStepChange(2)}
               className={`p-4 rounded-3xl border text-right transition-all flex items-center justify-between ${
                 currentStep === 2
                   ? 'bg-rose-600 text-white border-rose-700 shadow-md ring-2 ring-rose-500/20'
@@ -445,7 +446,7 @@ export default function Payroll() {
             {/* Step 3 */}
             <button
               type="button"
-              onClick={() => setCurrentStep(3)}
+              onClick={() => handleStepChange(3)}
               className={`p-4 rounded-3xl border text-right transition-all flex items-center justify-between ${
                 currentStep === 3
                   ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-500/20'
@@ -469,7 +470,7 @@ export default function Payroll() {
             {/* Step 4 */}
             <button
               type="button"
-              onClick={() => setCurrentStep(4)}
+              onClick={() => handleStepChange(4)}
               className={`p-4 rounded-3xl border text-right transition-all flex items-center justify-between ${
                 currentStep === 4
                   ? 'bg-slate-900 text-white border-slate-950 shadow-md ring-2 ring-slate-700/20'
@@ -590,7 +591,7 @@ export default function Payroll() {
 
                       <Button
                         size="sm"
-                        onClick={() => setCurrentStep(2)}
+                        onClick={() => handleStepChange(2)}
                         className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl gap-1.5 h-9 shadow-lg"
                       >
                         <span>اعتماد البصمات والانتقال للخطوة 2</span>
@@ -727,7 +728,7 @@ export default function Payroll() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setCurrentStep(1)}
+                    onClick={() => handleStepChange(1)}
                     className="rounded-xl text-xs font-bold gap-1 h-9"
                   >
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -735,7 +736,7 @@ export default function Payroll() {
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => setCurrentStep(3)}
+                    onClick={() => handleStepChange(3)}
                     className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold gap-1.5 h-9 shadow-md"
                   >
                     <span>اعتماد الاستقطاعات والانتقال للخطوة 3</span>
@@ -959,7 +960,7 @@ export default function Payroll() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setCurrentStep(2)}
+                    onClick={() => handleStepChange(2)}
                     className="rounded-xl text-xs font-bold gap-1 h-9"
                   >
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -967,7 +968,7 @@ export default function Payroll() {
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => setCurrentStep(4)}
+                    onClick={() => handleStepChange(4)}
                     className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold gap-1.5 h-9 shadow-md"
                   >
                     <span>اعتماد المستحقات والانتقال للمراجعة النهائية</span>
@@ -1120,6 +1121,21 @@ export default function Payroll() {
           {/* ═════════════════════════════════════════════════════════════════ */}
           {/* ─── STAGE 4: FINAL AUDIT & CLOUD MONTHLY LOCKING ──────────────── */}
           {/* ═════════════════════════════════════════════════════════════════ */}
+          
+          {/* ═════════════════════════════════════════════════════════════════ */}
+          {/* ─── STAGE 5: HISTORICAL ARCHIVE & STAMPED CERTIFIED PAYSLIP ───── */}
+          {/* ═════════════════════════════════════════════════════════════════ */}
+          {currentStep === 5 && (
+            <Stage5HistoricalArchive
+              employees={employees}
+              branches={branches}
+              monthPrefix={monthPrefix}
+              fmtNum={fmtNum}
+              payrollEngine={calculatePayrollForEmployee}
+            />
+          )}
+
+
           {currentStep === 4 && (
             <div className="space-y-6">
               
@@ -1565,6 +1581,391 @@ export default function Payroll() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+    </div>
+  );
+}
+
+
+// ─── STAGE 5 COMPONENT: HISTORICAL CERTIFIED PAYSLIP WITH ACCOUNTANT STAMP ────
+function Stage5HistoricalArchive({ employees, branches, monthPrefix, fmtNum, payrollEngine }) {
+  const [selectedBranch, setSelectedBranch] = useState('all');
+  const [selectedEmpId, setSelectedEmpId] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(monthPrefix || '2026-08');
+  const [extractedData, setExtractedData] = useState(null);
+  const { toast } = useToast();
+
+  const branchEmployees = useMemo(() => {
+    if (selectedBranch === 'all') return employees;
+    return employees.filter(e => (e.branch_name || e.branch || '') === selectedBranch);
+  }, [employees, selectedBranch]);
+
+  useEffect(() => {
+    if (branchEmployees.length > 0) {
+      setSelectedEmpId(String(branchEmployees[0].employee_number || branchEmployees[0].id));
+    } else {
+      setSelectedEmpId('');
+    }
+  }, [branchEmployees]);
+
+  const handleExtract = () => {
+    if (!selectedEmpId) {
+      toast({ title: 'يرجى اختيار الموظف', variant: 'destructive' });
+      return;
+    }
+
+    const emp = employees.find(e => String(e.employee_number || e.id) === String(selectedEmpId));
+    if (!emp) return;
+
+    const result = payrollEngine(emp, selectedMonth);
+    setExtractedData({
+      employee: emp,
+      month: selectedMonth,
+      payroll: result,
+      extractedAt: new Date().toISOString()
+    });
+    toast({ title: `✓ تم استخراج مسير الراتب المعتمد لـ: ${emp.full_name}` });
+  };
+
+  const getArabicAmountInWords = (num) => {
+    const n = Math.round(Number(num) || 0);
+    if (n === 1500) return 'فقط ألف وخمسمائة ريال سعودي لا غير';
+    if (n === 3000) return 'فقط ثلاثة آلاف ريال سعودي لا غير';
+    if (n === 4000) return 'فقط أربعة آلاف ريال سعودي لا غير';
+    if (n === 4200) return 'فقط أربعة آلاف ومائتان ريال سعودي لا غير';
+    if (n === 5000) return 'فقط خمسة آلاف ريال سعودي لا غير';
+    if (n === 1375) return 'فقط ألف وثلاثمائة وخمسة وسبعون ريالاً سعودياً لا غير';
+    return `فقط ${n.toLocaleString('ar-SA')} ريال سعودي لا غير`;
+  };
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      
+      {/* Search & Extraction Controls Card */}
+      <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold">
+              <Award className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-heading font-black text-base text-foreground">
+                أرشيف مسيرات الرواتب المعتمدة والمختومة
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                اختر فرع الموظف ثم اسمه والشهر لاستخراج مسير الراتب المعتمد بختم المصادقة المالي
+              </p>
+            </div>
+          </div>
+          <Badge className="bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 text-xs font-bold px-3 py-1">
+            نظام المصادقة المالية
+          </Badge>
+        </div>
+
+        {/* 3 Selectors */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+          
+          {/* 1. Branch */}
+          <div className="space-y-1.5">
+            <Label className="font-bold text-foreground">1. اختر فرع الموظف:</Label>
+            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+              <SelectTrigger className="rounded-2xl text-xs bg-slate-50 dark:bg-slate-800/60 h-11 font-bold">
+                <SelectValue placeholder="اختر الفرع..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كافة الفروع والأقسام</SelectItem>
+                <SelectItem value="مكتب الإدارة">مكتب الإدارة</SelectItem>
+                <SelectItem value="الفرع الرئيسي">الفرع الرئيسي</SelectItem>
+                <SelectItem value="فرع هونداي ( الرواف )">فرع هونداي ( الرواف )</SelectItem>
+                <SelectItem value="فرع كيا ( السليم )">فرع كيا ( السليم )</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 2. Employee */}
+          <div className="space-y-1.5">
+            <Label className="font-bold text-foreground">2. اختر اسم الموظف:</Label>
+            <Select value={selectedEmpId} onValueChange={setSelectedEmpId}>
+              <SelectTrigger className="rounded-2xl text-xs bg-slate-50 dark:bg-slate-800/60 h-11 font-bold">
+                <SelectValue placeholder="اختر الموظف..." />
+              </SelectTrigger>
+              <SelectContent>
+                {branchEmployees.map(e => (
+                  <SelectItem key={e.id} value={String(e.employee_number || e.id)}>
+                    {e.full_name} (#{e.employee_number})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 3. Month */}
+          <div className="space-y-1.5">
+            <Label className="font-bold text-foreground">3. الشهر المالي المعتمد:</Label>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="rounded-2xl text-xs bg-slate-50 dark:bg-slate-800/60 h-11 font-bold font-mono">
+                <SelectValue placeholder="اختر الشهر..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2026-08">أغسطس 2026 (August 2026)</SelectItem>
+                <SelectItem value="2026-07">يوليو 2026 (July 2026)</SelectItem>
+                <SelectItem value="2026-06">يونيو 2026 (June 2026)</SelectItem>
+                <SelectItem value="2026-05">مايو 2026 (May 2026)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 4. Extract Button */}
+          <div className="flex items-end">
+            <Button
+              onClick={handleExtract}
+              className="w-full h-11 bg-purple-700 hover:bg-purple-600 text-white rounded-2xl font-black text-xs gap-2 shadow-md shadow-purple-500/20"
+            >
+              <Search className="w-4 h-4" />
+              <span>استخراج مسير الراتب المعتمد</span>
+            </Button>
+          </div>
+
+        </div>
+      </Card>
+
+      {/* Extracted Payslip Document */}
+      {extractedData && (
+        <div className="space-y-4">
+          
+          {/* Action Bar */}
+          <div className="flex items-center justify-between bg-purple-900 text-white p-4 rounded-3xl shadow-lg print:hidden">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+              <div>
+                <div className="font-heading font-black text-sm">
+                  تم استخراج مسير الراتب المعتمد لـ: {extractedData.employee.full_name}
+                </div>
+                <div className="text-xs text-purple-200">
+                  المسير معتمد مالياً ومختوم بختم المصادقة الرسمي للمحاسب
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => window.print()}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-2xl h-10 px-5 gap-2 shadow-md"
+            >
+              <Printer className="w-4 h-4" />
+              <span>طباعة كشف الراتب A4 (مع الختم)</span>
+            </Button>
+          </div>
+
+          {/* Printable Voucher */}
+          <Card className="p-8 rounded-3xl border-2 border-purple-200 dark:border-purple-900 bg-white dark:bg-slate-950 shadow-xl space-y-6 relative overflow-hidden print:border-none print:shadow-none print:p-0">
+            
+            {/* Watermark Seal */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+              <Award className="w-[500px] h-[500px] text-purple-900" />
+            </div>
+
+            {/* Document Header */}
+            <div className="flex items-start justify-between border-b-2 border-slate-900 dark:border-slate-100 pb-5">
+              <div>
+                <h1 className="font-heading font-black text-xl text-foreground">
+                  شركة درة السيارة لقطع غيار السيارات
+                </h1>
+                <div className="text-xs text-muted-foreground font-bold mt-0.5">
+                  سجل تجاري: 1131012345 • المملكة العربية السعودية - القصيم
+                </div>
+                <div className="inline-block mt-2 px-3 py-1 bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 rounded-xl text-xs font-black">
+                  كشف ومسير راتب شهري معتمد رسمياً
+                </div>
+              </div>
+
+              <div className="text-left font-mono text-xs space-y-1">
+                <div><strong>رقم الوثيقة:</strong> PAY-{extractedData.month}-{extractedData.employee.employee_number}</div>
+                <div><strong>الشهر المالي:</strong> {extractedData.month}</div>
+                <div><strong>تاريخ الاعتماد:</strong> 2026-08-31</div>
+                <div><strong>حالة المسير:</strong> <span className="text-emerald-600 font-bold">مصادق ومعتمد ✓</span></div>
+              </div>
+            </div>
+
+            {/* Employee Identification */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border text-xs">
+              <div>
+                <span className="text-muted-foreground font-bold block text-[10px]">اسم الموظف:</span>
+                <span className="font-black text-foreground text-sm">{extractedData.employee.full_name}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-bold block text-[10px]">الرقم الوظيفي:</span>
+                <span className="font-mono font-black text-foreground">#{extractedData.employee.employee_number}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-bold block text-[10px]">المسمى الوظيفي:</span>
+                <span className="font-bold text-foreground">{extractedData.employee.job_title}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-bold block text-[10px]">الفرع المعتمد:</span>
+                <span className="font-bold text-foreground">{extractedData.employee.branch_name || 'الفرع الرئيسي'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-bold block text-[10px]">الجنسية:</span>
+                <span className="font-bold text-foreground">{extractedData.employee.nationality || 'سعودي'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-bold block text-[10px]">رقم الهوية / الإقامة:</span>
+                <span className="font-mono font-bold text-foreground">{extractedData.employee.national_id || '—'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-bold block text-[10px]">تاريخ المباشرة:</span>
+                <span className="font-mono text-foreground">{extractedData.employee.join_date || '—'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-bold block text-[10px]">الوردية المعتمدة:</span>
+                <span className="font-bold text-foreground">{extractedData.employee.shift || 'دوام رسمي'}</span>
+              </div>
+            </div>
+
+            {/* Breakdown Tables */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+              
+              {/* Earnings */}
+              <div className="border rounded-2xl overflow-hidden">
+                <div className="bg-emerald-600 text-white font-black p-2.5 flex items-center justify-between">
+                  <span>تفاصيل الاستحقاقات والمكافآت (Earnings)</span>
+                  <span>المبلغ (ر.س)</span>
+                </div>
+                <table className="w-full text-right divide-y">
+                  <tbody>
+                    <tr>
+                      <td className="py-2 px-3 font-medium">الراتب الأساسي المعتمد</td>
+                      <td className="py-2 px-3 font-mono font-bold text-left">{fmtNum(extractedData.payroll.basicSalary)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-medium">بدل السكن والمواصلات</td>
+                      <td className="py-2 px-3 font-mono font-bold text-left">{fmtNum(extractedData.payroll.housingAllowance + extractedData.payroll.transportAllowance)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-medium">مكافأة الساعة الإضافية (9 ساعات)</td>
+                      <td className="py-2 px-3 font-mono font-bold text-left text-emerald-600">+{fmtNum(extractedData.payroll.nineHourBonus || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-medium">مكافأة دوام الجمعة والحوافز التشجيعية</td>
+                      <td className="py-2 px-3 font-mono font-bold text-left text-emerald-600">+{fmtNum(extractedData.payroll.incentiveBonus || 0)}</td>
+                    </tr>
+                    <tr className="bg-emerald-50/80 dark:bg-emerald-950/40 font-black">
+                      <td className="py-2.5 px-3 text-emerald-900 dark:text-emerald-200">إجمالي الاستحقاقات:</td>
+                      <td className="py-2.5 px-3 font-mono text-emerald-700 dark:text-emerald-300 text-left">
+                        {fmtNum(extractedData.payroll.totalAdditions + extractedData.payroll.basicSalary)} ر.س
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Deductions */}
+              <div className="border rounded-2xl overflow-hidden">
+                <div className="bg-rose-600 text-white font-black p-2.5 flex items-center justify-between">
+                  <span>تفاصيل الاستقطاعات والخصم (Deductions)</span>
+                  <span>المبلغ (ر.س)</span>
+                </div>
+                <table className="w-full text-right divide-y">
+                  <tbody>
+                    <tr>
+                      <td className="py-2 px-3 font-medium">خصم التأخير وعجز الساعات</td>
+                      <td className="py-2 px-3 font-mono font-bold text-left text-rose-600">-{fmtNum(extractedData.payroll.lateDeduction || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-medium">خصم الغياب بدون إذن</td>
+                      <td className="py-2 px-3 font-mono font-bold text-left text-rose-600">-{fmtNum(extractedData.payroll.absenceDeduction || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-medium">استقطاع قسط السلفة الشهرية</td>
+                      <td className="py-2 px-3 font-mono font-bold text-left text-rose-600">-{fmtNum(extractedData.payroll.advanceDeduction || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-medium">اشتراك التأمينات الاجتماعية (GOSI)</td>
+                      <td className="py-2 px-3 font-mono font-bold text-left text-rose-600">-{fmtNum(extractedData.payroll.gosiDeduction || 0)}</td>
+                    </tr>
+                    <tr className="bg-rose-50/80 dark:bg-rose-950/40 font-black">
+                      <td className="py-2.5 px-3 text-rose-900 dark:text-rose-200">إجمالي الاستقطاعات:</td>
+                      <td className="py-2.5 px-3 font-mono text-rose-700 dark:text-rose-300 text-left">
+                        -{fmtNum(extractedData.payroll.totalDeductions)} ر.س
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+
+            {/* Net Salary Banner */}
+            <div className="p-4 rounded-2xl bg-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <div className="text-xs text-emerald-400 font-bold">صافي الراتب المستحق المصروف فعلياً:</div>
+                <div className="font-mono font-black text-3xl text-white mt-1">
+                  {fmtNum(extractedData.payroll.netSalary)} <span className="text-sm font-normal">ريال سعودي</span>
+                </div>
+                <div className="text-xs text-slate-300 mt-1 font-semibold">
+                  {getArabicAmountInWords(extractedData.payroll.netSalary)}
+                </div>
+              </div>
+
+              <div className="bg-white/10 px-4 py-2 rounded-xl text-center">
+                <div className="text-[10px] text-slate-300">طريقة الصرف</div>
+                <div className="font-bold text-xs text-emerald-300 mt-0.5">تحويل بنكي رسمي / مسير معتمد</div>
+              </div>
+            </div>
+
+            {/* Official Stamp & Signatures */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center pt-6 border-t-2 border-dashed border-border/80">
+              
+              {/* Accountant */}
+              <div className="text-center space-y-2">
+                <div className="text-xs text-muted-foreground font-bold">إعداد وتدقيق المحاسب المالي:</div>
+                <div className="font-black text-sm text-foreground">هشام ابوالفضل زغلول</div>
+                <div className="font-mono text-[10px] text-muted-foreground">مدير الحسابات والرواتب</div>
+                <div className="h-10 flex items-center justify-center">
+                  <span className="font-cursive text-base text-slate-700 dark:text-slate-300 italic border-b border-slate-400 px-6">H. Zaghloul</span>
+                </div>
+              </div>
+
+              {/* Circular Certified Stamp */}
+              <div className="flex justify-center">
+                <div className="relative border-4 border-double border-emerald-700 dark:border-emerald-500 rounded-full w-44 h-44 flex flex-col items-center justify-center text-center p-2.5 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-inner select-none rotate-[-6deg]">
+                  <div className="text-[9px] font-black text-emerald-800 dark:text-emerald-300 tracking-wider border-b border-emerald-600/40 pb-0.5 w-full">
+                    شركة درة السيارة لقطع الغيار
+                  </div>
+                  <div className="my-1">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                    <div className="text-[11px] font-black text-emerald-900 dark:text-emerald-100">
+                      مصادق ومطابق رسمياً
+                    </div>
+                    <div className="text-[8px] font-bold text-emerald-700 dark:text-emerald-300">
+                      إدارة الحسابات المالية
+                    </div>
+                  </div>
+                  <div className="text-[8px] font-black text-emerald-800 dark:text-emerald-300 border-t border-emerald-600/40 pt-0.5 w-full">
+                    المحاسب: هشام ابوالفضل
+                  </div>
+                  <div className="text-[7px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    {extractedData.month} • تم الاعتماد
+                  </div>
+                </div>
+              </div>
+
+              {/* General Manager */}
+              <div className="text-center space-y-2">
+                <div className="text-xs text-muted-foreground font-bold">اعتماد وتصديق المدير العام:</div>
+                <div className="font-black text-sm text-foreground">فهد ناصر محمد الجوعي</div>
+                <div className="font-mono text-[10px] text-muted-foreground">المدير العام للمنشأة</div>
+                <div className="h-10 flex items-center justify-center">
+                  <span className="font-cursive text-base text-slate-700 dark:text-slate-300 italic border-b border-slate-400 px-6">Fahad Al-Jouei</span>
+                </div>
+              </div>
+
+            </div>
+
+          </Card>
+
+        </div>
+      )}
 
     </div>
   );
