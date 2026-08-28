@@ -138,7 +138,7 @@ export default function MobileSidebar({ isOpen, onClose, isAdmin }) {
               return (
                 <div key={gIdx} className="space-y-1">
                   <p className="px-3 text-[11px] font-bold text-emerald-400/80 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                    <span>{grp.group}</span>
+                    <span>{grp.label || grp.group || "القائمة"}</span>
                     <span className="text-[10px] text-white/30 font-mono">({visibleItems.length})</span>
                   </p>
                   <div className="space-y-1">
