@@ -1,20 +1,55 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('zenith_auth_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      const stored = localStorage.getItem('zenith_auth_user');
+      return !!stored;
+    } catch {
+      return false;
+    }
+  });
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
-  const [authChecked, setAuthChecked] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState({ id: 'app_hr', public_settings: {} });
+
+  const checkUserAuth = useCallback(async () => {
+    setIsLoadingAuth(true);
+    try {
+      const currentUser = await base44.auth.me();
+      if (currentUser && (currentUser.id || currentUser.employee_number)) {
+        setUser(currentUser);
+        setIsAuthenticated(true);
+        setAuthError(null);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    } catch (error) {
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+    }
+  }, []);
 
   useEffect(() => {
     checkUserAuth();
-  }, []);
+  }, [checkUserAuth]);
 
   const checkAppState = async () => {
     setIsLoadingPublicSettings(false);
@@ -22,25 +57,11 @@ export const AuthProvider = ({ children }) => {
     setAuthChecked(true);
   };
 
-  const checkUserAuth = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-    } catch (error) {
-      setUser(null);
-      setIsAuthenticated(false);
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-    }
-  };
-
   const logout = (shouldRedirect = true) => {
     base44.auth.logout();
     setUser(null);
     setIsAuthenticated(false);
+    setAuthChecked(true);
     if (shouldRedirect) {
       window.location.href = '/login';
     }

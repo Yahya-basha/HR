@@ -1029,33 +1029,15 @@ export const base44 = {
       try {
         const stored = localStorage.getItem('zenith_auth_user');
         if (stored) {
-          return JSON.parse(stored);
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.id || parsed.employee_number)) {
+            return parsed;
+          }
         }
       } catch (e) {}
 
-      // Default session fallback so user is NEVER logged out to blank screen
-      const defaultUser = {
-        id: 'usr_admin',
-        employee_number: '1022',
-        full_name: 'يحيي محمد عبدالغفار باشا',
-        email: 'yahya9031@gmail.com',
-        role: 'admin',
-        job_title: 'مصمم و مسئول الموارد البشرية',
-        department: 'مكتب الإدارة',
-        branch: 'مكتب الإدارة',
-        national_id: '2554901666',
-        phone: '966575901487',
-        salary: 4000,
-      is_insured: true,
-      gosi_number: 'GSI-188898',
-        company: 'شركة درة السيارة لقطع غيار السيارات',
-        domain: 'doratcars',
-        saas_provider: 'Green Arrow HR'
-      };
-      try {
-        localStorage.setItem('zenith_auth_user', JSON.stringify(defaultUser));
-      } catch {}
-      return defaultUser;
+      // If no valid session exists, return null to require login
+      return null;
     },
     async loginViaNationalIdOrUsername(domain, username, password) {
       const cleanDomain = (domain || '').toString().trim().toLowerCase();
