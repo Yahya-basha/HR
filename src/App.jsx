@@ -53,8 +53,6 @@ const AuthenticatedApp = () => {
     return <UserNotRegisteredError />;
   }
 
-  const isEmployee = user?.role === 'employee';
-
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -64,34 +62,34 @@ const AuthenticatedApp = () => {
       
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
-          {/* Smart Root: Admin goes to Dashboard, Employee goes to Portal */}
-          <Route path="/" element={isEmployee ? <Navigate to="/portal" replace /> : <Dashboard />} />
+          {/* Main Dashboard is ALWAYS accessible at root / */}
+          <Route path="/" element={<Dashboard />} />
           <Route path="/portal" element={<EmployeePortal />} />
           
-          {/* Admin Protected Pages */}
-          <Route path="/employees" element={isEmployee ? <Navigate to="/portal" replace /> : <Employees />} />
+          {/* Core Administrative & Operational Pages */}
+          <Route path="/employees" element={<Employees />} />
           <Route path="/employees/:id" element={<EmployeeDetail />} />
           <Route path="/employee-profile" element={<EmployeeDetail />} />
-          <Route path="/attendance" element={isEmployee ? <Navigate to="/portal" replace /> : <Attendance />} />
-          <Route path="/leave" element={isEmployee ? <Navigate to="/portal" replace /> : <Leave />} />
-          <Route path="/departments" element={isEmployee ? <Navigate to="/portal" replace /> : <Departments />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/leave" element={<Leave />} />
+          <Route path="/departments" element={<Departments />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/payroll" element={isEmployee ? <Navigate to="/portal" replace /> : <Payroll />} />
-          <Route path="/settings" element={isEmployee ? <Navigate to="/portal" replace /> : <Settings />} />
-          <Route path="/contracts" element={isEmployee ? <Navigate to="/portal" replace /> : <Contracts />} />
-          <Route path="/branches" element={isEmployee ? <Navigate to="/portal" replace /> : <Branches />} />
-          <Route path="/shifts" element={isEmployee ? <Navigate to="/portal" replace /> : <Shifts />} />
-          <Route path="/reports" element={isEmployee ? <Navigate to="/portal" replace /> : <Reports />} />
-          <Route path="/leave-policies" element={isEmployee ? <Navigate to="/portal" replace /> : <LeavePolicies />} />
-          <Route path="/devices" element={isEmployee ? <Navigate to="/portal" replace /> : <Devices />} />
+          <Route path="/payroll" element={<Payroll />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/contracts" element={<Contracts />} />
+          <Route path="/branches" element={<Branches />} />
+          <Route path="/shifts" element={<Shifts />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/leave-policies" element={<LeavePolicies />} />
+          <Route path="/devices" element={<Devices />} />
           <Route path="/announcements" element={<Announcements />} />
-          <Route path="/users" element={isEmployee ? <Navigate to="/portal" replace /> : <UsersManagement />} />
-          <Route path="/end-of-service" element={isEmployee ? <Navigate to="/portal" replace /> : <EndOfService />} />
-          <Route path="/rewards-penalties" element={isEmployee ? <Navigate to="/portal" replace /> : <RewardsPenalties />} />
-          <Route path="/documents-print" element={isEmployee ? <Navigate to="/portal" replace /> : <DocumentsPrint />} />
-          <Route path="/evaluations" element={isEmployee ? <Navigate to="/portal" replace /> : <Evaluations />} />
-          <Route path="/print-templates" element={isEmployee ? <Navigate to="/portal" replace /> : <PrintTemplates />} />
-          <Route path="/import-data" element={isEmployee ? <Navigate to="/portal" replace /> : <ImportData />} />
+          <Route path="/users" element={<UsersManagement />} />
+          <Route path="/end-of-service" element={<EndOfService />} />
+          <Route path="/rewards-penalties" element={<RewardsPenalties />} />
+          <Route path="/documents-print" element={<DocumentsPrint />} />
+          <Route path="/evaluations" element={<Evaluations />} />
+          <Route path="/print-templates" element={<PrintTemplates />} />
+          <Route path="/import-data" element={<ImportData />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
