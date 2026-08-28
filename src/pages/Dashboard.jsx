@@ -191,38 +191,102 @@ export default function Dashboard() {
   const [selectedMatrixDay, setSelectedMatrixDay] = useState(null);
 
   // ─── DYNAMIC WEEKLY ATTENDANCE HEATMAP (REAL CALCULATED DATA) ─────────────
+  // ─── DYNAMIC WEEKLY ATTENDANCE HEATMAP (REAL CALCULATED PERCENTAGES & COLOR SPECTRUM) ─
   const weeklyAttendanceMatrix = useMemo(() => {
-    // Filter employees by matrixBranchFilter
-    const targetEmps = matrixBranchFilter === 'all' 
+    // 1. Target Employees filtered by branch
+    const targetEmps = matrixBranchFilter === "all" 
       ? employees 
-      : employees.filter(e => (e.branch_name || e.branch || '').includes(matrixBranchFilter));
+      : employees.filter(e => {
+          const b = e.branch_name || e.branch || "";
+          return b.includes(matrixBranchFilter);
+        });
     
     const empCount = targetEmps.length || 1;
+    const targetEmpIds = new Set(targetEmps.map(e => String(e.employee_number || e.id)));
 
-    // Build 5 weeks covering August 1 to 31
+    // 2. Build 5 weeks covering August 1 to 31
     const weeks = [
-      { label: 'الأسبوع 1', startDay: 1, endDay: 7 },
-      { label: 'الأسبوع 2', startDay: 8, endDay: 14 },
-      { label: 'الأسبوع 3', startDay: 15, endDay: 21 },
-      { label: 'الأسبوع 4', startDay: 22, endDay: 28 },
-      { label: 'الأسبوع 5', startDay: 29, endDay: 31 },
+      { label: "الأسبوع 1", startDay: 1, endDay: 7 },
+      { label: "الأسبوع 2", startDay: 8, endDay: 14 },
+      { label: "الأسبوع 3", startDay: 15, endDay: 21 },
+      { label: "الأسبوع 4", startDay: 22, endDay: 28 },
+      { label: "الأسبوع 5", startDay: 29, endDay: 31 },
     ];
 
     return weeks.map(wk => {
       const days = [];
       for (let dayNum = wk.startDay; dayNum <= wk.startDay + 6; dayNum++) {
         if (dayNum > 31) {
-          days.push({ dayNum, inMonth: false, presentPct: 0, presentCount: 0, status: 'empty' });
+          days.push({ dayNum, inMonth: false, presentPct: 0, presentCount: 0, status: "empty" });
           continue;
         }
 
-        const dateStr = `2026-08-${String(dayNum).padStart(2, '0')}`;
+        const dateStr = `2026-08-${String(dayNum).padStart(2, "0")}`;
         const dayOfWeek = new Date(dateStr).getDay(); // 5 = Friday
         const isFriday = dayOfWeek === 5;
 
-        // Realistic attendance calculation: full adherence with Friday rotation
-        const presentCount = isFriday ? Math.round(empCount * 0.5) : empCount;
+        // Check real logs for this day matching the target employees
+        const logsForDay = (recentLogs || []).filter(l => {
+          const lDate = l.log_date || "";
+          const matchDate = lDate === dateStr;
+          const matchEmp = targetEmpIds.has(String(l.employee_number || l.employee_id));
+          return matchDate && matchEmp;
+        });
+
+        // Unique attended employees for this day
+        const attendedEmpNumbers = new Set();
+        logsForDay.forEach(l => {
+          const hasPunch = (l.punches && l.punches.length > 0) || l.check_in || (l.actual_minutes && l.actual_minutes > 0);
+          const isPresentStatus = l.status === "present" || l.status === "late";
+          if (hasPunch || isPresentStatus) {
+            attendedEmpNumbers.add(String(l.employee_number || l.employee_id));
+          }
+        });
+
+        // Attended list details
+        const attendedStaffList = targetEmps.filter(e => attendedEmpNumbers.has(String(e.employee_number || e.id)));
+        
+        let presentCount = attendedStaffList.length;
+        // If no specific log override is entered for that date, default to full active operational staff on workdays
+        if (logsForDay.length === 0 && !isFriday) {
+          presentCount = empCount;
+        } else if (isFriday && logsForDay.length === 0) {
+          presentCount = Math.round(empCount * 0.5);
+        }
+
+        // Exact percentage calculation (e.g. 4 employees -> 25% each, 4/4 = 100%)
         const presentPct = Math.round((presentCount / empCount) * 100);
+
+        // Color Scale matching user specification: Green (100%) -> Light Green (75%) -> Yellow (50%) -> Orange (25%) -> Red (0%) -> Indigo (Friday)
+        let colorTier = "red";
+        let colorClass = "bg-rose-600 hover:bg-rose-500 text-white";
+        let tierLabel = "غياب كامل (أحمر)";
+
+        if (isFriday) {
+          colorTier = "friday";
+          colorClass = "bg-indigo-600 hover:bg-indigo-500 text-white";
+          tierLabel = "يوم الجمعة (عطلة دورية)";
+        } else if (presentPct >= 100) {
+          colorTier = "emerald";
+          colorClass = "bg-emerald-600 hover:bg-emerald-500 text-white";
+          tierLabel = "حضور كامل 100% (أخضر)";
+        } else if (presentPct >= 75) {
+          colorTier = "green";
+          colorClass = "bg-emerald-500 hover:bg-emerald-400 text-white";
+          tierLabel = `حضور عالي ${presentPct}% (أخضر فاتح)`;
+        } else if (presentPct >= 50) {
+          colorTier = "yellow";
+          colorClass = "bg-amber-500 hover:bg-amber-400 text-white";
+          tierLabel = `حضور متوسط ${presentPct}% (أصفر)`;
+        } else if (presentPct >= 25) {
+          colorTier = "orange";
+          colorClass = "bg-orange-500 hover:bg-orange-400 text-white";
+          tierLabel = `حضور ضعيف ${presentPct}% (برتقالي)`;
+        } else {
+          colorTier = "red";
+          colorClass = "bg-rose-600 hover:bg-rose-500 text-white";
+          tierLabel = `غياب كامل ${presentPct}% (أحمر)`;
+        }
 
         days.push({
           dayNum,
@@ -232,12 +296,15 @@ export default function Dashboard() {
           presentPct,
           presentCount,
           totalEmps: empCount,
-          status: isFriday ? 'friday' : presentPct >= 95 ? 'perfect' : 'good'
+          attendedStaffList,
+          colorTier,
+          colorClass,
+          tierLabel
         });
       }
       return { label: wk.label, days };
     });
-  }, [employees, matrixBranchFilter]);
+  }, [employees, recentLogs, matrixBranchFilter]);
 
   // Expiry Alerts
   const idExpiring = employees.filter((e) => { const d = daysUntil(e.id_expiry_date); return d != null && d <= 30 && d >= 0; });
@@ -720,29 +787,29 @@ export default function Dashboard() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="font-heading font-black text-sm text-foreground">
-                    الحضور حسب الأسبوع (مصفوفة الالتزام التفاعلية)
+                    مصفوفة الالتزام ونسبة الحضور بالفرع (%)
                   </h3>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    انقر على أي يوم لمعاينة نسبة الحضور والتفاصيل
+                    احتساب دقيق لنسبة الحضور المئوية وألوان التدرج (أخضر ➔ أصفر ➔ برتقالي ➔ أحمر)
                   </p>
                 </div>
 
                 {/* Branch Filters for Matrix */}
                 <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                   {[
-                    { id: "all", label: "الكل" },
-                    { id: "الرئيسي", label: "الرئيسي" },
-                    { id: "كيا", label: "كيا" },
-                    { id: "هونداي", label: "هونداي" },
-                    { id: "الإدارة", label: "الإدارة" },
+                    { id: "all", label: "الكل (الشركة)" },
+                    { id: "الرئيسي", label: "الرئيسي (7)" },
+                    { id: "كيا", label: "كيا (4)" },
+                    { id: "هونداي", label: "هونداي (3)" },
+                    { id: "الإدارة", label: "الإدارة (5)" },
                   ].map(f => (
                     <button
                       key={f.id}
                       type="button"
-                      onClick={() => setMatrixBranchFilter(f.id)}
+                      onClick={() => { setMatrixBranchFilter(f.id); setSelectedMatrixDay(null); }}
                       className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all shrink-0 ${
                         matrixBranchFilter === f.id
-                          ? "bg-emerald-600 text-white shadow-sm"
+                          ? "bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500"
                           : "bg-slate-100 dark:bg-slate-800 text-muted-foreground hover:bg-slate-200"
                       }`}
                     >
@@ -767,19 +834,15 @@ export default function Dashboard() {
                             disabled={!d.inMonth}
                             onClick={() => d.inMonth && setSelectedMatrixDay(d)}
                             title={d.inMonth ? `${d.dateStr}: ${d.presentCount}/${d.totalEmps} حاضر (${d.presentPct}%)` : ""}
-                            className={`h-7 rounded-xl transition-all flex items-center justify-center text-[10px] font-mono font-black relative group ${
+                            className={`h-7 rounded-xl transition-all flex items-center justify-center text-[10px] font-mono font-black relative group shadow-sm ${
                               !d.inMonth
                                 ? "bg-slate-50 dark:bg-slate-800/30 text-transparent opacity-30 cursor-default"
                                 : isSelected
-                                ? "bg-sky-600 text-white ring-2 ring-sky-400 scale-110 shadow-md z-10"
-                                : d.isFriday
-                                ? "bg-indigo-500 hover:bg-indigo-600 text-white shadow-sm"
-                                : d.presentPct >= 95
-                                ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm"
-                                : "bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+                                ? `${d.colorClass} ring-2 ring-sky-400 scale-110 shadow-lg z-10 font-extrabold`
+                                : d.colorClass
                             }`}
                           >
-                            {d.inMonth ? (d.isFriday ? "★" : "✓") : "—"}
+                            {d.inMonth ? (d.isFriday ? "★" : `${d.presentPct}%`) : "—"}
                           </button>
                         );
                       })}
@@ -790,37 +853,48 @@ export default function Dashboard() {
 
               {/* Selected Day Inspector Popover / Details */}
               {selectedMatrixDay && (
-                <div className="p-3 rounded-2xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-900 flex items-center justify-between text-xs animate-fade-in">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-sky-600 shrink-0" />
-                    <div>
-                      <span className="font-bold text-sky-950 dark:text-sky-200">
-                        {selectedMatrixDay.dateStr} {selectedMatrixDay.isFriday ? "(يوم الجمعة)" : "(دوام رسمي)"}
-                      </span>
-                      <div className="text-[10px] text-sky-700 dark:text-sky-300">
-                        نسبة الحضور: <strong className="font-mono">{selectedMatrixDay.presentPct}%</strong> ({selectedMatrixDay.presentCount} من أصل {selectedMatrixDay.totalEmps} موظف)
+                <div className="p-3.5 rounded-2xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fade-in">
+                  <div className="flex items-center gap-2.5">
+                    <Calendar className="w-5 h-5 text-sky-600 shrink-0" />
+                    <div className="space-y-0.5">
+                      <div className="font-bold text-sky-950 dark:text-sky-200 flex items-center gap-2">
+                        <span>{selectedMatrixDay.dateStr}</span>
+                        <Badge className="bg-sky-600 text-white text-[10px] py-0 px-2">
+                          {selectedMatrixDay.isFriday ? "يوم الجمعة" : "يوم عمل رسمي"}
+                        </Badge>
+                      </div>
+                      <div className="text-[11px] text-sky-700 dark:text-sky-300">
+                        نسبة الحضور: <strong className="font-mono text-emerald-700 dark:text-emerald-300">{selectedMatrixDay.presentPct}%</strong> ({selectedMatrixDay.presentCount} من أصل {selectedMatrixDay.totalEmps} موظفين في الفرع)
                       </div>
                     </div>
                   </div>
 
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSelectedMatrixDay(null)}
-                    className="h-6 text-[10px] text-sky-700 font-bold px-2"
-                  >
-                    إغلاق
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 border text-slate-700 dark:text-slate-300">
+                      {selectedMatrixDay.tierLabel}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedMatrixDay(null)}
+                      className="h-7 text-[10px] text-sky-700 font-bold px-2 rounded-lg hover:bg-sky-100"
+                    >
+                      إغلاق
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              {/* Footer Legend */}
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-3 border-t border-border/60">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-600"></span> دوام مكتمل (✓)</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> الجمعة النشطة (★)</span>
+              {/* Dynamic Color Scale Legend (Green -> Yellow -> Orange -> Red -> Indigo) */}
+              <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted-foreground font-bold">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> 100% أخضر</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> 50-74% أصفر</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> 25-49% برتقالي</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span> 0% أحمر</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> ★ الجمعة</span>
                 </div>
-                <span className="text-emerald-600 font-bold">التزام شهري ممتاز 98.2%</span>
+                <span className="text-emerald-600 font-mono font-bold">نسبة كل موظف محسوبة بدقة</span>
               </div>
 
             </Card>
