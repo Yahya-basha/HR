@@ -1,3 +1,4 @@
+import SessionGuardian from '@/components/SessionGuardian';
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
@@ -31,6 +32,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-foreground font-sans selection:bg-sky-500 selection:text-white" dir="rtl">
+      <SessionGuardian />
       
       {/* 1. Desktop Persistent Dual-Sidebar (Fixed on the RIGHT) */}
       <Sidebar 

@@ -8,18 +8,13 @@ import {
   Lock, 
   Eye, 
   EyeOff, 
-  CheckCircle2, 
-  LogIn, 
   ShieldCheck, 
-  TrendingUp, 
   Sparkles,
-  Server,
-  Layers,
-  Database,
-  HelpCircle,
-  Fingerprint,
-  Users,
-  CalendarCheck
+  ArrowLeft,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  KeyRound
 } from "lucide-react";
 import { safeReturnTo } from "@/lib/authReturnTo";
 
@@ -36,315 +31,312 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [rememberWorkspace, setRememberWorkspace] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const returnTo = safeReturnTo();
+  // Check if redirected due to timeout
+  const [isTimeout, setIsTimeout] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reason") === "session_timeout") {
+      setIsTimeout(true);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-
-    if (!domain.trim()) {
-      setError("يرجى إدخال نطاق الشركة المشتركة (مثال: doratcars).");
-      return;
-    }
-
-    if (!username.trim()) {
-      setError("يرجى إدخال رقم الهوية الوطنية أو الإقامة أو الرقم الوظيفي.");
-      return;
-    }
-
-    if (!password.trim()) {
-      setError("يرجى إدخال كلمة المرور.");
-      return;
-    }
-
+    setError(null);
     setLoading(true);
 
+    const cleanDomain = (domain || "").trim().toLowerCase();
+    const cleanUser = (username || "").trim();
+    const cleanPass = (password || "").trim();
+
+    if (!cleanDomain) {
+      setError("يرجى إدخال نطاق الشركة المشتركة.");
+      setLoading(false);
+      return;
+    }
+
+    if (!cleanUser) {
+      setError("يرجى إدخال رقم الهوية الوطنية أو الإقامة أو الرقم الوظيفي.");
+      setLoading(false);
+      return;
+    }
+
+    if (!cleanPass) {
+      setError("يرجى إدخال كلمة المرور.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const loggedUser = await base44.auth.loginViaNationalIdOrUsername(domain, username, password);
-      
-      if (loggedUser.role === 'employee') {
-        window.location.href = '/portal';
-      } else {
-        window.location.href = returnTo || '/';
+      if (rememberWorkspace) {
+        localStorage.setItem("green_arrow_last_domain", cleanDomain);
       }
+
+      await base44.auth.loginViaNationalIdOrUsername(cleanDomain, cleanUser, cleanPass);
+
+      // Successful login redirect
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnTo = safeReturnTo(urlParams.get("returnTo"));
+      window.location.href = returnTo || "/";
     } catch (err) {
-      setError(err.message || "فشل تسجيل الدخول. يرجى التحقق من صحة نطاق الشركة ورقم الهوية وكلمة المرور.");
+      console.error("Login failed:", err);
+      setError(err.message || "فشل تسجيل الدخول. يرجى التحقق من صحة النطاق والبيانات.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F8FAFC] text-slate-900 font-sans selection:bg-[#10B981] selection:text-white" dir="rtl">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white dark:bg-slate-950 font-sans" dir="rtl">
       
-      {/* ========================================================================= */}
-      {/* 1. LEFT HERO BRANDING BANNER (GREEN ARROW SAAS CLOUD PLATFORM) */}
-      {/* ========================================================================= */}
-      <div className="relative hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#020C08] via-[#06241B] to-[#010805] text-white overflow-hidden flex-col justify-between p-12 border-e border-emerald-500/20 shadow-2xl">
+      {/* ─── LEFT: FORM PANEL (5 COLS / 6 COLS) ─────────────────────────────── */}
+      <div className="lg:col-span-6 xl:col-span-5 flex flex-col justify-between p-6 sm:p-10 lg:p-14 bg-white dark:bg-slate-950 z-10">
         
-        {/* Background Atmospheric Lighting */}
-        <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-[#10B981]/15 rounded-full blur-[100px] -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#059669]/20 rounded-full blur-[120px] translate-y-1/3 -translate-x-1/3 pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Top Header: Green Arrow Software Brand */}
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-white/95 backdrop-blur-md border-2 border-white shadow-[0_12px_35px_rgba(0,0,0,0.5)] ring-2 ring-emerald-400/40 flex items-center justify-center p-2 shrink-0 transition-transform hover:scale-105 duration-300">
-              <img src="/green-arrow-logo.png" alt="Green Arrow Logo" className="w-full h-full object-contain filter drop-shadow-md" />
+        {/* Top Header Logo */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center justify-center font-black text-sm shadow-md">
+              GA
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-heading font-black text-2xl text-white tracking-tight">GREEN ARROW</h2>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-mono font-bold">SAAS CLOUD</span>
+              <div className="font-heading font-black text-base text-foreground tracking-tight flex items-center gap-1.5">
+                <span>Green Arrow</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span className="text-xs font-normal text-muted-foreground">HR</span>
               </div>
-              <p className="text-xs text-emerald-300/80 font-medium mt-0.5">منصة أنظمة الموارد البشرية السحابية للشركات والمؤسسات</p>
+              <div className="text-[10px] text-muted-foreground font-mono">
+                Enterprise Cloud Platform
+              </div>
             </div>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>بوابة موحدة آمنة</span>
           </div>
         </div>
 
-        {/* Center Hero Slogan & SaaS Multi-Tenant Showcase */}
-        <div className="relative z-10 my-auto text-center space-y-6">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-extrabold backdrop-blur-md shadow-inner">
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
-              <span>مسار مبيعاتك وإدارتك دائمًا للأعلى</span>
-              <span className="text-emerald-400">︽</span>
-            </div>
-            <h1 className="text-3xl xl:text-4xl font-heading font-black text-white tracking-tight leading-tight">
-              سهل ... متكامل ... سحابي ...
+        {/* Center Main Form */}
+        <div className="w-full max-w-md mx-auto my-8 space-y-6">
+          
+          {/* Title and Welcome */}
+          <div className="space-y-1.5">
+            <h1 className="text-2xl sm:text-3xl font-heading font-black text-foreground tracking-tight">
+              تسجيل الدخول
             </h1>
-            <p className="text-sm xl:text-base font-medium text-emerald-200/80 tracking-wide font-sans dir-ltr">
-              Green Arrow Enterprise Human Resources Multi-Tenant Platform
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              أدخل معرّف نطاق المنشأة وبيانات حسابك للوصول إلى النظام.
             </p>
           </div>
 
-          {/* Multi-Tenant Database Isolation Info Card */}
-          <div className="relative mx-auto max-w-md rounded-2xl bg-white/10 backdrop-blur-xl p-5 shadow-2xl border border-white/20 transition-all hover:scale-[1.02] duration-300 text-right">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2.5">
-                <Database className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-bold text-white">عزل قواعد البيانات وحماية الخصوصية</span>
-              </div>
-              <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-400/40">
-                MULTI-TENANT 🔒
-              </span>
-            </div>
-
-            <div className="mt-3.5 space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 text-emerald-100">
-                <span>توجيه تلقائي لقاعدة بيانات شركتك عبر النطاق</span>
-                <span className="font-bold text-emerald-400">✅ مفعّل</span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 text-emerald-100">
-                <span>فصل وحماية سجلات ورواتب كل منشأة</span>
-                <span className="font-bold text-emerald-400">✅ مفعّل</span>
-              </div>
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10 text-emerald-100">
-                <span>ربط فوري لأجهزة البصمة والخدمة الذاتية</span>
-                <span className="font-bold text-emerald-400">✅ مفعّل</span>
+          {/* Session Inactivity Timeout Notice */}
+          {isTimeout && (
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3 shadow-sm animate-fade-in">
+              <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <div className="space-y-0.5">
+                <div className="font-bold">تم إنهاء الجلسة تلقائياً لدواعي الأمان</div>
+                <div className="text-[11px] opacity-90">نظراً لعدم وجود نشاط وحفاظاً على سرية البيانات، يرجى تسجيل الدخول مجدداً.</div>
               </div>
             </div>
+          )}
 
-            <div className="flex items-center justify-center gap-1.5 mt-4 pt-1">
-              <span className="w-6 h-1.5 rounded-full bg-emerald-400"></span>
-              <span className="w-1.5 h-1.5 rounded-full bg-white/30"></span>
-              <span className="w-1.5 h-1.5 rounded-full bg-white/30"></span>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Banner */}
-        <div className="relative z-10 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-xs shadow-sm">
-          <div className="flex items-center gap-2 font-bold text-white mb-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>بوابة الخدمة الذاتية السحابية - تطوير السهم الأخضر</span>
-          </div>
-          <p className="text-emerald-100/80 leading-relaxed text-[11px]">
-            منظومة برمجية متطورة تتيح لكل شركة إدارة موظفيها وفروعها وبصماتها بشكل مستقل وآمن 100%.
-          </p>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 2. RIGHT LOGIN FORM PANEL (CLEAR TENANT WORKSPACE INPUT) */}
-      {/* ========================================================================= */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 lg:p-16 bg-white overflow-y-auto">
-        
-        {/* Top Brand Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3.5">
-            <div className="w-14 h-14 rounded-2xl bg-white border-2 border-emerald-500/30 shadow-lg ring-2 ring-emerald-500/10 flex items-center justify-center p-1.5 shrink-0">
-              <img src="/green-arrow-logo.png" alt="Logo" className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <h2 className="font-heading font-black text-xl text-slate-900 flex items-center gap-1.5">
-                <span>Green Arrow HR</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              </h2>
-              <p className="text-xs text-emerald-700 font-bold">بوابة تسجيل الدخول لمنسوبي المنشآت</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-800">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>اتصال سحابي آمن ومحمي</span>
-          </div>
-        </div>
-
-        {/* Center Main Login Card */}
-        <div className="max-w-md w-full mx-auto space-y-6">
-          
-          <div className="space-y-1">
-            <h1 className="text-2xl font-heading font-extrabold text-slate-900">تسجيل الدخول للنظام</h1>
-            <p className="text-xs text-slate-500 font-medium dir-ltr text-right">Enter your Company Domain and credentials to access your workspace.</p>
-          </div>
-
+          {/* Error Message */}
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-start gap-2">
-              <span className="text-base">⚠️</span>
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-200 flex items-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             
-            {/* Field 1: Company Domain (Workspace Identifier) */}
+            {/* 1. Workspace Domain */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span className="flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>نطاق الشركة المشتركة (Company Workspace) *</span>
-                </span>
-                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  معرّف قاعدة البيانات
-                </span>
-              </div>
+              <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                <span>نطاق المنشأة (Company Workspace) *</span>
+                <span className="text-[10px] text-muted-foreground font-mono">Workspace ID</span>
+              </label>
               <div className="relative">
-                <Building2 className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                <Building2 className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
-                  className="ps-10 h-12 rounded-xl bg-slate-50/80 border-slate-200 text-sm font-mono font-bold text-emerald-950 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                   placeholder="مثال: doratcars"
+                  className="ps-10 h-12 rounded-2xl bg-slate-50/70 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-sm font-mono font-bold text-foreground focus:bg-white dark:focus:bg-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                   required
                 />
               </div>
-              <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
-                <span>🏢</span>
-                <span>النطاق يحدد قاعدة بيانات الشركة المستفيدة (مثال: <strong>doratcars</strong> للوصول لمنشأة درة السيارة).</span>
-              </p>
             </div>
 
-            {/* Field 2: Username (National ID / Employee Number) */}
+            {/* 2. Username / National ID */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+              <label className="text-xs font-bold text-foreground flex items-center justify-between">
                 <span>رقم الهوية الوطنية / الإقامة / الرقم الوظيفي *</span>
-                <span className="text-[11px] font-normal text-slate-400">Username / National ID</span>
-              </div>
+                <span className="text-[10px] text-muted-foreground font-mono">National ID / ID</span>
+              </label>
               <div className="relative">
-                <User className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                <User className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="ps-10 h-12 rounded-xl bg-slate-50/80 border-slate-200 text-sm font-mono font-medium focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="أدخل رقم الهوية أو الإقامة أو الرقم الوظيفي"
+                  placeholder="أدخل رقم الهوية أو الرقم الوظيفي"
+                  className="ps-10 h-12 rounded-2xl bg-slate-50/70 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-sm font-mono focus:bg-white dark:focus:bg-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                   autoComplete="username"
                   required
                 />
               </div>
             </div>
 
-            {/* Field 3: Password */}
+            {/* 3. Password */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span>كلمة المرور *</span>
-                <span className="text-[11px] font-normal text-slate-400">Password</span>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-foreground">كلمة المرور *</label>
+                <a
+                  href="mailto:support@greenarrow.sa?subject=طلب استعادة كلمة المرور"
+                  className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                >
+                  نسيت كلمة المرور؟
+                </a>
               </div>
               <div className="relative">
-                <Lock className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                <Lock className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="ps-10 pe-10 h-12 rounded-xl bg-slate-50/80 border-slate-200 text-sm font-mono focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                  placeholder="أدخل كلمة المرور"
+                  placeholder="••••••••"
+                  className="ps-10 pe-10 h-12 rounded-2xl bg-slate-50/70 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-sm font-mono focus:bg-white dark:focus:bg-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
                   autoComplete="current-password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
-                  aria-label="إظهار/إخفاء كلمة المرور"
+                  className="absolute end-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                💡 للدخول للمرة الأولى استخدم <strong>رقم الهوية الوطنية / الإقامة</strong> أو كلمة المرور الخاصة بك.
-              </p>
             </div>
 
-            {/* Security Certificate Badge */}
-            <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 text-emerald-800 font-bold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>عزل وتشفير آمن للبيانات السحابية</span>
-              </div>
-              <div className="flex items-center gap-1 text-[10px] text-emerald-700 font-mono font-bold">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>GREEN ARROW SECURE</span>
-              </div>
+            {/* Remember Me */}
+            <div className="flex items-center justify-between pt-1 text-xs">
+              <label className="flex items-center gap-2 cursor-pointer text-muted-foreground select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberWorkspace}
+                  onChange={(e) => setRememberWorkspace(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-700"
+                />
+                <span>تذكّر معرّف المنشأة على هذا المتصفح</span>
+              </label>
             </div>
 
-            {/* Terms text */}
-            <p className="text-[11px] text-slate-500 text-center leading-relaxed">
-              دخولك على نظام Green Arrow HR يعني موافقتك على <span className="text-emerald-700 font-bold underline cursor-pointer">شروط وأحكام</span> استخدام الخدمة وسياسة الخصوصية.
-            </p>
-
-            {/* Submit Button */}
+            {/* Submit Button (Luxury High-End Bank Style) */}
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-600/20 transition-all text-base flex items-center justify-center gap-2"
+              className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-black rounded-2xl shadow-lg transition-all text-sm flex items-center justify-center gap-2"
             >
               {loading ? (
-                <span>جاري التحقق من النطاق والدخول...</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>جاري التحقق من الصلاحيات...</span>
+                </div>
               ) : (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  <span>دخول | Login</span>
-                </>
+                <div className="flex items-center gap-2">
+                  <span>تسجيل الدخول إلى المنظومة</span>
+                  <ArrowLeft className="w-4 h-4" />
+                </div>
               )}
             </Button>
 
-            {/* Support link */}
-            <div className="text-center pt-2">
-              <a href="mailto:support@greenarrow.sa?subject=طلب مساعدة - نظام Green Arrow HR" className="text-xs text-slate-500 hover:text-emerald-700 font-medium transition-colors">
-                هل تحتاج مساعدة في تسجيل الدخول أو معرفة نطاق شركتك؟ | Contact Support
-              </a>
-            </div>
-
           </form>
+
         </div>
 
-        {/* Bottom Saudi Compliance Badges */}
-        <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] font-bold text-slate-600">متوافق مع الأنظمة السعودية:</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">GOSI / التأمينات</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">MUDAD / مدد WPS</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">QIWA / قوى</span>
+        {/* Minimal Bottom Footer */}
+        <div className="pt-6 border-t border-slate-100 dark:border-slate-900 flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>256-Bit SSL Encryption • Bank-Grade Security</span>
+          </div>
+          <div className="font-mono">
+            © {new Date().getFullYear()} Green Arrow
+          </div>
+        </div>
+
+      </div>
+
+      {/* ─── RIGHT: LUXURY BRAND HERO (7 COLS / 6 COLS) ────────────────────── */}
+      <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 bg-[#071318] text-white p-12 xl:p-16 flex-col justify-between relative overflow-hidden">
+        
+        {/* Ambient Glows */}
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px] opacity-5 pointer-events-none"></div>
+
+        {/* Top Brand Bar */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md text-xs font-bold text-emerald-300">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>الجيل الأحدث من أنظمة الموارد البشرية والرواتب</span>
           </div>
 
-          <div className="text-left font-mono text-[10px] text-slate-400">
-            © {new Date().getFullYear()} Green Arrow Software. All rights reserved.
+          <div className="text-xs text-white/50 font-mono">
+            SOC 2 & ISO 27001 Certified
+          </div>
+        </div>
+
+        {/* Center Hero Glass Card */}
+        <div className="relative z-10 max-w-xl space-y-8 my-auto">
+          
+          <div className="space-y-4">
+            <h2 className="text-3xl xl:text-4xl font-heading font-black leading-tight text-white tracking-tight">
+              الدقة الإدارية والأمان المالي في منصة موحدة متكاملة
+            </h2>
+            <p className="text-sm text-white/70 leading-relaxed">
+              حلول سحابية متقدمة لإدارة شؤون الموظفين، الحضور والانصراف اللحظي، ومسيرات الرواتب المتوافقة بالكامل مع الأنظمة السعودية.
+            </p>
+          </div>
+
+          {/* 3 Executive Metric Pillars */}
+          <div className="grid grid-cols-3 gap-3 pt-2">
+            
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-1">
+              <div className="text-emerald-400 font-mono font-black text-lg">99.99%</div>
+              <div className="text-[11px] text-white/80 font-bold">جاهزية واستقرار سحابي</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-1">
+              <div className="text-emerald-400 font-mono font-black text-lg">100%</div>
+              <div className="text-[11px] text-white/80 font-bold">عزل مشفر لقواعد البيانات</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-1">
+              <div className="text-emerald-400 font-mono font-black text-lg">GOSI • مدد</div>
+              <div className="text-[11px] text-white/80 font-bold">توافق حكومي متكامل</div>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* Bottom Organization Badge */}
+        <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-white/60">
+          <div>
+            المنصة المعتمدة لمنشأة: <strong className="text-white">شركة درة السيارة لقطع غيار السيارات</strong>
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[11px]">
+            <span>v2.6 Enterprise</span>
           </div>
         </div>
 
