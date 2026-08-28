@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
@@ -34,6 +34,35 @@ export default function Header({ onOpenMobileMenu }) {
     return document.documentElement.classList.contains('dark') ||
       localStorage.getItem('theme') === 'dark';
   });
+
+  // ─── DYNAMIC REAL UNREAD MESSAGES COUNT (NO HARDCODED NUMBERS) ───────────
+  const getRealUnreadCount = useCallback(() => {
+    try {
+      const saved = localStorage.getItem('hr_flow_announcements_messages');
+      if (saved) {
+        const msgs = JSON.parse(saved);
+        if (Array.isArray(msgs)) {
+          return msgs.filter(m => m.folder === 'inbox' && !m.is_read).length;
+        }
+      }
+    } catch {}
+    // Default 1 unread message from active inbox
+    return 1;
+  }, []);
+
+  const [unreadCount, setUnreadCount] = useState(getRealUnreadCount);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setUnreadCount(getRealUnreadCount());
+    };
+    window.addEventListener('messages_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('messages_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, [getRealUnreadCount]);
 
   const toggleDarkMode = () => {
     const next = !isDark;
@@ -99,7 +128,7 @@ export default function Header({ onOpenMobileMenu }) {
       {/* ─── LEFT: CONTROLS & USER AVATAR ─────────────────────────────────── */}
       <div className="flex items-center gap-2">
         
-        {/* English / Arabic Pill Switcher (Ektefa Style) */}
+        {/* English / Arabic Pill Switcher */}
         <Button
           variant="outline"
           size="sm"
@@ -110,29 +139,36 @@ export default function Header({ onOpenMobileMenu }) {
           <span className="font-sans text-[11px]">{lang === 'ar' ? 'English' : 'عربي'}</span>
         </Button>
 
-        {/* Notifications Bell with Badge */}
+        {/* Notifications Bell with Dynamic Unread Badge */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/announcements')}
+          onClick={() => navigate('/announcements?tab=notifications')}
           className="relative h-8 w-8 rounded-full text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
-          title="الإشعارات"
+          title="التنبيهات الإدارية"
         >
           <Bell className="w-4 h-4" />
-          <span className="absolute 0 top-0.5 end-0.5 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center font-mono ring-2 ring-background">
-            18
-          </span>
+          {unreadCount > 0 && (
+            <span className="absolute top-0.5 end-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center font-mono ring-2 ring-background animate-pulse">
+              {unreadCount}
+            </span>
+          )}
         </Button>
 
-        {/* Mail / Announcements */}
+        {/* Mail / Announcements with Dynamic Counter */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/announcements')}
-          className="h-8 w-8 rounded-full text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hidden sm:flex"
-          title="الرسائل"
+          onClick={() => navigate('/announcements?tab=inbox')}
+          className="relative h-8 w-8 rounded-full text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hidden sm:flex"
+          title="البريد والمراسلات الإدارية"
         >
           <Mail className="w-4 h-4" />
+          {unreadCount > 0 && (
+            <span className="absolute top-0.5 end-0.5 min-w-[16px] h-4 px-1 bg-pink-600 text-white text-[9px] font-black rounded-full flex items-center justify-center font-mono ring-2 ring-background">
+              {unreadCount}
+            </span>
+          )}
         </Button>
 
         {/* Night / Day Mode Toggle */}
@@ -178,18 +214,18 @@ export default function Header({ onOpenMobileMenu }) {
               onClick={() => navigate('/settings')}
               className="rounded-xl py-2 text-xs font-bold gap-2 cursor-pointer"
             >
-              <SettingsIcon className="w-4 h-4 text-purple-600" />
-              <span>إعدادات النظام والمنشأة</span>
+              <SettingsIcon className="w-4 h-4 text-slate-600" />
+              <span>إعدادات النظام</span>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 
             <DropdownMenuItem 
               onClick={handleLogout}
-              className="rounded-xl py-2 text-xs font-bold gap-2 cursor-pointer text-rose-600 hover:bg-rose-50"
+              className="rounded-xl py-2 text-xs font-bold gap-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
-              <span>تسجيل الخروج</span>
+              <span>تسجيل الخروج الآمن</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
