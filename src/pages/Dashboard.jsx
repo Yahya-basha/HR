@@ -13,6 +13,7 @@ import {
   Download,
   CheckCircle2,
   ShieldAlert,
+  ShieldCheck,
   IdCard,
   Globe,
   FileSignature,
