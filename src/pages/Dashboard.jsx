@@ -121,36 +121,234 @@ export default function Dashboard() {
     loadData();
   }, [loadData]);
 
-  // ─── ATTENDANCE STATS CALCULATION ──────────────────────────────────────────
+  // ─── LOGGED-IN EMPLOYEE DATA ──────────────────────────────────────────────
+  const currentEmp = useMemo(() => {
+    if (!user) return employees[0] || null;
+    return employees.find(e => 
+      String(e.employee_number || e.id) === String(user.employee_number || user.id) ||
+      (e.national_id && e.national_id === user.national_id) ||
+      (e.email && e.email === user.email)
+    ) || user;
+  }, [employees, user]);
+
+  const userShift = useMemo(() => {
+    if (!currentEmp) return null;
+    const sName = currentEmp.shift_name || currentEmp.shift || '';
+    const found = shifts.find(s => s.id === currentEmp.shift_id || s.name === sName);
+    return found || {
+      name: sName || 'فترة عمل الكادر المعتمدة',
+      type: 'single',
+      start_time: '08:00',
+      end_time: '16:00'
+    };
+  }, [currentEmp, shifts]);
+
+  // ─── 100% REAL TODAY PUNCH CARD FOR LOGGED-IN USER ────────────────────────
+  const userTodayPunch = useMemo(() => {
+    if (!currentEmp) return null;
+    const today = todayStr();
+    const empNum = String(currentEmp.employee_number || currentEmp.id);
+    
+    // Look up today's log for the user
+    const log = (todayLogs || []).find(l => String(l.employee_number || l.employee_id) === empNum) ||
+      (recentLogs || []).find(l => (String(l.employee_number || l.employee_id) === empNum) && l.log_date === today);
+    
+    if (log && (log.check_in || (log.punches && log.punches.length > 0))) {
+      const punches = (log.punches || []).filter(Boolean);
+      let p1In = log.check_in || log.check_in_time || '--:--';
+      let p1Out = log.check_out || log.check_out_time || '--:--';
+      let p2In = '--:--';
+      let p2Out = '--:--';
+
+      if (punches.length >= 4) {
+        p1In = punches[0];
+        p1Out = punches[1];
+        p2In = punches[2];
+        p2Out = punches[3];
+      } else if (punches.length === 2) {
+        p1In = punches[0];
+        p1Out = punches[1];
+      } else if (punches.length === 1) {
+        p1In = punches[0];
+      }
+
+      const actualHours = log.actual_hours || (log.actual_minutes ? (log.actual_minutes / 60).toFixed(1) : '0.0');
+
+      return {
+        hasPunched: true,
+        shiftName: log.shift_name || userShift?.name || 'فترة العمل المعتمدة',
+        p1In,
+        p1Out,
+        p2In,
+        p2Out,
+        isTwoPeriod: punches.length >= 3 || userShift?.type === 'split',
+        lateMinutes: log.late_minutes || 0,
+        earlyMinutes: log.early_leave_minutes || 0,
+        status: log.status || 'present',
+        actualHours
+      };
+    }
+
+    // Real state when NO punch was recorded today:
+    return {
+      hasPunched: false,
+      shiftName: userShift?.name || 'فترة العمل المعتمدة',
+      p1In: '--:--',
+      p1Out: '--:--',
+      p2In: '--:--',
+      p2Out: '--:--',
+      isTwoPeriod: userShift?.type === 'split',
+      lateMinutes: 0,
+      earlyMinutes: 0,
+      status: 'none',
+      actualHours: '0.0'
+    };
+  }, [currentEmp, todayLogs, recentLogs, userShift]);
+
+  // ─── 100% REAL ATTENDANCE STATS CALCULATION FOR TODAY ─────────────────────
   const stats = useMemo(() => {
-    const totalCount = employees.length || 19;
-    const presentCount = todayLogs.filter(l => l.status === 'present' || l.check_in).length;
-    const lateCount = todayLogs.filter(l => l.status === 'late').length;
+    const totalCount = employees.length || 0;
+    
+    // Real count of employees who clocked in today
+    const presentCount = todayLogs.filter(l => (l.status === 'present' || l.status === 'late' || l.check_in || (l.punches && l.punches.length > 0))).length;
+    const lateCount = todayLogs.filter(l => l.status === 'late' || (l.late_minutes && l.late_minutes > 0)).length;
     const onLeaveCount = leaves.filter(lv => lv.status === 'approved' && lv.start_date <= todayStr() && lv.end_date >= todayStr()).length;
-    const exemptCount = 1;
+    const excusedCount = todayLogs.filter(l => l.status === 'excused').length;
+    const exemptCount = employees.filter(e => e.job_title?.includes('مدير') || e.is_exempt).length;
     const absentCount = Math.max(0, totalCount - presentCount - onLeaveCount - exemptCount);
+
+    // Sum total early leave minutes today
+    let totalEarlyMinutes = 0;
+    todayLogs.forEach(l => {
+      if (l.early_leave_minutes) totalEarlyMinutes += l.early_leave_minutes;
+    });
+    const earlyHours = Math.floor(totalEarlyMinutes / 60);
+    const earlyMins = totalEarlyMinutes % 60;
+    const earlyLeaveStr = `${String(earlyHours).padStart(2, '0')}:${String(earlyMins).padStart(2, '0')}`;
+
+    // New joiners today
+    const newJoinersCount = employees.filter(e => e.hire_date === todayStr()).length;
 
     return {
       total: totalCount,
-      present: presentCount || 18,
-      absent: absentCount || 1,
-      late: lateCount || 0,
-      excused: 0,
+      present: presentCount,
+      absent: absentCount,
+      late: lateCount,
+      excused: excusedCount,
       exempt: exemptCount,
-      onLeave: onLeaveCount || 0,
-      earlyLeave: '26:02',
-      newJoiners: 0,
+      onLeave: onLeaveCount,
+      earlyLeave: earlyLeaveStr,
+      newJoiners: newJoinersCount,
     };
   }, [employees, todayLogs, leaves]);
 
-  // Donut Data for 30-Day Attendance
-  const donutData = useMemo(() => {
-    return [
-      { name: 'حضور', value: 82, color: '#1e1b4b' },
-      { name: 'تأخير', value: 12, color: '#f59e0b' },
-      { name: 'غياب', value: 6, color: '#f43f5e' },
-    ];
-  }, []);
+  // ─── 100% REAL 30-DAY ATTENDANCE METRICS ──────────────────────────────────
+  const { donutData, adherenceRate, donutCounts } = useMemo(() => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+    const logsLast30 = (recentLogs || []).filter(l => l.log_date >= thirtyDaysAgoStr && l.log_date <= todayStr());
+    
+    let present = 0;
+    let late = 0;
+    let absent = 0;
+
+    logsLast30.forEach(l => {
+      if (l.status === 'late' || (l.late_minutes && l.late_minutes > 0)) {
+        late += 1;
+      } else if (l.status === 'present' || l.check_in) {
+        present += 1;
+      } else if (l.status === 'absent') {
+        absent += 1;
+      }
+    });
+
+    const total = present + late + absent;
+    if (total === 0) {
+      return {
+        donutData: [
+          { name: 'حضور', value: 100, color: '#10b981' },
+          { name: 'تأخير', value: 0, color: '#f59e0b' },
+          { name: 'غياب', value: 0, color: '#f43f5e' },
+        ],
+        adherenceRate: 100,
+        donutCounts: { present: 0, late: 0, absent: 0, presentPct: 100, latePct: 0, absentPct: 0 }
+      };
+    }
+
+    const presentPct = Math.round((present / total) * 100);
+    const latePct = Math.round((late / total) * 100);
+    const absentPct = Math.max(0, 100 - presentPct - latePct);
+    const overallAdherence = Math.round(((present + late) / total) * 100);
+
+    return {
+      donutData: [
+        { name: 'حضور', value: presentPct, color: '#10b981' },
+        { name: 'تأخير', value: latePct, color: '#f59e0b' },
+        { name: 'غياب', value: absentPct, color: '#f43f5e' },
+      ],
+      adherenceRate: overallAdherence,
+      donutCounts: { present, late, absent, presentPct, latePct, absentPct }
+    };
+  }, [recentLogs]);
+
+  // ─── 100% REAL WORK HOURS FOR LOGGED-IN EMPLOYEE (WEEK & MONTH) ───────────
+  const userWorkHours = useMemo(() => {
+    const today = new Date();
+    
+    // Get start of current week (Saturday = 6 or Sunday = 0)
+    const dayOfWeek = today.getDay();
+    const startOfWeek = new Date(today);
+    const diff = (dayOfWeek + 1) % 7; // Assuming Saturday is start of week
+    startOfWeek.setDate(today.getDate() - diff);
+    const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+
+    // Get start of current month
+    const startOfMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+    const todayDateStr = todayStr();
+
+    const empNum = currentEmp ? String(currentEmp.employee_number || currentEmp.id) : '';
+
+    const userLogs = (recentLogs || []).filter(l => String(l.employee_number || l.employee_id) === empNum);
+
+    // Sum week minutes
+    let weekMinutes = 0;
+    userLogs.forEach(l => {
+      if (l.log_date >= startOfWeekStr && l.log_date <= todayDateStr) {
+        weekMinutes += (l.actual_minutes || (l.actual_hours ? Math.round(l.actual_hours * 60) : 0));
+      }
+    });
+
+    // Sum month minutes
+    let monthMinutes = 0;
+    userLogs.forEach(l => {
+      if (l.log_date >= startOfMonthStr && l.log_date <= todayDateStr) {
+        monthMinutes += (l.actual_minutes || (l.actual_hours ? Math.round(l.actual_hours * 60) : 0));
+      }
+    });
+
+    // Target hours: 48h/week, 192h/month
+    const targetWeekMinutes = 48 * 60;
+    const targetMonthMinutes = 192 * 60;
+
+    const weekPct = Math.min(100, Math.round((weekMinutes / targetWeekMinutes) * 100));
+    const monthPct = Math.min(100, Math.round((monthMinutes / targetMonthMinutes) * 100));
+
+    const formatHoursMinutes = (totalMins) => {
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+
+    return {
+      weekStr: `${formatHoursMinutes(weekMinutes)} / 48:00 ساعات`,
+      weekPct,
+      monthStr: `${formatHoursMinutes(monthMinutes)} / 192:00 ساعات`,
+      monthPct,
+      averagePerDay: (monthMinutes > 0 ? (monthMinutes / 60 / 22).toFixed(1) : '0.0')
+    };
+  }, [currentEmp, recentLogs]);
 
   // ─── 100% REAL BRANCH ATTENDANCE & ADHERENCE DATA ─────────────────────────
   const deptBarData = useMemo(() => {
@@ -160,6 +358,12 @@ export default function Dashboard() {
       'فرع هونداي ( الرواف )': { name: 'فرع هونداي ( الرواف )', shortName: 'هونداي', total: 0, present: 0, color: '#f59e0b' },
       'فرع كيا ( السليم )': { name: 'فرع كيا ( السليم )', shortName: 'كيا', total: 0, present: 0, color: '#8b5cf6' }
     };
+
+    const presentEmpSet = new Set(
+      todayLogs
+        .filter(l => (l.status === 'present' || l.status === 'late' || l.check_in || (l.punches && l.punches.length > 0)))
+        .map(l => String(l.employee_number || l.employee_id))
+    );
 
     employees.forEach(e => {
       const b = e.branch_name || e.branch || 'الفرع الرئيسي';
@@ -171,7 +375,9 @@ export default function Dashboard() {
 
       if (branchMap[targetKey]) {
         branchMap[targetKey].total += 1;
-        branchMap[targetKey].present += 1;
+        if (presentEmpSet.has(String(e.employee_number || e.id))) {
+          branchMap[targetKey].present += 1;
+        }
       }
     });
 
@@ -180,18 +386,18 @@ export default function Dashboard() {
       fullName: b.name,
       total: b.total,
       present: b.present,
-      rate: b.total > 0 ? Math.round((b.present / b.total) * 100) : 100,
+      rate: b.total > 0 ? Math.round((b.present / b.total) * 100) : 0,
       fill: b.color
     }));
-  }, [employees]);
+  }, [employees, todayLogs]);
 
   // Selected branch filter for Weekly Matrix Heatmap
   const [matrixBranchFilter, setMatrixBranchFilter] = useState('all');
   const [selectedMatrixDay, setSelectedMatrixDay] = useState(null);
 
-  // ─── DYNAMIC WEEKLY ATTENDANCE HEATMAP (REAL CALCULATED PERCENTAGES & COLOR SPECTRUM) ─
+  // ─── DYNAMIC WEEKLY ATTENDANCE HEATMAP (REAL DATABASE CALCULATIONS) ───────
   const weeklyAttendanceMatrix = useMemo(() => {
-    const today = todayStr(); // Current date: e.g. 2026-08-28
+    const today = todayStr();
 
     // 1. Target Employees filtered by branch
     const targetEmps = matrixBranchFilter === 'all' 
@@ -224,10 +430,9 @@ export default function Dashboard() {
         const dateStr = `2026-08-${String(dayNum).padStart(2, '0')}`;
         const dayOfWeek = new Date(dateStr).getDay(); // 5 = Friday
         const isFriday = dayOfWeek === 5;
-        const isFuture = dateStr > today; // Future dates (e.g. Aug 29, 30, 31)
+        const isFuture = dateStr > today;
         const isToday = dateStr === today;
 
-        // If the date is in the future, it has not occurred yet!
         if (isFuture) {
           days.push({
             dayNum,
@@ -247,7 +452,7 @@ export default function Dashboard() {
           continue;
         }
 
-        // Check real logs for past & today dates matching the target employees
+        // Real logs query for this exact day
         const logsForDay = (recentLogs || []).filter(l => {
           const lDate = l.log_date || '';
           const matchDate = lDate === dateStr;
@@ -255,7 +460,7 @@ export default function Dashboard() {
           return matchDate && matchEmp;
         });
 
-        // Unique attended employees for this day
+        // Count unique present employees for this day
         const attendedEmpNumbers = new Set();
         logsForDay.forEach(l => {
           const hasPunch = (l.punches && l.punches.length > 0) || l.check_in || (l.actual_minutes && l.actual_minutes > 0);
@@ -266,21 +471,15 @@ export default function Dashboard() {
         });
 
         const attendedStaffList = targetEmps.filter(e => attendedEmpNumbers.has(String(e.employee_number || e.id)));
-        
-        let presentCount = attendedStaffList.length;
-        if (logsForDay.length === 0 && !isFriday) {
-          presentCount = Math.max(1, Math.round(empCount * 0.9));
-        } else if (isFriday && logsForDay.length === 0) {
-          presentCount = Math.round(empCount * 0.4);
-        }
+        const presentCount = attendedStaffList.length;
 
-        // Exact percentage calculation (e.g. 4 employees -> 25% each, 4/4 = 100%)
-        const presentPct = Math.round((presentCount / empCount) * 100);
+        // Exact percentage calculation based on branch staff count
+        const presentPct = empCount > 0 ? Math.round((presentCount / empCount) * 100) : 0;
 
-        // Color Scale: Green (100%) -> Light Green (75%) -> Yellow (50%) -> Orange (25%) -> Red (0%) -> Indigo (Friday)
+        // Dynamic Color Scale based on percentage
         let colorTier = 'red';
         let colorClass = 'bg-rose-600 hover:bg-rose-500 text-white';
-        let tierLabel = 'غياب كامل (أحمر)';
+        let tierLabel = 'غياب كامل 0% (أحمر)';
 
         if (isFriday) {
           colorTier = 'friday';
@@ -334,87 +533,6 @@ export default function Dashboard() {
   const contractExpiring = contracts.filter((c) => { const d = daysUntil(c.end_date); return d != null && d <= 60 && d >= 0; });
   const totalAlerts = idExpiring.length + passportExpiring.length + contractExpiring.length;
 
-  // ─── LOGGED-IN EMPLOYEE SHIFT & REAL TODAY PUNCHES DATA ──────────────────
-  const currentEmp = useMemo(() => {
-    if (!user) return employees[0] || null;
-    return employees.find(e => 
-      String(e.employee_number || e.id) === String(user.employee_number || user.id) ||
-      (e.national_id && e.national_id === user.national_id) ||
-      (e.email && e.email === user.email)
-    ) || user;
-  }, [employees, user]);
-
-  const userShift = useMemo(() => {
-    if (!currentEmp) return null;
-    const sName = currentEmp.shift_name || currentEmp.shift || '';
-    const found = shifts.find(s => s.id === currentEmp.shift_id || s.name === sName);
-    return found || {
-      name: sName || 'فترة عمل الكادر المعتمدة',
-      type: 'single',
-      start_time: '08:00',
-      end_time: '16:00'
-    };
-  }, [currentEmp, shifts]);
-
-  const userTodayPunch = useMemo(() => {
-    if (!currentEmp) return null;
-    const today = todayStr();
-    const empNum = String(currentEmp.employee_number || currentEmp.id);
-    
-    const log = (todayLogs || []).find(l => String(l.employee_number || l.employee_id) === empNum) ||
-      (recentLogs || []).find(l => (String(l.employee_number || l.employee_id) === empNum) && l.log_date === today);
-    
-    if (log) {
-      const punches = (log.punches || []).filter(Boolean);
-      let p1In = '--:--';
-      let p1Out = '--:--';
-      let p2In = '--:--';
-      let p2Out = '--:--';
-
-      if (punches.length >= 4) {
-        p1In = punches[0];
-        p1Out = punches[1];
-        p2In = punches[2];
-        p2Out = punches[3];
-      } else if (punches.length === 2) {
-        p1In = punches[0];
-        p1Out = punches[1];
-      } else if (punches.length === 1) {
-        p1In = punches[0];
-      } else {
-        p1In = log.check_in || log.check_in_time || '08:56';
-        p1Out = log.check_out || log.check_out_time || '16:25';
-      }
-
-      return {
-        shiftName: log.shift_name || userShift?.name || 'فترة عمل الكادر المعتمدة',
-        p1In,
-        p1Out,
-        p2In,
-        p2Out,
-        isTwoPeriod: punches.length >= 3 || userShift?.type === 'split',
-        lateMinutes: log.late_minutes || 0,
-        earlyMinutes: log.early_leave_minutes || 0,
-        status: log.status || 'present',
-        actualHours: log.actual_hours || (log.actual_minutes ? (log.actual_minutes / 60).toFixed(1) : '7.5')
-      };
-    }
-
-    // Default active punch record based on employee identity
-    return {
-      shiftName: userShift?.name || 'فترة عمل الكادر المعتمدة',
-      p1In: '08:56',
-      p1Out: '16:25',
-      p2In: '--:--',
-      p2Out: '--:--',
-      isTwoPeriod: userShift?.type === 'split',
-      lateMinutes: 0,
-      earlyMinutes: 0,
-      status: 'present',
-      actualHours: '7.5'
-    };
-  }, [currentEmp, todayLogs, recentLogs, userShift]);
-
   return (
     <div className="space-y-5" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
       
@@ -454,7 +572,8 @@ export default function Dashboard() {
           
           {/* Top 3 Cards Row */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Card 1: Donut */}
+            
+            {/* Card 1: Donut (100% Real 30-Day Logs) */}
             <Card className="lg:col-span-4 p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
               <div className="font-heading font-black text-sm text-foreground mb-2">الحضور - آخر 30 يوماً</div>
               <div className="h-44 flex items-center justify-center relative">
@@ -468,47 +587,59 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-2xl font-black font-mono text-foreground">96.4%</span>
+                  <span className="text-2xl font-black font-mono text-foreground">{adherenceRate}%</span>
                   <span className="text-[10px] text-muted-foreground font-bold">التزام عام</span>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center text-xs pt-3 border-t border-border/60">
-                <div><div className="text-muted-foreground text-[10px]">حضور</div><div className="font-bold font-mono text-emerald-600">82%</div></div>
-                <div><div className="text-muted-foreground text-[10px]">تأخير</div><div className="font-bold font-mono text-amber-500">12%</div></div>
-                <div><div className="text-muted-foreground text-[10px]">غياب</div><div className="font-bold font-mono text-rose-500">6%</div></div>
+                <div><div className="text-muted-foreground text-[10px]">حضور</div><div className="font-bold font-mono text-emerald-600">{donutCounts.presentPct}%</div></div>
+                <div><div className="text-muted-foreground text-[10px]">تأخير</div><div className="font-bold font-mono text-amber-500">{donutCounts.latePct}%</div></div>
+                <div><div className="text-muted-foreground text-[10px]">غياب</div><div className="font-bold font-mono text-rose-500">{donutCounts.absentPct}%</div></div>
               </div>
             </Card>
             
-            {/* Card 2: Progress Bars */}
+            {/* Card 2: Progress Bars (100% Real Logged-in User Hours) */}
             <Card className="lg:col-span-4 p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
-              <div className="font-heading font-black text-sm text-foreground mb-3">معدل ساعات العمل</div>
+              <div className="font-heading font-black text-sm text-foreground mb-3">معدل ساعات العمل الفعلية</div>
               <div className="space-y-4 my-auto">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-bold">
                     <span>هذا الأسبوع</span>
-                    <span className="font-mono text-muted-foreground">52:01 / 26:44 ساعات</span>
+                    <span className="font-mono text-muted-foreground">{userWorkHours.weekStr}</span>
                   </div>
                   <div className="w-full h-3.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border">
-                    <div className="h-full bg-gradient-to-l from-cyan-500 to-blue-600 rounded-full flex items-center justify-end px-1.5 text-[9px] font-black text-white font-mono" style={{ width: '51.39%' }}>51.39%</div>
+                    <div 
+                      className="h-full bg-gradient-to-l from-cyan-500 to-blue-600 rounded-full flex items-center justify-end px-1.5 text-[9px] font-black text-white font-mono transition-all duration-500" 
+                      style={{ width: `${Math.max(5, userWorkHours.weekPct)}%` }}
+                    >
+                      {userWorkHours.weekPct}%
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-bold">
                     <span>هذا الشهر</span>
-                    <span className="font-mono text-muted-foreground">232:04 / 190:09 ساعات</span>
+                    <span className="font-mono text-muted-foreground">{userWorkHours.monthStr}</span>
                   </div>
                   <div className="w-full h-3.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border">
-                    <div className="h-full bg-gradient-to-l from-emerald-500 to-teal-600 rounded-full flex items-center justify-end px-1.5 text-[9px] font-black text-white font-mono" style={{ width: '81.94%' }}>81.94%</div>
+                    <div 
+                      className="h-full bg-gradient-to-l from-emerald-500 to-teal-600 rounded-full flex items-center justify-end px-1.5 text-[9px] font-black text-white font-mono transition-all duration-500" 
+                      style={{ width: `${Math.max(5, userWorkHours.monthPct)}%` }}
+                    >
+                      {userWorkHours.monthPct}%
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="text-[11px] text-muted-foreground pt-3 border-t border-border/60 flex items-center justify-between font-mono">
-                <span>المعدل المستهدف: 8 ساعات/يوم</span>
-                <span className="text-emerald-600 font-bold">مكتمل 81.9% ✓</span>
+                <span>المتوسط اليومي: {userWorkHours.averagePerDay} س/يوم</span>
+                <span className={userWorkHours.monthPct >= 80 ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>
+                  إنجاز {userWorkHours.monthPct}%
+                </span>
               </div>
             </Card>
             
-            {/* Card 3: Logged-in User Punch Card */}
+            {/* Card 3: Today Dynamic Punch Card for Logged-in User */}
             <Card className="lg:col-span-4 p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-xs font-bold text-muted-foreground truncate">
@@ -517,33 +648,53 @@ export default function Dashboard() {
                 <Badge variant="outline" className="font-mono text-[10px] bg-slate-50 dark:bg-slate-800 shrink-0">{todayStr()}</Badge>
               </div>
               <div className="grid grid-cols-2 gap-3 text-center text-xs">
+                {/* Check-In */}
                 <div className="bg-sky-50/80 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-900 p-3 rounded-2xl flex flex-col items-center justify-center space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-sky-800 dark:text-sky-300">
                     <LogIn className="w-4 h-4 text-sky-600" /><span>تسجيل الدخول</span>
                   </div>
-                  <div className="text-xl font-black font-mono text-sky-900 dark:text-sky-100 py-0.5">{userTodayPunch?.p1In || '08:56'}</div>
-                  <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-sky-100 dark:border-sky-950">
-                    {userTodayPunch?.lateMinutes > 0 ? `تأخير ${userTodayPunch.lateMinutes} د` : 'دخول منضبط 00:00'}
+                  <div className="text-xl font-black font-mono text-sky-900 dark:text-sky-100 py-0.5">
+                    {userTodayPunch?.p1In || '--:--'}
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-sky-100 dark:border-sky-950">
+                    {userTodayPunch?.hasPunched 
+                      ? (userTodayPunch.lateMinutes > 0 ? `تأخير ${userTodayPunch.lateMinutes} د` : 'دخول منضبط 00:00')
+                      : 'لم يتم التسجيل'}
                   </div>
                 </div>
+
+                {/* Check-Out */}
                 <div className="bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 p-3 rounded-2xl flex flex-col items-center justify-center space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-rose-800 dark:text-rose-300">
                     <Calendar className="w-4 h-4 text-rose-600" /><span>تسجيل الخروج</span>
                   </div>
-                  <div className="text-xl font-black font-mono text-rose-900 dark:text-rose-100 py-0.5">{userTodayPunch?.p1Out || '16:25'}</div>
+                  <div className="text-xl font-black font-mono text-rose-900 dark:text-rose-100 py-0.5">
+                    {userTodayPunch?.p1Out || '--:--'}
+                  </div>
                   <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-rose-100 dark:border-rose-950">
-                    {userTodayPunch?.earlyMinutes > 0 ? `خروج مبكر ${userTodayPunch.earlyMinutes} د` : 'خروج منضبط 00:00'}
+                    {userTodayPunch?.hasPunched
+                      ? (userTodayPunch.earlyMinutes > 0 ? `خروج مبكر ${userTodayPunch.earlyMinutes} د` : 'خروج منضبط 00:00')
+                      : 'لم يتم التسجيل'}
                   </div>
                 </div>
               </div>
-              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 py-2 rounded-2xl text-center text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-center gap-1.5">
-                <CheckCircle className="w-4 h-4 text-emerald-600" />
-                <span>حالة الحضور: حضور منضبط ومكتمل ({userTodayPunch?.actualHours || '7.5'} س عمل)</span>
-              </div>
+
+              {/* Status Badge */}
+              {userTodayPunch?.hasPunched ? (
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 py-2 rounded-2xl text-center text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>حالة الحضور: حضور مسجل اليوم ({userTodayPunch.actualHours} س عمل)</span>
+                </div>
+              ) : (
+                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 py-2 rounded-2xl text-center text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center justify-center gap-1.5">
+                  <Clock className="w-4 h-4 text-slate-500" />
+                  <span>حالة الحضور: لم يتم تسجيل بصمة اليوم بعد</span>
+                </div>
+              )}
             </Card>
           </div>
           
-          {/* ─── 8 STATS BOXES ─── */}
+          {/* ─── 8 STATS BOXES (100% REAL LIVE COUNTS) ─── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
             {[
               { label: 'الحاضرين', val: stats.present, sub: 'اليوم', color: 'bg-sky-500', icon: Users },
@@ -568,7 +719,7 @@ export default function Dashboard() {
             })}
           </div>
           
-          {/* ─── CHARTS ROW ─── */}
+          {/* ─── CHARTS ROW (100% REAL LIVE DATA) ─── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Chart 1: Branch Distribution */}
             <Card className="p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm space-y-4">
@@ -584,7 +735,7 @@ export default function Dashboard() {
                   <div key={b.name} className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border text-center space-y-0.5">
                     <div className="text-[10px] font-bold text-muted-foreground truncate">{b.fullName}</div>
                     <div className="font-mono font-black text-sm text-foreground">{b.present}/{b.total}</div>
-                    <div className="text-[9px] font-bold text-emerald-600 font-mono">100% التزام</div>
+                    <div className="text-[9px] font-bold text-emerald-600 font-mono">{b.rate}% التزام</div>
                   </div>
                 ))}
               </div>
@@ -602,7 +753,7 @@ export default function Dashboard() {
                             <div className="font-bold text-emerald-400">{data.fullName}</div>
                             <div>إجمالي الموظفين: <strong className="font-mono">{data.total} موظفين</strong></div>
                             <div>المباشرون اليوم: <strong className="font-mono">{data.present} موظف</strong></div>
-                            <div className="text-sky-300 font-bold">نسبة الالتزام: 100%</div>
+                            <div className="text-sky-300 font-bold">نسبة الالتزام: {data.rate}%</div>
                           </div>
                         );
                       }
@@ -614,7 +765,7 @@ export default function Dashboard() {
               </div>
             </Card>
             
-            {/* Chart 2: Matrix */}
+            {/* Chart 2: Matrix (Real Database Logs) */}
             <Card className="p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
@@ -788,7 +939,7 @@ export default function Dashboard() {
         <div className="space-y-4">
           <Card className="p-6 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
             <div><h2 className="text-base font-heading font-black">دورة مسير الرواتب المعتمدة</h2><p className="text-xs text-muted-foreground">مراجعة وتدقيق واعتماد رواتب الشهر عبر المراحل الأربعة</p></div>
-            <Button onClick={() => navigate('/payroll')} className="bg-slate-900 text-white rounded-2xl text-xs font-bold h-10 px-5 gap-2"><Wallet className="w-4 h-4 text-emerald-400" /><span>فتح شاشة مسير الرواتب (4 مراحل) ➔</span></Button>
+            <Button onClick={() => navigate("/payroll")} className="bg-slate-900 text-white rounded-2xl text-xs font-bold h-10 px-5 gap-2"><Wallet className="w-4 h-4 text-emerald-400" /><span>فتح شاشة مسير الرواتب (4 مراحل) ➔</span></Button>
           </Card>
         </div>
       )}
