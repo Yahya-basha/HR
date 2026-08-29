@@ -190,6 +190,21 @@ export default function Reports() {
 
   // Selected Report ID (null = Catalog view, string = Filter/Results view)
   const [selectedReportId, setSelectedReportId] = useState(() => searchParams.get('report') || null);
+
+  // Sync with URL query parameter changes from sidebar navigation
+  useEffect(() => {
+    const reportParam = searchParams.get('report');
+    if (reportParam !== selectedReportId) {
+      setSelectedReportId(reportParam || null);
+    }
+  }, [searchParams]);
+
+  // Automatically generate report data whenever selectedReportId or employees change
+  useEffect(() => {
+    if (selectedReportId && employees.length > 0) {
+      handleGenerateReport();
+    }
+  }, [selectedReportId, employees, attendanceLogs, fromDate, toDate, filterEmpId, filterBranch]);
   
   // Category Filter in Catalog ('all' | 'hr' | 'attendance' | 'payroll' | 'admin')
   const [catalogCategory, setCatalogCategory] = useState('all');
