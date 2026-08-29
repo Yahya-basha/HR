@@ -105,19 +105,7 @@
   direction: ltr !important;
   unicode-bidi: embed !important;
 }
-@media print {
-  html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-  .space-y-6 > .no-print {
-    display: none !important;
-    height: 0 !important;
-    overflow: hidden !important;
-  }
-}
+
 
 
 /* Touch & Mobile Smooth Scroll Utilities */
@@ -155,4 +143,44 @@ html, body {
 
 .animate-marquee-rtl:hover {
   animation-play-state: paused;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 15mm 10mm;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  header, aside, nav, .no-print, .print-hidden, [data-no-print] {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .print-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+  .print-table th, .print-table td {
+    border: 1px solid #cbd5e1 !important;
+    color: #000000 !important;
+  }
+  .print-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: bold !important;
+  }
 }

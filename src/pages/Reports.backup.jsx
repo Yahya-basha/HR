@@ -320,7 +320,6 @@ export default function Reports() {
         // Daily attendance logs between fromDate and toDate using verified master engine
         const monthKey = fromDate.slice(0, 7) || '2026-08';
         const settings = getPayrollSettings();
-        const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
         targetEmployees.forEach(emp => {
           const pr = computeEmployeePayroll(emp, attendanceLogs, shifts, {
@@ -329,25 +328,18 @@ export default function Reports() {
           });
 
           const days = (pr.dailyDetails || []).filter(d => {
-            const dStr = d.log_date || d.dateStr || d.date || '';
+            const dStr = d.dateStr || d.date || '';
             return !dStr || (dStr >= fromDate && dStr <= toDate);
           });
 
           days.forEach(d => {
-            const logDate = d.log_date || d.dateStr || d.date || `${monthKey}-01`;
-            let dayName = d.day_name;
-            if (!dayName && logDate) {
-              const dt = new Date(logDate);
-              if (!isNaN(dt.getTime())) dayName = daysAr[dt.getDay()];
-            }
-
-            const checkIn = d.firstCheckIn && d.firstCheckIn !== '—' ? d.firstCheckIn : (d.check_in || d.checkIn || '--:--');
-            const checkOut = d.lastCheckOut && d.lastCheckOut !== '—' ? d.lastCheckOut : (d.check_out || d.checkOut || '--:--');
+            const checkIn = d.firstCheckIn && d.firstCheckIn !== '—' ? d.firstCheckIn : (d.checkIn || '--:--');
+            const checkOut = d.lastCheckOut && d.lastCheckOut !== '—' ? d.lastCheckOut : (d.checkOut || '--:--');
             const actualHrs = d.actualMinutes ? (d.actualMinutes / 60).toFixed(1) : (d.actualHours || 0);
 
             rows.push({
-              date: logDate,
-              day_name: dayName || 'يوم عمل',
+              date: d.dateStr || `${monthKey}-${String(d.dayNum).padStart(2, '0')}`,
+              day_name: d.dayName || 'اليوم',
               emp_name: emp.full_name,
               emp_num: emp.employee_number,
               branch: emp.branch_name || emp.branch || 'الفرع الرئيسي',
@@ -371,6 +363,7 @@ export default function Reports() {
           presentDays: rows.filter(r => r.status.includes('حاضر') || r.status.includes('متأخر')).length,
           employeesCount: targetEmployees.length
         };
+
       } else if (repId === 'payroll_details') {
         // Detailed Payroll calculation
         const monthKey = fromDate.slice(0, 7) || '2026-08';
@@ -556,7 +549,7 @@ export default function Reports() {
           VIEW 1: REPORT CATALOG / DIRECTORY (دليل وفهرس التقارير)
           ═══════════════════════════════════════════════════════════════════════ */}
       {!selectedReportId && (
-        <div className="space-y-6 no-print print:hidden">
+        <div className="space-y-6">
           
           {/* Top Title & Search */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border shadow-sm">
@@ -808,44 +801,9 @@ export default function Reports() {
           {/* ─── GENERATED REPORT RESULTS TABLE ────────────────────────────── */}
           {generatedData && (
             <div className="space-y-4">
-
-              {/* ─── OFFICIAL ENTERPRISE A4 PRINT HEADER (VISIBLE ONLY IN PRINT) ─── */}
-              <div className="hidden print:block mb-6 border-b-2 border-slate-900 pb-4 text-black" dir="rtl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img src="/green-arrow-logo.png" alt="logo" className="w-12 h-12 object-contain" />
-                    <div>
-                      <h1 className="text-xl font-bold font-heading text-black">Green Arrow HR</h1>
-                      <p className="text-[11px] text-slate-700 font-bold">منظومة الموارد البشرية والرواتب المتكاملة</p>
-                    </div>
-                  </div>
-                  <div className="text-left text-[10px] text-slate-700 font-mono space-y-0.5">
-                    <div>المملكة العربية السعودية</div>
-                    <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA')} {new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</div>
-                    <div>رقم الوثيقة: GA-REP-{Date.now().toString().slice(-6)}</div>
-                  </div>
-                </div>
-
-                <div className="my-3 text-center bg-slate-100 py-2 border border-slate-300 rounded">
-                  <h2 className="text-base font-black text-black font-heading">
-                    {generatedData.reportDef.title}
-                  </h2>
-                  <p className="text-[11px] text-slate-700 mt-0.5">
-                    الفترة من: <span className="font-mono font-bold text-black">{generatedData.fromDate}</span> إلى: <span className="font-mono font-bold text-black">{generatedData.toDate}</span> • الفرع: <span className="font-bold text-black">{generatedData.filterBranch === 'all' ? 'كافة الفروع' : generatedData.filterBranch}</span>
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-mono border border-slate-300 p-2 bg-slate-50">
-                  <div><strong>إجمالي السجلات:</strong> {generatedData.rows.length}</div>
-                  <div><strong>عدد الموظفين:</strong> {generatedData.summary.employeesCount || generatedData.summary.totalEmployees || 1}</div>
-                  <div><strong>إجمالي الساعات:</strong> {generatedData.summary.totalHours || '—'} س</div>
-                  <div><strong>المستخرج:</strong> {user?.full_name || 'مسؤول النظام'}</div>
-                </div>
-              </div>
-
               
               {/* Results Top Header & Export Buttons */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-3xl border shadow-sm no-print print:hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-3xl border shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                     <CheckCircle2 className="w-5 h-5" />
@@ -887,7 +845,7 @@ export default function Reports() {
               {/* Data Table */}
               <Card className="rounded-3xl border shadow-sm overflow-hidden bg-white dark:bg-slate-900">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs print-table print:text-[10px]" style={{ direction: 'rtl' }}>
+                  <table className="w-full text-right text-xs" style={{ direction: 'rtl' }}>
                     <thead>
                       <tr className="bg-sky-600 text-white font-heading font-black border-b border-sky-700">
                         {selectedReportId === 'daily_biometrics' && (
@@ -1063,31 +1021,6 @@ export default function Reports() {
                     </tbody>
                   </table>
                 </div>
-
-                {/* ─── OFFICIAL ENTERPRISE A4 PRINT FOOTER (VISIBLE ONLY IN PRINT) ─── */}
-                <div className="hidden print:block mt-8 pt-4 border-t-2 border-slate-900 text-black text-xs" dir="rtl">
-                  <div className="grid grid-cols-3 gap-6 text-center">
-                    <div className="space-y-8">
-                      <div className="font-bold">إعداد ومطابقة (الموارد البشرية)</div>
-                      <div className="border-b border-dashed border-slate-500 w-32 mx-auto"></div>
-                      <div className="text-[10px] text-slate-600">التوقيع: ............................</div>
-                    </div>
-                    <div className="space-y-8">
-                      <div className="font-bold">مراجعة وتدقيق (الإدارة المالية)</div>
-                      <div className="border-b border-dashed border-slate-500 w-32 mx-auto"></div>
-                      <div className="text-[10px] text-slate-600">التوقيع: ............................</div>
-                    </div>
-                    <div className="space-y-8">
-                      <div className="font-bold">اعتماد ومصادقة (المدير العام)</div>
-                      <div className="border-b border-dashed border-slate-500 w-32 mx-auto"></div>
-                      <div className="text-[10px] text-slate-600">الختم والتوقيع: ............................</div>
-                    </div>
-                  </div>
-                  <div className="mt-6 text-center text-[9px] text-slate-500 font-mono">
-                    تم استخراج هذا التقرير آلياً عبر نظام Green Arrow HR - وثيقة رسمية معتمدة
-                  </div>
-                </div>
-
               </Card>
 
             </div>

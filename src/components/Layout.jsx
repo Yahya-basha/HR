@@ -35,22 +35,14 @@ export default function Layout() {
       <SessionGuardian />
       
       {/* 1. Desktop Persistent Dual-Sidebar (Fixed on the RIGHT) */}
-      <Sidebar 
-        isAdmin={isAdmin} 
-        isSubMenuOpen={isSubMenuOpen} 
-        setIsSubMenuOpen={setIsSubMenuOpen} 
-      />
+      <div className="no-print print:hidden"><Sidebar isAdmin={isAdmin} isSubMenuOpen={isSubMenuOpen} setIsSubMenuOpen={setIsSubMenuOpen} /></div>
 
       {/* 2. Mobile Slide-out Drawer */}
-      <MobileSidebar 
-        isOpen={mobileMenuOpen} 
-        onClose={() => setMobileMenuOpen(false)} 
-        isAdmin={isAdmin} 
-      />
+      <div className="no-print print:hidden"><MobileSidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} isAdmin={isAdmin} /></div>
 
       {/* 3. Main Content Area with EXPLICIT right padding */}
       <div className={`${desktopRightPadding} flex flex-col min-h-screen transition-all duration-200`}>
-        <Header onOpenMobileMenu={() => setMobileMenuOpen(true)} />
+        <div className="no-print print:hidden"><Header onOpenMobileMenu={() => setMobileMenuOpen(true)} /></div>
         
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-5 lg:py-6 pb-28 lg:pb-12 max-w-[1650px] w-full mx-auto">
           <Outlet />
