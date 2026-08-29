@@ -378,12 +378,20 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   let totalRequiredMinutes = 0, totalActualMinutes = 0, totalShortfallMinutes = 0;
   let presentDays = 0, absentDays = 0, leaveDays = 0, fridayDays = 0, overtimeDays = 0;
 
+    const isExecutive = (emp.job_title || '').includes('المدير العام') || String(emp.employee_number || '') === '1001' || (emp.shift || '').includes('المدير العام') || (emp.shift || '').includes('إدارة عامة');
+
   const dailyDetails = uniqueLogs.map(log => {
     const isFriday = isFridayAttendance(log);
-    const exempt = isDayExempt(log);
-    const hasAtt = hasRealBiometricPunches(log);
+    const exempt = isDayExempt(log) || (isExecutive && !isFriday);
+    const hasAtt = hasRealBiometricPunches(log) || (isExecutive && !!log.check_in);
     const status = (log.status || 'present').toLowerCase();
-    const actualMins = calcActualMinutes(log);
+    let actualMins = calcActualMinutes(log);
+    
+    // For Executive Manager with check-in, full hours credited
+    if (isExecutive && (log.check_in || hasAtt)) {
+      actualMins = shiftHours * 60;
+    }
+
     let requiredMins = 0, shortfallMins = 0;
 
     if (!exempt && !isFriday && hasAtt) {
@@ -394,6 +402,12 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
       shortfallMins = Math.max(0, requiredMins - actual);
       totalShortfallMinutes += shortfallMins;
       presentDays++;
+    } else if (isExecutive && !isFriday && (log.check_in || hasAtt)) {
+      requiredMins = shiftHours * 60;
+      totalRequiredMinutes += requiredMins;
+      totalActualMinutes += requiredMins;
+      shortfallMins = 0;
+      presentDays++;
     } else if (!exempt && !isFriday && !hasAtt && (status === 'absent' || status === 'غائب')) {
       absentDays++;
       requiredMins = shiftHours * 60;
@@ -402,6 +416,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
       totalShortfallMinutes += shortfallMins;
     } else if (exempt) {
       if (status.includes('إجازة') || status === 'on_leave' || status === 'leave') leaveDays++;
+      else if (isExecutive) presentDays++;
     }
     
     if (isFriday && hasAtt) {
@@ -415,9 +430,9 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     return {
       log_date: log.log_date,
       day_name: log.day_name || '',
-      status: log.status || 'present',
+      status: (isExecutive && (log.check_in || hasAtt)) ? 'present' : (log.status || 'present'),
       check_in: log.check_in || '',
-      check_out: log.check_out || '',
+      check_out: log.check_out || (isExecutive ? '16:00' : ''),
       timestamp_raw: log.timestamp_raw || '',
       isFriday,
       isExempt: exempt,
