@@ -1,3 +1,4 @@
+import { useTheme } from '@/lib/theme';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
@@ -30,10 +31,7 @@ export default function Header({ onOpenMobileMenu }) {
   const { lang, toggleLanguage } = useI18n();
   const navigate = useNavigate();
 
-  const [isDark, setIsDark] = useState(() => {
-    return document.documentElement.classList.contains('dark') ||
-      localStorage.getItem('theme') === 'dark';
-  });
+  const { isDark, toggleDarkMode } = useTheme();
 
   // ─── DYNAMIC REAL UNREAD MESSAGES COUNT (NO HARDCODED NUMBERS) ───────────
   const getRealUnreadCount = useCallback(() => {
@@ -64,17 +62,7 @@ export default function Header({ onOpenMobileMenu }) {
     };
   }, [getRealUnreadCount]);
 
-  const toggleDarkMode = () => {
-    const next = !isDark;
-    setIsDark(next);
-    if (next) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
+  // toggleDarkMode provided by useTheme
 
   const handleLogout = async () => {
     await logout();

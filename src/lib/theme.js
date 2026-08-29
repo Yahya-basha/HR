@@ -69,6 +69,19 @@ export const THEMES = [
   }
 ];
 
+export function getCurrentTheme() {
+  try {
+    const savedId = localStorage.getItem('hr_flow_theme_id') || 'green-arrow';
+    const isDark = localStorage.getItem('theme') === 'dark' || 
+                   localStorage.getItem('hr_flow_is_dark') === 'true' || 
+                   document.documentElement.classList.contains('dark');
+    const theme = THEMES.find(t => t.id === savedId) || THEMES[0];
+    return { theme, isDark };
+  } catch (e) {
+    return { theme: THEMES[0], isDark: false };
+  }
+}
+
 export function applyTheme(themeId, isDark = false) {
   const selected = THEMES.find(t => t.id === themeId) || THEMES[0];
   const root = document.documentElement;
@@ -82,30 +95,23 @@ export function applyTheme(themeId, isDark = false) {
 
   if (isDark) {
     root.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+    localStorage.setItem('hr_flow_is_dark', 'true');
   } else {
     root.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+    localStorage.setItem('hr_flow_is_dark', 'false');
   }
 
   localStorage.setItem('hr_flow_theme_id', selected.id);
-  localStorage.setItem('hr_flow_is_dark', isDark ? 'true' : 'false');
   window.dispatchEvent(new CustomEvent('hr_flow_theme_changed', { detail: { theme: selected, isDark } }));
-}
-
-export function getCurrentTheme() {
-  try {
-    const savedId = localStorage.getItem('hr_flow_theme_id') || 'green-arrow';
-    const isDark = localStorage.getItem('hr_flow_is_dark') === 'true';
-    const theme = THEMES.find(t => t.id === savedId) || THEMES[0];
-    return { theme, isDark };
-  } catch (e) {
-    return { theme: THEMES[0], isDark: false };
-  }
 }
 
 export function useTheme() {
   const [themeState, setThemeState] = useState(getCurrentTheme);
 
   useEffect(() => {
+    // Apply initial state
     applyTheme(themeState.theme.id, themeState.isDark);
 
     const handler = (e) => {
@@ -113,8 +119,17 @@ export function useTheme() {
         setThemeState({ theme: e.detail.theme, isDark: e.detail.isDark });
       }
     };
+
+    const storageHandler = () => {
+      setThemeState(getCurrentTheme());
+    };
+
     window.addEventListener('hr_flow_theme_changed', handler);
-    return () => window.removeEventListener('hr_flow_theme_changed', handler);
+    window.addEventListener('storage', storageHandler);
+    return () => {
+      window.removeEventListener('hr_flow_theme_changed', handler);
+      window.removeEventListener('storage', storageHandler);
+    };
   }, []);
 
   const setTheme = (id) => {
