@@ -65,6 +65,8 @@ const AuthenticatedApp = () => {
           {/* Main Dashboard is ALWAYS accessible at root / */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/portal" element={<EmployeePortal />} />
+        <Route path="/requests" element={<EmployeeRequests />} />
+        <Route path="/advances" element={<EmployeeRequests />} />
           
           {/* Core Administrative & Operational Pages */}
           <Route path="/employees" element={<Employees />} />
