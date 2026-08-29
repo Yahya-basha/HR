@@ -26,6 +26,7 @@ import {
   Search 
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -49,6 +50,34 @@ export default function ImportData() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
   const [importedSuccess, setImportedSuccess] = useState(false);
+  const [clearDbModal, setClearDbModal] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+
+  // Clear all attendance logs in Supabase & local storage
+  const handleClearAllAttendanceLogs = async () => {
+    setIsClearing(true);
+    try {
+      if (base44.supabase) {
+        await base44.supabase.from('attendance_logs').delete().neq('id', '___non_existent___');
+      }
+      try {
+        localStorage.removeItem('hr_flow_v11_dora_AttendanceLog');
+      } catch (e) {}
+
+      setClearDbModal(false);
+      setSelectedFiles([]);
+      setExtractedRecords([]);
+      toast({
+        title: '✓ تم تصفير ومسح كافة سجلات البصمات بنجاح',
+        description: 'أصبح جدول البصمات فارغاً ونظيفاً وجاهزاً لاستقبال ملفات جديدة.'
+      });
+    } catch (e) {
+      console.error('Clear error:', e);
+      toast({ title: 'خطأ أثناء المسح', description: e.message, variant: 'destructive' });
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   // Load existing employees for name & number mapping
   useEffect(() => {
@@ -368,8 +397,17 @@ export default function ImportData() {
           </div>
         </div>
 
-        {selectedFiles.length > 0 && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setClearDbModal(true)}
+            className="rounded-2xl text-xs font-bold gap-1.5 h-11 px-4 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-900 shadow-sm"
+          >
+            <Trash2 className="w-4 h-4 text-rose-600" />
+            <span>مسح وتصفير كافة البصمات</span>
+          </Button>
+
+          {selectedFiles.length > 0 && (
             <Button
               onClick={handleSaveToCloud}
               disabled={isSaving}
@@ -387,8 +425,8 @@ export default function ImportData() {
                 </>
               )}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Upload Dropzone (When no files are loaded) */}
@@ -606,6 +644,53 @@ export default function ImportData() {
         </div>
       )}
 
+    
+      {/* ─── CONFIRM BULK CLEAR MODAL ─────────────────────────────────────── */}
+      <Dialog open={clearDbModal} onOpenChange={setClearDbModal}>
+        <DialogContent className="sm:max-w-md rounded-3xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-heading font-black text-rose-600 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <span>تأكيد مسح وتصفير كافة سجلات البصمات الشامل</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-2 leading-relaxed">
+              هل أنت متأكد من رغبتك في <strong>مسح وتصفير كافة حركات وسجلات البصمات المخزنة في السحابة</strong>؟
+              <br />
+              <span className="text-rose-600 font-bold">⚠️ ملاحظة: هذا الإجراء يمسح سجلات البصمات فقط لتتمكن من إعادة رفع ملفات جديدة نظيفة، مع الحفاظ الكامل على بيانات الموظفين والفروع والرواتب.</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setClearDbModal(false)}
+              className="rounded-xl font-bold text-xs"
+              disabled={isClearing}
+            >
+              إلغاء التراجع
+            </Button>
+            <Button
+              onClick={handleClearAllAttendanceLogs}
+              disabled={isClearing}
+              className="bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs shadow-md gap-1.5"
+            >
+              {isClearing ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>جاري المسح والتصفير...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>نعم، امسح كافة البصمات الآن 🗑️</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
