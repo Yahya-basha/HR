@@ -698,7 +698,16 @@ const ENTITY_TABLE_MAP = {
 };
 
 function getTableName(entityName) {
-  return ENTITY_TABLE_MAP[entityName] || (entityName.toLowerCase() + 's');
+  const map = {
+    'Employee': 'employees',
+    'AttendanceLog': 'attendance_logs',
+    'Branch': 'branches',
+    'Department': 'departments',
+    'Shift': 'shifts',
+    'LeaveRequest': 'leave_requests',
+    'Announcement': 'announcements'
+  };
+  return map[entityName] || (entityName.toLowerCase() + 's');
 }
 
 function toDbRecord(entityName, item) {
@@ -721,7 +730,10 @@ function toDbRecord(entityName, item) {
       gosi_number: gosiNum,
       manager_name: existingManager,
       company: item.company || 'درة السيارة لقطع غيار السيارات',
-      gender: item.gender || 'male'
+      gender: item.gender || 'male',
+      marital_status: item.marital_status || 'أعزب',
+      contract_type: item.contract_type || 'محدد',
+      contract_end_date: item.contract_end_date || null
     });
 
     return {
@@ -745,6 +757,43 @@ function toDbRecord(entityName, item) {
       transport_allowance: Number(item.transport_allowance) || 0,
       leave_policy: item.leave_policy || 'الاجازة السنوية',
       status: item.status || 'active',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'Branch') {
+    return {
+      id: item.id || ('br_' + Date.now()),
+      name: item.name || '',
+      address: item.address || '',
+      phone: item.phone || '',
+      is_main: Boolean(item.is_main),
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'Department') {
+    return {
+      id: item.id || ('dept_' + Date.now()),
+      name: item.name || '',
+      code: item.code || 'DEP',
+      manager_name: item.manager_name || '',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'Shift') {
+    return {
+      id: item.id || ('shf_' + Date.now()),
+      name: item.name || '',
+      type: item.type || 'morning',
+      start_time: item.start_time || '08:00',
+      end_time: item.end_time || '17:00',
+      break_start: item.break_start || null,
+      break_end: item.break_end || null,
+      working_hours: Number(item.working_hours) || 8,
+      grace_minutes: Number(item.grace_minutes) || 15,
+      description: item.description || '',
       created_at: item.created_at || new Date().toISOString()
     };
   }
@@ -773,6 +822,34 @@ function toDbRecord(entityName, item) {
       created_at: item.created_at || new Date().toISOString()
     };
   }
+
+  if (entityName === 'LeaveRequest') {
+    return {
+      id: item.id || ('lr_' + Date.now()),
+      employee_id: item.employee_id || item.employee_number || null,
+      employee_name: item.employee_name || '',
+      leave_type: item.leave_type || 'إجازة سنوية',
+      start_date: item.start_date || null,
+      end_date: item.end_date || null,
+      days_count: Number(item.days_count) || 1,
+      reason: item.reason || '',
+      status: item.status || 'pending',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'Announcement') {
+    return {
+      id: item.id || ('ann_' + Date.now()),
+      title: item.title || '',
+      category: item.category || item.type || 'circular',
+      date: item.date || new Date().toISOString().split('T')[0],
+      content: item.content || item.body || '',
+      status: item.status || 'active',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
   return item;
 }
 
@@ -784,6 +861,9 @@ function fromDbRecord(entityName, row) {
     let gosi_number = '';
     let manager_name = row.manager_name;
     let company = 'درة السيارة لقطع غيار السيارات';
+    let marital_status = 'أعزب';
+    let contract_type = 'محدد';
+    let contract_end_date = null;
 
     if (row.manager_name && typeof row.manager_name === 'string') {
       if (row.manager_name.startsWith('{')) {
@@ -801,6 +881,15 @@ function fromDbRecord(entityName, row) {
           if (meta.company !== undefined) {
             company = meta.company;
           }
+          if (meta.marital_status !== undefined) {
+            marital_status = meta.marital_status;
+          }
+          if (meta.contract_type !== undefined) {
+            contract_type = meta.contract_type;
+          }
+          if (meta.contract_end_date !== undefined) {
+            contract_end_date = meta.contract_end_date;
+          }
         } catch (e) {}
       }
     }
@@ -811,6 +900,9 @@ function fromDbRecord(entityName, row) {
       gosi_number,
       manager_name,
       company,
+      marital_status,
+      contract_type,
+      contract_end_date,
       department: row.department_name,
       branch: row.branch_name
     };
@@ -821,26 +913,22 @@ function fromDbRecord(entityName, row) {
     if (row.notes) {
       try {
         extra = JSON.parse(row.notes);
-      } catch (e) {
-        extra = { note: row.notes };
-      }
+      } catch (e) {}
     }
     return {
+      ...row,
       ...extra,
-      id: row.id,
-      user_id: extra.user_id || row.employee_id,
-      employee_id: row.employee_id,
-      employee_number: extra.employee_number || row.employee_id,
-      employee_name: row.employee_name,
-      log_date: row.log_date,
-      check_in: row.check_in,
-      check_out: row.check_out,
-      status: row.status || 'present',
-      timestamp_raw: extra.timestamp_raw || (row.check_in ? (row.check_in + ' ' + (row.check_out || '')).trim() : ''),
-      total_hours: extra.total_hours || 0,
-      created_at: row.created_at
+      notes: extra.note || row.notes || ''
     };
   }
+
+  if (entityName === 'LeaveRequest') {
+    return {
+      ...row,
+      employee_number: row.employee_id
+    };
+  }
+
   return row;
 }
 
