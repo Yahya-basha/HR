@@ -78,6 +78,58 @@ export default function ImportData() {
     });
   };
 
+  // Helper: Robust Date & Time Value Parser
+  const parseDateTimeValue = (val) => {
+    if (val === undefined || val === null || val === '') return { date: null, time: null };
+
+    // If JS Date
+    if (val instanceof Date) {
+      const dateStr = val.toISOString().split('T')[0];
+      const timeStr = val.toTimeString().split(' ')[0].substring(0, 5);
+      return { date: dateStr, time: timeStr };
+    }
+
+    // If Excel serial number (e.g. 45627.999)
+    if (typeof val === 'number') {
+      if (val > 40000 && val < 60000) {
+        const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+        if (!isNaN(d.getTime())) {
+          const dateStr = d.toISOString().split('T')[0];
+          const timeStr = d.toISOString().split('T')[1].substring(0, 5);
+          return { date: dateStr, time: timeStr };
+        }
+      }
+    }
+
+    const str = val.toString().trim();
+    let datePart = null;
+    let timePart = null;
+
+    // Check if contains both date and time (e.g. "2026-08-20 08:30:00" or "20/08/2026 08:30")
+    const parts = str.split(/[\sT]+/);
+    for (const part of parts) {
+      if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(part)) {
+        const d = part.split(/[-/]/);
+        datePart = d[0] + '-' + d[1].padStart(2, '0') + '-' + d[2].padStart(2, '0');
+      } else if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(part)) {
+        const d = part.split(/[-/]/);
+        datePart = d[2] + '-' + d[1].padStart(2, '0') + '-' + d[0].padStart(2, '0');
+      } else if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(part)) {
+        timePart = part.substring(0, 5);
+      }
+    }
+
+    if (!datePart && str.length >= 8) {
+      const parsed = new Date(str);
+      if (!isNaN(parsed.getTime()) && parsed.getFullYear() >= 2020 && parsed.getFullYear() <= 2030) {
+        datePart = parsed.toISOString().split('T')[0];
+        timePart = timePart || parsed.toTimeString().split(' ')[0].substring(0, 5);
+      }
+    }
+
+    return { date: datePart, time: timePart };
+  };
+
   // Helper: Parse rows from Excel
   const parseRowsToAttendance = (rows, sourceFileName) => {
     let bestHeaderRowIndex = 0;
@@ -91,7 +143,7 @@ export default function ImportData() {
         if (text.includes('الرقم الوظيفي') || text.includes('رقم الموظف') || text.includes('ac-no') || text.includes('no.')) score += 5;
         if (text.includes('اسم الموظف') || text.includes('الاسم') || text.includes('name')) score += 5;
         if (text.includes('الطابع الزمني') || text.includes('timetable') || text.includes('بصمات')) score += 6;
-        if (text.includes('التاريخ') || text.includes('date') || text.includes('الفترة')) score += 4;
+        if (text.includes('التاريخ') || text.includes('date') || text.includes('اليوم')) score += 5;
         if (text.includes('دخول') || text.includes('خروج') || text.includes('in') || text.includes('out')) score += 3;
       });
       if (score > maxScore) {
@@ -105,12 +157,12 @@ export default function ImportData() {
     let idxEmpNum = -1, idxEmpName = -1, idxDate = -1, idxRaw = -1, idxIn = -1, idxOut = -1;
     headerRow.forEach((col, idx) => {
       const c = col.toLowerCase();
-      if (c.includes('رقم') || c.includes('الرقم الوظيفي') || c.includes('ac-no') || c.includes('no.')) idxEmpNum = idx;
-      if (c.includes('اسم') || c.includes('الموظف') || c.includes('name')) idxEmpName = idx;
-      if (c.includes('تاريخ') || c.includes('date') || c.includes('اليوم')) idxDate = idx;
-      if (c.includes('طابع') || c.includes('بصمات') || c.includes('raw') || c.includes('timetable')) idxRaw = idx;
-      if (c.includes('دخول') || c.includes('حضور') || c.includes('in') || c.includes('on duty')) idxIn = idx;
-      if (c.includes('خروج') || c.includes('انصراف') || c.includes('out') || c.includes('off duty')) idxOut = idx;
+      if (idxEmpNum === -1 && (c.includes('رقم') || c.includes('وظيفي') || c.includes('ac-no') || c.includes('no.'))) idxEmpNum = idx;
+      if (idxEmpName === -1 && (c.includes('اسم') || c.includes('name') || (c.includes('موظف') && !c.includes('رقم')))) idxEmpName = idx;
+      if (idxDate === -1 && (c.includes('تاريخ') || c.includes('date') || c.includes('اليوم'))) idxDate = idx;
+      if (idxRaw === -1 && (c.includes('طابع') || c.includes('بصمات') || c.includes('raw') || c.includes('timetable'))) idxRaw = idx;
+      if (idxIn === -1 && (c.includes('دخول') || c.includes('حضور') || c.includes('in') || c.includes('on duty'))) idxIn = idx;
+      if (idxOut === -1 && (c.includes('خروج') || c.includes('انصراف') || c.includes('out') || c.includes('off duty'))) idxOut = idx;
     });
 
     const parsed = [];
@@ -118,44 +170,39 @@ export default function ImportData() {
       const row = rows[r];
       if (!row || row.length === 0) continue;
 
-      const empNum = idxEmpNum !== -1 ? String(row[idxEmpNum] || '').trim() : '';
-      const empName = idxEmpName !== -1 ? String(row[idxEmpName] || '').trim() : '';
-      let dateVal = idxDate !== -1 ? String(row[idxDate] || '').trim() : '';
+      const rawEmpNum = idxEmpNum !== -1 ? String(row[idxEmpNum] || '').trim() : '';
+      const rawEmpName = idxEmpName !== -1 ? String(row[idxEmpName] || '').trim() : '';
+      const rawDateCell = idxDate !== -1 ? row[idxDate] : null;
+      const rawTimeCell = idxIn !== -1 ? row[idxIn] : null;
       const rawPunches = idxRaw !== -1 ? String(row[idxRaw] || '').trim() : '';
-      const checkInVal = idxIn !== -1 ? String(row[idxIn] || '').trim() : '';
-      const checkOutVal = idxOut !== -1 ? String(row[idxOut] || '').trim() : '';
 
-      if (!empNum && !empName) continue;
+      if (!rawEmpNum && !rawEmpName) continue;
 
-      // Normalize date YYYY-MM-DD
-      let normalizedDate = dateVal;
-      if (dateVal.includes('/')) {
-        const parts = dateVal.split('/');
-        if (parts.length === 3) {
-          const y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : '2026');
-          const m = parts[0].length <= 2 && parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[1].padStart(2, '0');
-          const d = parts[1].length <= 2 && parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[2].padStart(2, '0');
-          normalizedDate = y + '-' + m + '-' + d;
-        }
-      } else if (!dateVal) {
-        normalizedDate = '2026-08-01';
-      }
+      // Extract accurate date
+      const dateInfo = parseDateTimeValue(rawDateCell);
+      const timeInfo = parseDateTimeValue(rawTimeCell);
+      const punchesDateInfo = parseDateTimeValue(rawPunches);
 
-      // Extract 4 punches if raw string has them
+      const finalDate = dateInfo.date || punchesDateInfo.date || '2026-08-01';
+
+      // Extract times from raw punches or in/out columns
       const times = (rawPunches.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g) || []);
-      const p1In = times[0] || checkInVal || '';
+      const p1In = times[0] || timeInfo.time || (row[idxIn] ? String(row[idxIn]).slice(0, 5) : '08:00');
       const p1Out = times[1] || '';
       const p2In = times[2] || '';
-      const p2Out = times[3] || times[times.length - 1] || checkOutVal || '';
+      const p2Out = times[3] || times[times.length - 1] || (row[idxOut] ? String(row[idxOut]).slice(0, 5) : '');
+
+      const empNum = rawEmpNum.replace(/\D/g, '') || '1000';
+      const empName = rawEmpName || 'موظف';
 
       parsed.push({
-        id: ('att_' + empNum + '_' + normalizedDate).replace(/[^a-zA-Z0-9_]/g, '_'),
-        employee_number: empNum || '1000',
+        id: ('att_' + empNum + '_' + finalDate).replace(/[^a-zA-Z0-9_]/g, '_'),
+        employee_number: empNum,
         employee_id: 'emp_' + empNum,
-        employee_name: empName || 'موظف',
-        log_date: normalizedDate,
-        check_in: p1In ? (normalizedDate + 'T' + p1In + ':00') : null,
-        check_out: p2Out ? (normalizedDate + 'T' + p2Out + ':00') : null,
+        employee_name: empName,
+        log_date: finalDate,
+        check_in: p1In ? (finalDate + 'T' + p1In + ':00') : null,
+        check_out: p2Out ? (finalDate + 'T' + p2Out + ':00') : null,
         period_1_in: p1In,
         period_1_out: p1Out,
         period_2_in: p2In,
