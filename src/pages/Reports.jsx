@@ -339,7 +339,8 @@ export default function Reports() {
       let rows = [];
       let summary = {};
 
-      const repId = currentReportDef?.id;
+      const targetReportDef = REPORT_DEFINITIONS.find(r => r.id === selectedReportId) || currentReportDef || REPORT_DEFINITIONS[0];
+      const repId = targetReportDef?.id;
 
       if (repId === 'daily_biometrics' || repId === 'branch_biometrics_advanced') {
         // Daily attendance logs between fromDate and toDate using verified master engine
@@ -460,23 +461,30 @@ export default function Reports() {
             monthPrefix: monthKey
           });
 
+          const basicSal = Number(pr.basicSalary || emp.salary) || 0;
+          const housingVal = Number(pr.housing || emp.housing_allowance) || 0;
+          const transportVal = Number(pr.transport || emp.transport_allowance) || 0;
+          const additionsVal = Number(pr.totalAdditions) || 0;
+          const deductionsVal = Number(pr.totalDeductions) || 0;
+          const netSal = Number(pr.netSalary) || (basicSal + housingVal + transportVal + additionsVal - deductionsVal);
+
           rows.push({
             emp_num: emp.employee_number,
             emp_name: emp.full_name,
             branch: emp.branch_name || 'الفرع الرئيسي',
-            job_title: emp.job_title || 'موظف مبيعات',
-            basic_salary: pr.basicSalary,
-            housing_allowance: pr.housingAllowance,
-            transport_allowance: pr.transportAllowance,
-            gross_salary: pr.grossSalary,
-            extra_hours_bonus: pr.earnings.extraHoursBonus,
-            sales_incentive: pr.earnings.incentives,
-            total_earnings: pr.totalEarnings,
-            late_deduction: pr.deductions.lateDeduction,
-            absence_deduction: pr.deductions.absenceDeduction,
-            advance_deduction: pr.deductions.advanceDeduction,
-            total_deductions: pr.totalDeductions,
-            net_salary: pr.netSalary
+            job_title: emp.job_title || 'موظف',
+            basic_salary: basicSal,
+            housing_allowance: housingVal,
+            transport_allowance: transportVal,
+            gross_salary: basicSal + housingVal + transportVal,
+            extra_hours_bonus: Number(pr.customBonusesTotal) || 0,
+            sales_incentive: additionsVal,
+            total_earnings: basicSal + housingVal + transportVal + additionsVal,
+            late_deduction: Number(pr.approvedShortfallDeduction) || 0,
+            absence_deduction: Number(pr.customPenaltiesTotal) || 0,
+            advance_deduction: Number(pr.advanceInstallment) || 0,
+            total_deductions: deductionsVal,
+            net_salary: netSal
           });
         });
 
@@ -586,7 +594,7 @@ export default function Reports() {
       }
 
       setGeneratedData({
-        reportDef: currentReportDef,
+        reportDef: targetReportDef,
         rows,
         summary,
         generatedAt: new Date().toLocaleString('ar-SA'),
@@ -597,7 +605,7 @@ export default function Reports() {
       });
 
       setIsGenerating(false);
-      toast({ title: `✓ تم استخراج: ${currentReportDef.title} بنجاح` });
+      toast({ title: `✓ تم استخراج: ${targetReportDef?.title || "التقرير"} بنجاح` });
     }, 400);
   };
 
