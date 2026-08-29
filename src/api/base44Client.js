@@ -755,6 +755,42 @@ function toDbRecord(entityName, item) {
     };
   }
 
+  if (entityName === 'AttendanceLog') {
+    const empId = item.employee_id || item.user_id || ('emp_' + (item.employee_number || '1000'));
+    const empNum = String(item.employee_number || item.employee_id || '').replace('emp_', '');
+    const empName = item.employee_name || 'موظف';
+    const logDate = item.log_date || (item.check_in ? String(item.check_in).slice(0, 10) : new Date().toISOString().split('T')[0]);
+    
+    // Pack all rich metadata into notes JSON so Supabase table accepts it cleanly
+    const metaNotes = JSON.stringify({
+      employee_number: empNum,
+      user_id: empId,
+      period_1_in: item.period_1_in || '',
+      period_1_out: item.period_1_out || '',
+      period_2_in: item.period_2_in || '',
+      period_2_out: item.period_2_out || '',
+      timestamp_raw: item.timestamp_raw || '',
+      total_hours: Number(item.total_hours) || 0,
+      leave_type: item.leave_type || null,
+      deduction_from_annual_balance: item.deduction_from_annual_balance || false,
+      note: typeof item.notes === 'string' ? item.notes : ''
+    });
+
+    const uniqueId = item.id || `att_${empNum}_${logDate}`.replace(/[^a-zA-Z0-9_]/g, '_');
+
+    return {
+      id: uniqueId,
+      employee_id: empId,
+      employee_name: empName,
+      log_date: logDate,
+      check_in: item.check_in || (item.period_1_in ? `${logDate}T${item.period_1_in}:00` : null),
+      check_out: item.check_out || (item.period_2_out ? `${logDate}T${item.period_2_out}:00` : null),
+      status: item.status || 'present',
+      notes: metaNotes,
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
   if (entityName === 'Branch') {
     return {
       id: item.id || ('br_' + Date.now()),
