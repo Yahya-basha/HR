@@ -266,16 +266,59 @@ export default function Payroll() {
   // ─── ACTION HANDLERS ────────────────────────────────────────────────────────
 
   // Stage 1: Edit Biometric Log (Admin Only)
-    const handleSavePunchEdit = async () => {
+      const handleSavePunchEdit = async () => {
     if (!editPunchModal) return;
     try {
-      const { log, emp, newCheckIn, newCheckOut, newStatus } = editPunchModal;
+      const { log, emp, isSplitShift, p1In, p1Out, p2In, p2Out, newCheckIn, newCheckOut, newStatus } = editPunchModal;
       
       const empId = emp ? emp.id : (log.employee_id || log.user_id);
       const empNum = emp ? String(emp.employee_number) : (log.employee_number || '1000');
       const empName = emp ? emp.full_name : (log.employee_name || 'موظف');
-
       const isLeave = newStatus === 'annual_leave' || newStatus === 'sick_leave' || newStatus === 'emergency_leave' || newStatus === 'unpaid_leave';
+
+      const parseM = (t) => {
+        if (!t) return null;
+        const clean = t.replace(/[^0-9:]/g, '');
+        const p = clean.split(':');
+        return p.length >= 2 ? (parseInt(p[0], 10) * 60 + parseInt(p[1], 10)) : null;
+      };
+
+      let totalHrs = 0;
+      let rawPunches = '';
+      let checkInFinal = null;
+      let checkOutFinal = null;
+
+      if (!isLeave) {
+        if (isSplitShift) {
+          const m1In = parseM(p1In);
+          const m1Out = parseM(p1Out);
+          const m2In = parseM(p2In);
+          const m2Out = parseM(p2Out);
+
+          let dur1 = 0;
+          if (m1In !== null && m1Out !== null) {
+            dur1 = m1Out >= m1In ? m1Out - m1In : (m1Out + 1440) - m1In;
+          }
+          let dur2 = 0;
+          if (m2In !== null && m2Out !== null) {
+            dur2 = m2Out >= m2In ? m2Out - m2In : (m2Out + 1440) - m2In;
+          }
+          totalHrs = Math.round(((dur1 + dur2) / 60) * 10) / 10;
+          rawPunches = `${p1In || '09:00'}:00 -- ${p1Out || '13:00'}:00 & ${p2In || '16:00'}:00 -- ${p2Out || '21:00'}:00`;
+          checkInFinal = p1In ? `${log.log_date}T${p1In}:00` : null;
+          checkOutFinal = p2Out ? `${log.log_date}T${p2Out}:00` : null;
+        } else {
+          const inM = parseM(newCheckIn);
+          const outM = parseM(newCheckOut);
+          if (inM !== null && outM !== null) {
+            const diff = outM >= inM ? outM - inM : (outM + 1440) - inM;
+            totalHrs = Math.round((diff / 60) * 10) / 10;
+          }
+          rawPunches = `${newCheckIn || '16:00'}:00 -- ${newCheckOut || '21:00'}:00`;
+          checkInFinal = newCheckIn ? `${log.log_date}T${newCheckIn}:00` : null;
+          checkOutFinal = newCheckOut ? `${log.log_date}T${newCheckOut}:00` : null;
+        }
+      }
 
       const updatedItem = {
         ...log,
@@ -285,12 +328,24 @@ export default function Payroll() {
         employee_number: empNum,
         employee_name: empName,
         log_date: log.log_date,
-        check_in: newCheckIn ? `${log.log_date}T${newCheckIn}` : (isLeave ? null : log.check_in),
-        check_out: newCheckOut ? `${log.log_date}T${newCheckOut}` : (isLeave ? null : log.check_out),
+        check_in: checkInFinal,
+        check_out: checkOutFinal,
         status: newStatus || log.status || 'present',
+        timestamp_raw: rawPunches,
+        total_hours: totalHrs,
+        period_1_in: isSplitShift ? p1In : newCheckIn,
+        period_1_out: isSplitShift ? p1Out : newCheckOut,
+        period_2_in: isSplitShift ? p2In : '',
+        period_2_out: isSplitShift ? p2Out : '',
         notes: JSON.stringify({
           employee_number: empNum,
           user_id: empId,
+          total_hours: totalHrs,
+          timestamp_raw: rawPunches,
+          period_1_in: isSplitShift ? p1In : newCheckIn,
+          period_1_out: isSplitShift ? p1Out : newCheckOut,
+          period_2_in: isSplitShift ? p2In : '',
+          period_2_out: isSplitShift ? p2Out : '',
           leave_type: isLeave ? newStatus : null,
           deduction_from_annual_balance: newStatus === 'annual_leave',
           manual_edit_by: user?.full_name || 'مدير الموارد البشرية',
@@ -304,7 +359,7 @@ export default function Payroll() {
         await base44.entities.AttendanceLog.create(updatedItem);
       }
 
-      // If user selected Annual Leave, sync with LeaveRequest table
+      // If user selected Leave, sync with LeaveRequest
       if (newStatus === 'annual_leave' || newStatus === 'sick_leave' || newStatus === 'emergency_leave') {
         try {
           await base44.entities.LeaveRequest.create({
@@ -326,8 +381,8 @@ export default function Payroll() {
       }
 
       toast({ 
-        title: '✓ تم تعديل واعتماد حالة اليوم بنجاح',
-        description: newStatus === 'annual_leave' ? 'تم توثيق الإجازة وخصمها من رصيد الإجازات السنوية بدون عجز ساعات.' : undefined
+        title: '✓ تم تعديل واعتماد البصمات الأربعة بنجاح',
+        description: `تم توثيق ساعات العمل (${totalHrs} س) وحفظها في قاعدة البيانات المركزية.`
       });
       setEditPunchModal(null);
       await loadData();
@@ -738,13 +793,39 @@ export default function Payroll() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => setEditPunchModal({
-                                      log: d,
-                                      emp: currentSelectedEmp,
-                                      newCheckIn: d.check_in?.slice(11, 16) || '',
-                                      newCheckOut: d.check_out?.slice(11, 16) || '',
-                                      newStatus: d.status
-                                    })}
+                                    onClick={() => {
+                                      const empShift = currentSelectedEmp?.shift || '';
+                                      const isSplit = empShift.includes('فترتين') || 
+                                        empShift.includes('غير سعودي') || 
+                                        empShift.includes('9 ساعات') || 
+                                        empShift.includes('8 ساعات') || 
+                                        (currentSelectedEmp?.nationality !== 'سعودي' && currentSelectedEmp?.employee_number !== '1001');
+
+                                      // Parse raw times if available
+                                      const rawStr = d.timestamp_raw || '';
+                                      const times = (rawStr.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g) || []);
+
+                                      let p1In = d.period_1_in || (times[0] || (d.check_in ? String(d.check_in).slice(11, 16) : '09:00'));
+                                      let p1Out = d.period_1_out || (times[1] || (isSplit ? '13:00' : ''));
+                                      let p2In = d.period_2_in || (times[2] || (isSplit ? '16:00' : ''));
+                                      let p2Out = d.period_2_out || (times[3] || times[times.length - 1] || (d.check_out ? String(d.check_out).slice(11, 16) : (isSplit ? '21:00' : '')));
+
+                                      let singleIn = p1In || (d.check_in ? String(d.check_in).slice(11, 16) : '16:00');
+                                      let singleOut = p2Out || p1Out || (d.check_out ? String(d.check_out).slice(11, 16) : '21:00');
+
+                                      setEditPunchModal({
+                                        log: d,
+                                        emp: currentSelectedEmp,
+                                        isSplitShift: isSplit,
+                                        p1In: p1In || (empShift.includes('8 ساعات') ? '08:00' : '09:00'),
+                                        p1Out: p1Out || (empShift.includes('8 ساعات') ? '12:00' : '13:00'),
+                                        p2In: p2In || '16:00',
+                                        p2Out: p2Out || (empShift.includes('8 ساعات') ? '20:00' : '21:00'),
+                                        newCheckIn: singleIn,
+                                        newCheckOut: singleOut,
+                                        newStatus: d.status || 'present'
+                                      });
+                                    }}
                                     className="h-7 text-[11px] font-bold rounded-lg text-blue-600 hover:bg-blue-50"
                                   >
                                     <Edit3 className="w-3 h-3 ml-1" />
@@ -1478,72 +1559,181 @@ export default function Payroll() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL: EDIT PUNCH (STAGE 1 ADMIN) ──────────────────────────────── */}
+      {/* ─── MODAL: EDIT PUNCH DYNAMIC MULTI-SHIFT (STAGE 1 ADMIN) ───────── */}
       {editPunchModal && (
         <Dialog open={!!editPunchModal} onOpenChange={(o) => !o && setEditPunchModal(null)}>
-          <DialogContent className="sm:max-w-md rounded-3xl" dir="rtl">
+          <DialogContent className="sm:max-w-xl rounded-3xl" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-base font-heading font-black">
-                تعديل واعتماد بصمة — {editPunchModal.emp.full_name}
+              <DialogTitle className="text-base font-heading font-black flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <Fingerprint className="w-4 h-4" />
+                </div>
+                <span>تعديل واعتماد بصمة اليوم — {editPunchModal.emp?.full_name}</span>
               </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4 py-2 text-xs">
-              <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl">
-                التاريخ: <strong className="font-mono">{editPunchModal.log.log_date}</strong> ({editPunchModal.log.day_name})
+              
+              {/* Shift Banner */}
+              <div className="p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/60 flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-sky-900 dark:text-sky-200">الوردية المعتمدة: </span>
+                  <span className="font-bold text-sky-700 dark:text-sky-300">{editPunchModal.emp?.shift || 'فترة عمل'}</span>
+                </div>
+                <Badge className="bg-sky-600 text-white font-bold text-[10px]">
+                  {editPunchModal.isSplitShift ? 'دوام فترتين (4 بصمات)' : 'دوام فترة واحدة (بصمتين)'}
+                </Badge>
               </div>
 
+              {/* Date & Status */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="font-bold">وقت الدخول:</Label>
-                  <Input
-                    type="time"
-                    value={editPunchModal.newCheckIn}
-                    onChange={(e) => setEditPunchModal(prev => ({ ...prev, newCheckIn: e.target.value }))}
-                    className="rounded-xl font-mono"
-                  />
+                <div className="space-y-1">
+                  <Label className="font-bold">تاريخ اليوم:</Label>
+                  <div className="h-10 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 border flex items-center font-mono font-bold text-slate-800 dark:text-slate-200">
+                    {editPunchModal.log.log_date} ({editPunchModal.log.day_name})
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="font-bold">وقت الخروج:</Label>
-                  <Input
-                    type="time"
-                    value={editPunchModal.newCheckOut}
-                    onChange={(e) => setEditPunchModal(prev => ({ ...prev, newCheckOut: e.target.value }))}
-                    className="rounded-xl font-mono"
-                  />
+
+                <div className="space-y-1">
+                  <Label className="font-bold">حالة اليوم المعتمدة:</Label>
+                  <Select
+                    value={editPunchModal.newStatus}
+                    onValueChange={(v) => setEditPunchModal(prev => ({ ...prev, newStatus: v }))}
+                  >
+                    <SelectTrigger className="rounded-xl font-bold text-xs h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl max-h-72">
+                      <SelectItem value="present" className="font-bold text-emerald-700 py-2">✓ حاضر (دوام منضبط مكتمل)</SelectItem>
+                      <SelectItem value="late" className="font-bold text-amber-700 py-2">⏰ متأخر (مع احتساب التأخير)</SelectItem>
+                      <SelectItem value="annual_leave" className="font-bold text-teal-700 py-2">🏖️ إجازة سنوية (تخصم من رصيد الإجازات - مدفوعة)</SelectItem>
+                      <SelectItem value="sick_leave" className="font-bold text-purple-700 py-2">🏥 إجازة مرضية (بتقرير طبي - مدفوعة)</SelectItem>
+                      <SelectItem value="emergency_leave" className="font-bold text-indigo-700 py-2">⚠️ إجازة اضطرارية (تخصم من الرصيد)</SelectItem>
+                      <SelectItem value="unpaid_leave" className="font-bold text-rose-700 py-2">⏳ إجازة بدون راتب (خصم من الراتب)</SelectItem>
+                      <SelectItem value="unexcused_absence" className="font-bold text-rose-800 py-2">🚫 غياب بدون إذن (خصم يوم كامل)</SelectItem>
+                      <SelectItem value="exempt" className="font-bold text-slate-700 py-2">✨ معفى إدارياً / عطلة رسمية</SelectItem>
+                      <SelectItem value="absent" className="font-bold text-rose-600 py-2">غائب</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="font-bold">حالة اليوم:</Label>
-                <Select
-                  value={editPunchModal.newStatus}
-                  onValueChange={(v) => setEditPunchModal(prev => ({ ...prev, newStatus: v }))}
-                >
-                  <SelectTrigger className="rounded-xl font-bold text-xs h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl max-h-72">
-                    <SelectItem value="present" className="font-bold text-emerald-700 py-2">✓ حاضر (دوام منضبط مكتمل)</SelectItem>
-                    <SelectItem value="late" className="font-bold text-amber-700 py-2">⏰ متأخر (مع احتساب التأخير)</SelectItem>
-                    <SelectItem value="annual_leave" className="font-bold text-teal-700 py-2">🏖️ إجازة سنوية (تخصم من رصيد الإجازات - مدفوعة)</SelectItem>
-                    <SelectItem value="sick_leave" className="font-bold text-purple-700 py-2">🏥 إجازة مرضية (بتقرير طبي - مدفوعة)</SelectItem>
-                    <SelectItem value="emergency_leave" className="font-bold text-indigo-700 py-2">⚠️ إجازة اضطرارية (تخصم من الرصيد)</SelectItem>
-                    <SelectItem value="unpaid_leave" className="font-bold text-rose-700 py-2">⏳ إجازة بدون راتب (خصم من الراتب)</SelectItem>
-                    <SelectItem value="unexcused_absence" className="font-bold text-rose-800 py-2">🚫 غياب بدون إذن (خصم يوم كامل)</SelectItem>
-                    <SelectItem value="exempt" className="font-bold text-slate-700 py-2">✨ معفى إدارياً / عطلة رسمية</SelectItem>
-                    <SelectItem value="absent" className="font-bold text-rose-600 py-2">غائب</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Dynamic Punches based on Shift */}
+              {editPunchModal.newStatus !== 'annual_leave' && editPunchModal.newStatus !== 'sick_leave' && editPunchModal.newStatus !== 'exempt' && editPunchModal.newStatus !== 'absent' && (
+                <>
+                  {editPunchModal.isSplitShift ? (
+                    /* ─── 4 PUNCHES FOR DUAL SHIFT ────────────────────────── */
+                    <div className="space-y-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-border/80">
+                      <div className="flex items-center justify-between font-bold text-xs text-foreground">
+                        <span className="flex items-center gap-1.5 text-amber-600">
+                          <Sun className="w-4 h-4" />
+                          <span>بصمات الفترة الصباحية:</span>
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-mono">الفترة 1</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground font-bold">1. دخول صباحي (Check In 1)</Label>
+                          <Input 
+                            type="time" 
+                            value={editPunchModal.p1In} 
+                            onChange={(e) => setEditPunchModal(prev => ({ ...prev, p1In: e.target.value }))}
+                            className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900 mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground font-bold">2. خروج صباحي (Check Out 1)</Label>
+                          <Input 
+                            type="time" 
+                            value={editPunchModal.p1Out} 
+                            onChange={(e) => setEditPunchModal(prev => ({ ...prev, p1Out: e.target.value }))}
+                            className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900 mt-1"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Break indicator */}
+                      <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 flex items-center justify-between text-[11px] text-amber-800 dark:text-amber-300">
+                        <span className="flex items-center gap-1">
+                          <Coffee className="w-3.5 h-3.5 text-amber-600" />
+                          <span>فترة الاستراحة الرسمية (البريك)</span>
+                        </span>
+                        <span className="font-mono font-bold" dir="ltr">1:00 PM - 4:00 PM</span>
+                      </div>
+
+                      <div className="flex items-center justify-between font-bold text-xs text-foreground pt-1">
+                        <span className="flex items-center gap-1.5 text-indigo-600">
+                          <Moon className="w-4 h-4" />
+                          <span>بصمات الفترة المسائية:</span>
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-mono">الفترة 2</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground font-bold">3. دخول مسائي (Check In 2)</Label>
+                          <Input 
+                            type="time" 
+                            value={editPunchModal.p2In} 
+                            onChange={(e) => setEditPunchModal(prev => ({ ...prev, p2In: e.target.value }))}
+                            className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900 mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground font-bold">4. خروج مسائي (Check Out 2)</Label>
+                          <Input 
+                            type="time" 
+                            value={editPunchModal.p2Out} 
+                            onChange={(e) => setEditPunchModal(prev => ({ ...prev, p2Out: e.target.value }))}
+                            className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900 mt-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ─── 2 PUNCHES FOR SINGLE SHIFT ──────────────────────── */
+                    <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-border/80">
+                      <div className="space-y-1">
+                        <Label className="font-bold flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                          <span>1. وقت الحضور (Check In):</span>
+                        </Label>
+                        <Input 
+                          type="time" 
+                          value={editPunchModal.newCheckIn} 
+                          onChange={(e) => setEditPunchModal(prev => ({ ...prev, newCheckIn: e.target.value }))}
+                          className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="font-bold flex items-center gap-1 text-indigo-700 dark:text-indigo-400">
+                          <span>2. وقت الانصراف (Check Out):</span>
+                        </Label>
+                        <Input 
+                          type="time" 
+                          value={editPunchModal.newCheckOut} 
+                          onChange={(e) => setEditPunchModal(prev => ({ ...prev, newCheckOut: e.target.value }))}
+                          className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
             </div>
 
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setEditPunchModal(null)} className="rounded-xl font-bold">
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setEditPunchModal(null)} className="rounded-xl font-bold text-xs">
                 إلغاء
               </Button>
-              <Button onClick={handleSavePunchEdit} className="bg-slate-900 text-white rounded-xl font-bold">
-                حفظ واعتماد البصمة
+              <Button 
+                onClick={handleSavePunchEdit} 
+                className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md gap-1.5"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>حفظ واعتماد البصمة 💾</span>
               </Button>
             </DialogFooter>
           </DialogContent>
