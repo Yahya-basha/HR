@@ -143,13 +143,13 @@ export default function Attendance() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [emps, logs, sList] = await Promise.all([
+      const [sList, emps, logs] = await Promise.all([
         base44.entities.Shift.list(),
         base44.entities.Employee.list(),
         base44.entities.AttendanceLog.list('-log_date', 2000),
       ]);
+      setShifts(sList || []);
       setEmployees(emps || []);
-      if (sList && sList.length > 0) setShifts(sList);
       setAttendanceLogs(logs || []);
     } catch (e) {
       console.error('Error loading biometrics:', e);
