@@ -39,10 +39,9 @@ export const navigationModules = [
     activeBg: 'bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200',
     items: [
       { to: '/', label: 'لوحة التحكم', icon: LayoutDashboard },
-      { to: '/employee-profile', label: 'ملفي', icon: UserCheck },
-      { to: '/leave', label: 'طلباتي', icon: CalendarDays },
-      { to: '/attendance', label: 'موافقاتي', icon: FileCheck },
-      { to: '/documents-print', label: 'مستنداتي', icon: FolderOpen },
+      { to: '/employee-profile', label: 'ملفي الشخصي 360°', icon: UserCheck },
+      { to: '/portal', label: 'بوابة الموظف (الخدمة الذاتية)', icon: UserCheck },
+      { to: '/documents-print', label: 'مستنداتي والطباعة', icon: FolderOpen },
     ]
   },
   {
@@ -54,9 +53,9 @@ export const navigationModules = [
     activeBg: 'bg-pink-50 text-pink-900 dark:bg-pink-950/40 dark:text-pink-200',
     items: [
       { to: '/announcements?tab=inbox', label: 'البريد الداخلي', icon: Mail, admin: true },
-      { to: '/announcements?tab=circulars', label: 'التعاميم', icon: Megaphone, admin: true },
-      { to: '/announcements?tab=notifications', label: 'التنبيهات', icon: Bell, admin: true },
-      { to: '/announcements?tab=calendar', label: 'التقويم', icon: CalendarDays, admin: true },
+      { to: '/announcements?tab=circulars', label: 'التعاميم والقرارات', icon: Megaphone, admin: true },
+      { to: '/announcements?tab=notifications', label: 'التنبيهات الإدارية', icon: Bell, admin: true },
+      { to: '/announcements?tab=calendar', label: 'التقويم والفعاليات', icon: CalendarDays, admin: true },
     ]
   },
   {
@@ -67,11 +66,11 @@ export const navigationModules = [
     badgeColor: 'bg-orange-500 text-white',
     activeBg: 'bg-orange-50 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200',
     items: [
-      { to: '/attendance', label: 'إدارة البصمات', icon: Clock },
-      { to: '/devices', label: 'أجهزة البصمة', icon: Fingerprint, admin: true },
-      { to: '/import-data', label: 'رفع الحضور', icon: UploadCloud, admin: true },
+      { to: '/attendance', label: 'إدارة وسجل البصمات', icon: Clock },
+      { to: '/devices', label: 'أجهزة البصمة الحيوية', icon: Fingerprint, admin: true },
+      { to: '/import-data', label: 'رفع واستيراد الحضور', icon: UploadCloud, admin: true },
       { to: '/attendance?mode=manual', label: 'التحضير اليدوي', icon: FileCheck, admin: true },
-      { to: '/devices?sync=true', label: 'تحديث البصمات', icon: Fingerprint, admin: true },
+      { to: '/devices?sync=true', label: 'مزامنة وسحب الحركات', icon: Fingerprint, admin: true },
     ]
   },
   {
@@ -82,23 +81,23 @@ export const navigationModules = [
     badgeColor: 'bg-red-500 text-white',
     activeBg: 'bg-red-50 text-red-900 dark:bg-red-950/40 dark:text-red-200',
     items: [
-      { to: '/employees', label: 'دليل الموظفين', icon: Users, admin: true },
-      { to: '/branches', label: 'الفروع', icon: GitBranch, admin: true },
-      { to: '/departments', label: 'الأقسام', icon: Layers, admin: true },
-      { to: '/contracts', label: 'العقود', icon: FileText, admin: true },
-      { to: '/shifts', label: 'الورديات', icon: CalendarRange, admin: true },
+      { to: '/employees', label: 'دليل وسجلات الموظفين', icon: Users, admin: true },
+      { to: '/branches', label: 'الفروع ومواقع العمل', icon: GitBranch, admin: true },
+      { to: '/departments', label: 'الأقسام والهيكل الإداري', icon: Layers, admin: true },
+      { to: '/contracts', label: 'العقود ومسيرات التوظيف', icon: FileText, admin: true },
+      { to: '/shifts', label: 'الورديات ومواعيد العمل', icon: CalendarRange, admin: true },
     ]
   },
   {
     id: 'services',
     label: 'وظائف الكادر',
     icon: Briefcase,
-    color: '#0ea5e9', // Blue
+    color: '#0ea5e9', // Sky/Cyan Blue
     badgeColor: 'bg-sky-500 text-white',
     activeBg: 'bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200',
     items: [
-      { to: '/leave', label: 'الإجازات', icon: CalendarDays },
-      { to: '/leave-policies', label: 'سياسات الإجازات', icon: BookOpen, admin: true },
+      { to: '/leave', label: 'إدارة ومسيرات الإجازات', icon: CalendarDays },
+      { to: '/leave-policies', label: 'سياسات واستحقاقات الإجازات', icon: BookOpen, admin: true },
       { to: '/rewards-penalties', label: 'المكافآت والجزاءات', icon: Award, admin: true },
     ]
   },
@@ -129,9 +128,9 @@ export const navigationModules = [
     items: [
       { to: '/reports', label: 'مركز التقارير الشامل', icon: FileSpreadsheet, admin: true },
       { to: '/reports?report=daily_biometrics', label: 'تقرير البصمات اليومي', icon: Clock, admin: true },
-      { to: '/reports?report=payroll_details', label: 'تفاصيل الرواتب', icon: Wallet, admin: true },
-      { to: '/reports?report=employee_master_data', label: 'بيانات الموظفين', icon: Users, admin: true },
-      { to: '/reports?report=leave_report', label: 'تقرير الإجازات', icon: CalendarDays, admin: true },
+      { to: '/reports?report=payroll_details', label: 'تفاصيل الرواتب والأجور', icon: Wallet, admin: true },
+      { to: '/reports?report=employee_master_data', label: 'بيانات الموظفين الشاملة', icon: Users, admin: true },
+      { to: '/reports?report=leave_report', label: 'تقرير الإجازات والأرصدة', icon: CalendarDays, admin: true },
       { to: '/reports?report=advances_and_loans', label: 'تقرير السلف والقروض', icon: CreditCard, admin: true },
     ]
   },
@@ -143,10 +142,10 @@ export const navigationModules = [
     badgeColor: 'bg-emerald-500 text-white',
     activeBg: 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200',
     items: [
-      { to: '/settings', label: 'إعدادات النظام', icon: Settings, admin: true },
+      { to: '/settings', label: 'إعدادات النظام العامة', icon: Settings, admin: true },
       { to: '/users', label: 'المستخدمين والصلاحيات', icon: KeyRound, admin: true },
-      { to: '/print-templates', label: 'قوالب الطباعة', icon: FileText, admin: true },
-      { to: '/evaluations', label: 'التقييمات', icon: Award, admin: true },
+      { to: '/print-templates', label: 'قوالب ونماذج الطباعة', icon: FileText, admin: true },
+      { to: '/evaluations', label: 'تقييمات الأداء السنوية', icon: Award, admin: true },
     ]
   }
 ];

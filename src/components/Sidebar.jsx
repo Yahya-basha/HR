@@ -9,17 +9,52 @@ import {
   Check 
 } from 'lucide-react';
 
+const ROUTE_MODULE_MAP = {
+  '/': 'dashboard',
+  '/portal': 'dashboard',
+  '/employee-profile': 'dashboard',
+  '/documents-print': 'dashboard',
+  '/announcements': 'communication',
+  '/attendance': 'attendance',
+  '/devices': 'attendance',
+  '/import-data': 'attendance',
+  '/employees': 'employees',
+  '/branches': 'employees',
+  '/departments': 'employees',
+  '/contracts': 'employees',
+  '/shifts': 'employees',
+  '/leave': 'services',
+  '/leave-policies': 'services',
+  '/rewards-penalties': 'services',
+  '/payroll': 'payroll',
+  '/end-of-service': 'payroll',
+  '/reports': 'reports',
+  '/settings': 'settings',
+  '/users': 'settings',
+  '/print-templates': 'settings',
+  '/evaluations': 'settings',
+};
+
 export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Find active module based on current pathname
+  // Find active module based on current pathname with deterministic route mapping
   const findModuleForPath = (pathname) => {
+    // 1. Direct match in ROUTE_MODULE_MAP
+    for (const [route, modId] of Object.entries(ROUTE_MODULE_MAP)) {
+      if (route === '/' && pathname === '/') return modId;
+      if (route !== '/' && (pathname === route || pathname.startsWith(route + '/') || pathname.startsWith(route + '?'))) {
+        return modId;
+      }
+    }
+    // 2. Fallback: check module items
     for (const mod of EKTEFA_MODULES) {
       for (const item of mod.items) {
-        if (item.to === '/' && pathname === '/') return mod.id;
-        if (item.to !== '/' && pathname.startsWith(item.to.split('?')[0])) {
+        const itemBase = item.to.split('?')[0];
+        if (itemBase === '/' && pathname === '/') return mod.id;
+        if (itemBase !== '/' && (pathname === itemBase || pathname.startsWith(itemBase + '/'))) {
           return mod.id;
         }
       }
@@ -30,7 +65,7 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
   const [activeModuleId, setActiveModuleId] = useState(() => findModuleForPath(location.pathname));
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sync active module when location changes
+  // Sync active module when location (route) changes
   useEffect(() => {
     const modId = findModuleForPath(location.pathname);
     if (modId) setActiveModuleId(modId);
@@ -44,7 +79,7 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
     return permMatch && searchMatch;
   });
 
-    const isItemActive = (to) => {
+  const isItemActive = (to) => {
     if (to.includes('?')) {
       return (location.pathname + location.search) === to;
     }
@@ -53,18 +88,26 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
     return location.pathname === basePath && !location.search;
   };
 
+  const handleModuleClick = (modId) => {
+    setActiveModuleId(modId);
+    if (!isSubMenuOpen) {
+      setIsSubMenuOpen(true);
+    }
+    setSearchQuery('');
+  };
+
   return (
     <div className="hidden lg:flex fixed top-0 bottom-0 right-0 z-40 flex-row" dir="rtl">
       
       {/* ─── RAIL 1: SLIM PRIMARY ICON RAIL (68px) ON FAR RIGHT ─────────── */}
       <aside 
-        className="w-[68px] h-full bg-white dark:bg-slate-900 border-l border-slate-200/80 dark:border-slate-800 flex flex-col items-center py-3 z-20 shadow-sm shrink-0"
+        className="w-[68px] h-full bg-white dark:bg-slate-900 border-l border-slate-200/80 dark:border-slate-800 flex flex-col items-center py-3 z-20 shadow-sm shrink-0 select-none"
       >
         {/* Brand Mini Logo */}
         <Link 
           to="/" 
           className="w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-md mb-3 hover:scale-105 transition-transform shrink-0 p-1"
-          title="Green Arrow HR"
+          title="Green Arrow HR - لوحة التحكم"
         >
           <img src="/green-arrow-logo.png" alt="logo" className="w-7 h-7 object-contain" />
         </Link>
@@ -79,14 +122,7 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
               <button
                 key={mod.id}
                 type="button"
-                onClick={() => {
-                  setActiveModuleId(mod.id);
-                  if (!isSubMenuOpen) setIsSubMenuOpen(true);
-                  const firstItem = mod.items.find(it => !it.admin || isAdmin);
-                  if (firstItem && !isItemActive(firstItem.to)) {
-                    navigate(firstItem.to);
-                  }
-                }}
+                onClick={() => handleModuleClick(mod.id)}
                 className={`group relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-200 shrink-0 ${
                   isCurrent 
                     ? 'shadow-md ring-2 ring-offset-2 ring-offset-background' 
