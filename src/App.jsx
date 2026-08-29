@@ -14,6 +14,7 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Layout from '@/components/Layout';
 import EmployeePortal from '@/pages/EmployeePortal';
+import EmployeeRequests from '@/pages/EmployeeRequests';
 import Dashboard from '@/pages/Dashboard';
 import Employees from '@/pages/Employees';
 import EmployeeDetail from '@/pages/EmployeeDetail';
