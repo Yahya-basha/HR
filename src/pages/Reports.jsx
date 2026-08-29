@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { base44 } from '@/api/base44Client';
@@ -33,7 +33,8 @@ import {
   Calculator,
   CalendarDays,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,8 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { computeEmployeePayroll, getPayrollSettings, getAdvances } from '@/lib/payrollEngine';
 
-// ─── REPORT DEFINITIONS CATALOG (MATCHING EKTEFA SYSTEM) ─────────────────────
-const REPORT_DEFINITIONS = [
+export const REPORT_DEFINITIONS = [
   {
     id: 'branch_biometrics_advanced',
     title: 'البصمات (حسب الفرع) - مطور',
@@ -54,7 +54,6 @@ const REPORT_DEFINITIONS = [
     icon: Clock,
     color: '#0284c7'
   },
-
   {
     id: 'daily_biometrics',
     title: 'تقرير البصمات اليومي',
@@ -66,7 +65,7 @@ const REPORT_DEFINITIONS = [
   },
   {
     id: 'payroll_details',
-    title: 'تفاصيل الرواتب',
+    title: 'تفاصيل الرواتب والأجور',
     category: 'payroll',
     categoryLabel: 'رواتب الموظفين',
     description: 'المسير المالي للرواتب متضمناً البدلات والمكافآت والاستقطاعات وصافي الراتب المستحق',
@@ -74,13 +73,31 @@ const REPORT_DEFINITIONS = [
     color: '#8b5cf6'
   },
   {
+    id: 'employee_master_data',
+    title: 'بيانات الموظفين الشاملة',
+    category: 'hr',
+    categoryLabel: 'الموارد البشرية',
+    description: 'الدليل العام والشامل لبيانات الكادر، الأرقام الوظيفية، الهويات، وتواريخ المباشرة',
+    icon: Users,
+    color: '#ef4444'
+  },
+  {
     id: 'leave_report',
-    title: 'تقرير الإجازات',
+    title: 'تقرير الإجازات والأرصدة',
     category: 'hr',
     categoryLabel: 'الموارد البشرية',
     description: 'سجل الإجازات السنوية والمرضية والاضطرارية وفترات القيام والعودة من الإجازة',
     icon: CalendarDays,
     color: '#10b981'
+  },
+  {
+    id: 'advances_and_loans',
+    title: 'تقرير السلف والقروض',
+    category: 'payroll',
+    categoryLabel: 'رواتب الموظفين',
+    description: 'كشف السلف المالية الممنوحة للموظفين، المبالغ المسددة، والأقساط الشهرية المتبقية',
+    icon: Wallet,
+    color: '#f59e0b'
   },
   {
     id: 'punch_corrections',
@@ -92,94 +109,31 @@ const REPORT_DEFINITIONS = [
     color: '#f59e0b'
   },
   {
-    id: 'employee_master_data',
-    title: 'تقرير بيانات الموظفين',
+    id: 'medical_insurance',
+    title: 'تقرير التأمين الطبي للموظفين',
     category: 'hr',
     categoryLabel: 'الموارد البشرية',
-    description: 'الدليل العام والشامل لبيانات الكادر، الأرقام الوظيفية، الهويات، وتواريخ المباشرة',
-    icon: Users,
-    color: '#ef4444'
+    description: 'بيانات وثائق التأمين الصحي، فئات التغطية، وتواريخ الصلاحية لكافة الموظفين والتابعين',
+    icon: HeartPulse,
+    color: '#ec4899'
   },
   {
     id: 'terminated_employees',
-    title: 'تقرير بيانات الموظفين المنتهية خدماتهم',
+    title: 'تقرير الموظفين المنتهية خدماتهم',
     category: 'hr',
     categoryLabel: 'الموارد البشرية',
-    description: 'سجل الاستقالات، إنهاء العقود، وتواريخ تسليم العهد وتصفية المستحقات',
+    description: 'سجل الاستقالات، إنهاء العقود، وتواريخ تسليم العهد وتصفية المستحقات النهائية',
     icon: Briefcase,
     color: '#64748b'
   },
   {
     id: 'company_custodies',
-    title: 'التقرير العام - العهد',
+    title: 'التقرير العام - العهد المسلمة',
     category: 'admin',
-    categoryLabel: 'الإدارة',
-    description: 'جرد العهد العينية المسلمة للموظفين (السيارات، أجهزة الحاسب، الجوالات، والعهد المالية)',
+    categoryLabel: 'الإدارة والعهد',
+    description: 'جرد العهد العينية والمالية المسلمة للموظفين (السيارات، أجهزة الحاسب، والعهد النقدية)',
     icon: Package,
-    color: '#0d9488'
-  },
-  {
-    id: 'employee_detailed_dossier',
-    title: 'تقرير الموظفين التفصيلي',
-    category: 'hr',
-    categoryLabel: 'الموارد البشرية',
-    description: 'ملف الموظف الشامل مع تفاصيل الورديات والرواتب والتأمينات وبيانات التواصل',
-    icon: FileText,
-    color: '#3b82f6'
-  },
-  {
-    id: 'medical_insurance',
-    title: 'تقرير التأمين الطبي للموظفين',
-    category: 'hr',
-    categoryLabel: 'الموارد البشرية',
-    description: 'بيانات وثائق التأمين الصحي، فئات التغطية (Class A/B/C/VIP)، وتواريخ الصلاحية',
-    icon: HeartPulse,
-    color: '#ec4899'
-  },
-  {
-    id: 'employee_leave_balances',
-    title: 'تقرير إجازات الموظف',
-    category: 'hr',
-    categoryLabel: 'الموارد البشرية',
-    description: 'أرصدة الإجازات المستحقة والمستهلكة والمتبقية وتاريخ آخر إجازة',
-    icon: Calendar,
-    color: '#14b8a6'
-  },
-  {
-    id: 'employee_status_report',
-    title: 'تقرير حالة الموظف',
-    category: 'hr',
-    categoryLabel: 'الموارد البشرية',
-    description: 'حالة النشاط على رأس العمل، تحت التجربة، في إجازة، أو منقطع',
-    icon: UserCheck,
-    color: '#6366f1'
-  },
-  {
-    id: 'end_of_service_settlements',
-    title: 'طلبات نهاية الخدمة المنتهية',
-    category: 'payroll',
-    categoryLabel: 'رواتب الموظفين',
-    description: 'بيان تسويات مكافأة نهاية الخدمة المعتمدة ومسيرات التصفية النهائية',
-    icon: Calculator,
-    color: '#d97706'
-  },
-  {
-    id: 'accrued_leaves_by_year',
-    title: 'الإجازات المتراكمة حسب السنة',
-    category: 'hr',
-    categoryLabel: 'الموارد البشرية',
-    description: 'الرصيد التراكمي للإجازات السنوية المرحلة عبر سنوات الخدمة وفقاً لنظام العمل',
-    icon: Layers,
-    color: '#8b5cf6'
-  },
-  {
-    id: 'advances_and_loans',
-    title: 'تقرير السلف والقروض المؤسسية',
-    category: 'payroll',
-    categoryLabel: 'رواتب الموظفين',
-    description: 'بيان السلف الممنوحة والأقساط المستقطعة والمبالغ المتبقية وسندات لأمر',
-    icon: Wallet,
-    color: '#7c3aed'
+    color: '#06b6d4'
   }
 ];
 
@@ -188,30 +142,16 @@ export default function Reports() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Selected Report ID (null = Catalog view, string = Filter/Results view)
   const [selectedReportId, setSelectedReportId] = useState(() => searchParams.get('report') || null);
-
-  // Sync with URL query parameter changes from sidebar navigation
-  useEffect(() => {
-    const reportParam = searchParams.get('report');
-    if (reportParam !== selectedReportId) {
-      setSelectedReportId(reportParam || null);
-    }
-  }, [searchParams]);
-
-  // Automatically generate report data whenever selectedReportId or employees change
-  useEffect(() => {
-    if (selectedReportId && employees.length > 0) {
-      handleGenerateReport();
-    }
-  }, [selectedReportId, employees, attendanceLogs, fromDate, toDate, filterEmpId, filterBranch]);
-  
-  // Category Filter in Catalog ('all' | 'hr' | 'attendance' | 'payroll' | 'admin')
   const [catalogCategory, setCatalogCategory] = useState('all');
   const [catalogSearch, setCatalogSearch] = useState('');
   const [starredReports, setStarredReports] = useState(() => {
-    const s = localStorage.getItem('ga_starred_reports');
-    return s ? JSON.parse(s) : ['daily_biometrics', 'payroll_details', 'employee_master_data'];
+    try {
+      const s = localStorage.getItem('ga_starred_reports');
+      return s ? JSON.parse(s) : ['daily_biometrics', 'payroll_details', 'employee_master_data'];
+    } catch (e) {
+      return ['daily_biometrics', 'payroll_details', 'employee_master_data'];
+    }
   });
 
   // Filter Form State
@@ -220,11 +160,7 @@ export default function Reports() {
   const [fromDate, setFromDate] = useState('2026-08-01');
   const [toDate, setToDate] = useState('2026-08-31');
 
-  // Generated Report Data State
-  const [generatedData, setGeneratedData] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // Master Raw Data from DB
+  // Master Data
   const [employees, setEmployees] = useState([]);
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [shifts, setShifts] = useState([]);
@@ -232,7 +168,19 @@ export default function Reports() {
   const [advancesList, setAdvancesList] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load All Data
+  // Generated Data
+  const [generatedData, setGeneratedData] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Sync with searchParams
+  useEffect(() => {
+    const reportParam = searchParams.get('report');
+    if (reportParam !== selectedReportId) {
+      setSelectedReportId(reportParam || null);
+    }
+  }, [searchParams]);
+
+  // Load Data
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -257,43 +205,9 @@ export default function Reports() {
     loadData();
   }, []);
 
-  // Update query param when selecting report
-  const handleSelectReport = (repId) => {
-    setSelectedReportId(repId);
-    setGeneratedData(null);
-    if (repId) {
-      setSearchParams({ report: repId });
-    } else {
-      setSearchParams({});
-    }
-  };
-
   const currentReportDef = useMemo(() => {
     return REPORT_DEFINITIONS.find(r => r.id === selectedReportId) || null;
   }, [selectedReportId]);
-
-  // Toggle Star
-  const handleToggleStar = (id, e) => {
-    e.stopPropagation();
-    setStarredReports(prev => {
-      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      localStorage.setItem('ga_starred_reports', JSON.stringify(next));
-      return next;
-    });
-  };
-
-  // Filter Catalog
-  const filteredCatalog = useMemo(() => {
-    return REPORT_DEFINITIONS.filter(r => {
-      const matchCat = catalogCategory === 'all' || r.category === catalogCategory;
-      const q = catalogSearch.toLowerCase();
-      const matchSearch = !catalogSearch ||
-        r.title.toLowerCase().includes(q) ||
-        r.description.toLowerCase().includes(q) ||
-        r.categoryLabel.toLowerCase().includes(q);
-      return matchCat && matchSearch;
-    });
-  }, [catalogCategory, catalogSearch]);
 
   // Unique branches
   const branches = useMemo(() => {
@@ -305,447 +219,385 @@ export default function Reports() {
     return Array.from(set);
   }, [employees]);
 
-  // Filtered employees list based on selected branch
-  const branchFilteredEmployees = useMemo(() => {
-    if (filterBranch === 'all') return employees;
-    return employees.filter(e => (e.branch_name || e.branch || '') === filterBranch);
-  }, [employees, filterBranch]);
-
-  // When branch changes, ensure selected employee belongs to that branch
-  const handleBranchChange = (newBranch) => {
-    setFilterBranch(newBranch);
-    if (newBranch !== 'all' && filterEmpId !== 'all') {
-      const stillValid = employees.some(e => 
-        String(e.employee_number || e.id) === String(filterEmpId) && 
-        (e.branch_name || e.branch || '') === newBranch
-      );
-      if (!stillValid) setFilterEmpId('all');
-    }
-  };
-
-
-  // ─── GENERATE REPORT ENGINE ───────────────────────────────────────────────
-  function handleGenerateReport() {
+  // Master Generation Function
+  const generateCurrentReport = (repId) => {
     setIsGenerating(true);
 
     setTimeout(() => {
-      // 1. Filter employees
-      let targetEmployees = employees.filter(e => {
-        const matchEmp = filterEmpId === 'all' || String(e.employee_number || e.id) === String(filterEmpId);
-        const matchBranch = filterBranch === 'all' || (e.branch_name || e.branch || '') === filterBranch;
-        return matchEmp && matchBranch;
-      });
+      try {
+        let targetEmployees = employees.filter(e => {
+          const matchEmp = filterEmpId === 'all' || String(e.employee_number || e.id) === String(filterEmpId);
+          const matchBranch = filterBranch === 'all' || (e.branch_name || e.branch || '') === filterBranch;
+          return matchEmp && matchBranch;
+        });
 
-      let rows = [];
-      let summary = {};
+        let rows = [];
+        let summary = {};
+        const activeDef = REPORT_DEFINITIONS.find(r => r.id === repId) || currentReportDef || REPORT_DEFINITIONS[0];
 
-      const targetReportDef = REPORT_DEFINITIONS.find(r => r.id === selectedReportId) || currentReportDef || REPORT_DEFINITIONS[0];
-      const repId = targetReportDef?.id;
+        if (repId === 'daily_biometrics' || repId === 'branch_biometrics_advanced') {
+          const monthKey = fromDate.slice(0, 7) || '2026-08';
+          const settings = getPayrollSettings();
+          const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
-      if (repId === 'daily_biometrics' || repId === 'branch_biometrics_advanced') {
-        // Daily attendance logs between fromDate and toDate using verified master engine
-        const monthKey = fromDate.slice(0, 7) || '2026-08';
-        const settings = getPayrollSettings();
-        const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+          targetEmployees.forEach(emp => {
+            const pr = computeEmployeePayroll(emp, attendanceLogs, shifts, {
+              ...settings,
+              monthPrefix: monthKey
+            });
 
-        targetEmployees.forEach(emp => {
-          const pr = computeEmployeePayroll(emp, attendanceLogs, shifts, {
-            ...settings,
-            monthPrefix: monthKey
-          });
+            const days = (pr.dailyDetails || []).filter(d => {
+              const dStr = d.log_date || '';
+              return !dStr || (dStr >= fromDate && dStr <= toDate);
+            });
 
-          const days = (pr.dailyDetails || []).filter(d => {
-            const dStr = d.log_date || d.dateStr || d.date || '';
-            return !dStr || (dStr >= fromDate && dStr <= toDate);
-          });
-
-          days.forEach(d => {
-            const logDate = d.log_date || d.dateStr || d.date || `${monthKey}-01`;
-            let dayName = d.day_name;
-            if (!dayName && logDate) {
-              const dt = new Date(logDate);
-              if (!isNaN(dt.getTime())) dayName = daysAr[dt.getDay()];
-            }
-
-            // Find matching raw log for exact punches
-            const matchingLog = attendanceLogs.find(l => 
-              (l.user_id === emp.id || l.employee_id === emp.id || String(l.employee_number) === String(emp.employee_number) || l.employee_name === emp.full_name) &&
-              (l.log_date === logDate)
-            );
-
-            // Shift Times
-            let shiftTimes = '08:00 -- 16:00';
-            const empShiftName = emp.shift || d.shiftName || 'فترة عمل غير سعودي';
-            if (empShiftName.includes('غير سعودي') || empShiftName.includes('دوامين')) {
-              shiftTimes = '08:00 -- 12:00 & 16:00 -- 20:00';
-            } else if (empShiftName.includes('صباحي')) {
-              shiftTimes = '08:00 -- 13:00';
-            } else if (empShiftName.includes('مسائي')) {
-              shiftTimes = '16:00 -- 21:00';
-            } else if (empShiftName.includes('المدير') || empShiftName.includes('إدارة')) {
-              shiftTimes = '07:00 -- 06:59';
-            }
-
-            // Exact Biometric Timestamps string (matching Ektefa style)
-            let biometricPunches = '--:--';
-            if (matchingLog) {
-              if (matchingLog.timestamp_raw && matchingLog.timestamp_raw.includes('&')) {
-                biometricPunches = matchingLog.timestamp_raw;
-              } else if (matchingLog.period_1_in && matchingLog.period_2_out) {
-                biometricPunches = `${matchingLog.period_1_in} -- ${matchingLog.period_1_out || '--:--'} & ${matchingLog.period_2_in || '--:--'} -- ${matchingLog.period_2_out}`;
-              } else if (matchingLog.check_in && matchingLog.check_out && matchingLog.check_in !== matchingLog.check_out) {
-                biometricPunches = `${matchingLog.check_in} -- ${matchingLog.check_out}`;
-              } else if (matchingLog.check_in) {
-                biometricPunches = `${matchingLog.check_in} -- --:--`;
+            days.forEach((d, idx) => {
+              const logDate = d.log_date || (monthKey + '-01');
+              let dayName = d.day_name;
+              if (!dayName && logDate) {
+                const dt = new Date(logDate);
+                if (!isNaN(dt.getTime())) dayName = daysAr[dt.getDay()];
               }
-            } else if (d.firstCheckIn && d.lastCheckOut && d.firstCheckIn !== '—') {
-              biometricPunches = `${d.firstCheckIn} -- ${d.lastCheckOut}`;
-            }
 
-            if (empShiftName.includes('المدير') || emp.employee_number === '1001') {
-              biometricPunches = 'حضور معفى آلياً';
-            }
+              const actMins = Number(d.actualMinutes) || 0;
+              const reqMins = Number(d.requiredMinutes) || 480;
+              const lateMins = Number(d.shortfallMinutes) || 0;
+              const actHrs = (actMins / 60).toFixed(1);
 
-            const checkIn = d.firstCheckIn && d.firstCheckIn !== '—' ? d.firstCheckIn : (d.check_in || d.checkIn || '--:--');
-            const checkOut = d.lastCheckOut && d.lastCheckOut !== '—' ? d.lastCheckOut : (d.check_out || d.checkOut || '--:--');
-            const actualHrs = d.actualMinutes ? (d.actualMinutes / 60).toFixed(1) : (d.actualHours || 0);
+              rows.push({
+                index: idx + 1,
+                emp_num: emp.employee_number || '1000',
+                emp_name: emp.full_name,
+                branch: emp.branch_name || 'الفرع الرئيسي',
+                shift: emp.shift || 'دوام رسمي',
+                date: logDate,
+                day_name: dayName || 'يوم عمل',
+                check_in: d.check_in ? (d.check_in.includes('T') ? d.check_in.split('T')[1].slice(0, 5) : d.check_in.slice(0, 5)) : '--:--',
+                check_out: d.check_out ? (d.check_out.includes('T') ? d.check_out.split('T')[1].slice(0, 5) : d.check_out.slice(0, 5)) : '--:--',
+                actual_hours: actHrs,
+                late_minutes: lateMins,
+                status: d.status === 'present' ? 'حاضر' : d.status === 'absent' ? 'غائب' : d.status
+              });
+            });
+          });
 
-            let statusLabel = 'حاضر';
-            if (emp.employee_number === '1001' || d.isExempt) {
-              statusLabel = 'معفى';
-            } else if (d.status === 'absent' || (!matchingLog && !d.hasAttendance)) {
-              statusLabel = 'غياب';
-            } else if (d.lateMinutes > 0 || d.status === 'late') {
-              statusLabel = 'متأخر';
-            } else if (d.status?.includes('إجازة')) {
-              statusLabel = 'إجازة';
-            }
+          summary = {
+            totalRows: rows.length,
+            presentCount: rows.filter(r => r.status === 'حاضر').length,
+            absentCount: rows.filter(r => r.status === 'غائب').length,
+            totalHours: rows.reduce((acc, r) => acc + Number(r.actual_hours || 0), 0).toFixed(1)
+          };
+
+        } else if (repId === 'payroll_details') {
+          const monthKey = fromDate.slice(0, 7) || '2026-08';
+          const settings = getPayrollSettings();
+
+          targetEmployees.forEach((emp, idx) => {
+            const pr = computeEmployeePayroll(emp, attendanceLogs, shifts, {
+              ...settings,
+              monthPrefix: monthKey
+            });
+
+            const basicSal = Number(pr.basicSalary || emp.salary) || 0;
+            const housingVal = Number(pr.housing || emp.housing_allowance) || 0;
+            const transportVal = Number(pr.transport || emp.transport_allowance) || 0;
+            const additionsVal = Number(pr.totalAdditions) || 0;
+            const deductionsVal = Number(pr.totalDeductions) || 0;
+            const netSal = Number(pr.netSalary) || (basicSal + housingVal + transportVal + additionsVal - deductionsVal);
 
             rows.push({
+              index: idx + 1,
               emp_num: emp.employee_number,
               emp_name: emp.full_name,
-              date: logDate,
-              day_name: dayName || 'يوم عمل',
-              shift: empShiftName,
-              shift_times: shiftTimes,
-              biometric_punches: biometricPunches,
-              branch: emp.branch_name || emp.branch || 'الفرع الرئيسي',
-              department: emp.department_name || emp.department || 'درة السيارة لقطع الغيار',
-              check_in: checkIn,
-              check_out: checkOut,
-              actual_hours: actualHrs,
-              late_minutes: d.lateMinutes || 0,
-              early_leave: d.earlyMinutes || 0,
-              status: statusLabel
+              branch: emp.branch_name || 'الفرع الرئيسي',
+              job_title: emp.job_title || 'موظف',
+              basic_salary: basicSal,
+              housing_allowance: housingVal,
+              transport_allowance: transportVal,
+              gross_salary: basicSal + housingVal + transportVal,
+              extra_hours_bonus: Number(pr.customBonusesTotal) || 0,
+              sales_incentive: additionsVal,
+              total_earnings: basicSal + housingVal + transportVal + additionsVal,
+              late_deduction: Number(pr.approvedShortfallDeduction) || 0,
+              absence_deduction: Number(pr.customPenaltiesTotal) || 0,
+              advance_deduction: Number(pr.advanceInstallment) || 0,
+              total_deductions: deductionsVal,
+              net_salary: netSal
             });
           });
-        });
 
-        // Sort by employee_number and date
-        rows.sort((a, b) => a.date.localeCompare(b.date) || a.emp_num.localeCompare(b.emp_num));
-        summary = {
-          totalRows: rows.length,
-          totalHours: rows.reduce((acc, r) => acc + Number(r.actual_hours || 0), 0).toFixed(1),
-          totalLateMins: rows.reduce((acc, r) => acc + Number(r.late_minutes || 0), 0),
-          presentDays: rows.filter(r => r.status.includes('حاضر') || r.status.includes('معفى') || r.status.includes('متأخر')).length,
-          employeesCount: targetEmployees.length
-        };
-      } else if (repId === 'payroll_details') {
-        // Detailed Payroll calculation
-        const monthKey = fromDate.slice(0, 7) || '2026-08';
-        const settings = getPayrollSettings();
+          summary = {
+            totalEmployees: rows.length,
+            totalGross: rows.reduce((acc, r) => acc + Number(r.gross_salary || 0), 0),
+            totalDeductions: rows.reduce((acc, r) => acc + Number(r.total_deductions || 0), 0),
+            totalNetSalary: rows.reduce((acc, r) => acc + Number(r.net_salary || 0), 0)
+          };
 
-        targetEmployees.forEach(emp => {
-          const pr = computeEmployeePayroll(emp, attendanceLogs, shifts, {
-            ...settings,
-            monthPrefix: monthKey
-          });
-
-          const basicSal = Number(pr.basicSalary || emp.salary) || 0;
-          const housingVal = Number(pr.housing || emp.housing_allowance) || 0;
-          const transportVal = Number(pr.transport || emp.transport_allowance) || 0;
-          const additionsVal = Number(pr.totalAdditions) || 0;
-          const deductionsVal = Number(pr.totalDeductions) || 0;
-          const netSal = Number(pr.netSalary) || (basicSal + housingVal + transportVal + additionsVal - deductionsVal);
-
-          rows.push({
-            emp_num: emp.employee_number,
-            emp_name: emp.full_name,
-            branch: emp.branch_name || 'الفرع الرئيسي',
-            job_title: emp.job_title || 'موظف',
-            basic_salary: basicSal,
-            housing_allowance: housingVal,
-            transport_allowance: transportVal,
-            gross_salary: basicSal + housingVal + transportVal,
-            extra_hours_bonus: Number(pr.customBonusesTotal) || 0,
-            sales_incentive: additionsVal,
-            total_earnings: basicSal + housingVal + transportVal + additionsVal,
-            late_deduction: Number(pr.approvedShortfallDeduction) || 0,
-            absence_deduction: Number(pr.customPenaltiesTotal) || 0,
-            advance_deduction: Number(pr.advanceInstallment) || 0,
-            total_deductions: deductionsVal,
-            net_salary: netSal
-          });
-        });
-
-        summary = {
-          totalEmployees: rows.length,
-          totalGross: rows.reduce((acc, r) => acc + Number(r.gross_salary || 0), 0),
-          totalDeductions: rows.reduce((acc, r) => acc + Number(r.total_deductions || 0), 0),
-          totalNetSalary: rows.reduce((acc, r) => acc + Number(r.net_salary || 0), 0)
-        };
-
-      } else if (repId === 'employee_master_data' || repId === 'employee_detailed_dossier') {
-        // Master Employee Directory
-        targetEmployees.forEach(emp => {
-          rows.push({
-            emp_num: emp.employee_number,
-            name_ar: emp.full_name,
-            name_en: emp.english_name || emp.name_en || '--',
-            national_id: emp.national_id || emp.iqama_number || '--',
-            nationality: emp.nationality || 'سعودي',
-            branch: emp.branch_name || 'الفرع الرئيسي',
-            job_title: emp.job_title || 'موظف',
-            join_date: emp.join_date || emp.hire_date || '--',
-            basic_salary: emp.basic_salary || 0,
-            mobile: emp.mobile_number || emp.phone || '--',
-            status: emp.status || 'active'
-          });
-        });
-        summary = { totalEmployees: rows.length, saudiCount: rows.filter(r => r.nationality === 'سعودي').length };
-
-      } else if (repId === 'advances_and_loans') {
-        // Loans and Advances
-        advancesList.forEach(adv => {
-          const emp = employees.find(e => String(e.employee_number || e.id) === String(adv.employee_number));
-          const matchBranch = filterBranch === 'all' || (emp?.branch_name || '') === filterBranch;
-          const matchEmp = filterEmpId === 'all' || String(adv.employee_number) === String(filterEmpId);
-
-          if (matchBranch && matchEmp) {
-            const total = Number(adv.total_amount) || 0;
-            const paid = Number(adv.paid_amount) || 0;
-            const rem = Math.max(0, total - paid);
+        } else if (repId === 'employee_master_data') {
+          targetEmployees.forEach((emp, idx) => {
             rows.push({
-              emp_num: adv.employee_number,
-              emp_name: emp?.full_name || adv.employee_name,
-              branch: emp?.branch_name || 'الفرع الرئيسي',
-              total_amount: total,
-              monthly_installment: adv.monthly_installment,
-              total_installments: adv.total_installments,
-              paid_amount: paid,
-              remaining_amount: rem,
-              start_month: adv.start_month,
-              status: rem <= 0 ? 'مسددة بالكامل' : 'سارية وقيد الاستقطاع'
+              index: idx + 1,
+              emp_num: emp.employee_number,
+              name_ar: emp.full_name,
+              name_en: emp.english_name || emp.name_en || '--',
+              national_id: emp.national_id || '--',
+              nationality: emp.nationality || 'سعودي',
+              branch: emp.branch_name || 'الفرع الرئيسي',
+              job_title: emp.job_title || 'موظف',
+              join_date: emp.join_date || emp.hire_date || '--',
+              basic_salary: emp.salary || 0,
+              mobile: emp.phone || emp.mobile || '--',
+              status: emp.status || 'نشط'
             });
-          }
-        });
-        summary = {
-          totalAdvances: rows.reduce((acc, r) => acc + Number(r.total_amount || 0), 0),
-          totalPaid: rows.reduce((acc, r) => acc + Number(r.paid_amount || 0), 0),
-          totalRemaining: rows.reduce((acc, r) => acc + Number(r.remaining_amount || 0), 0)
-        };
-
-      } else if (repId === 'medical_insurance') {
-        // Medical Insurance
-        targetEmployees.forEach(emp => {
-          const isExpired = emp.insurance_status === 'منتهي';
-          rows.push({
-            emp_num: emp.employee_number,
-            emp_name: emp.full_name,
-            branch: emp.branch_name || 'الفرع الرئيسي',
-            national_id: emp.national_id || '--',
-            policy_num: 'POL-GA-2026-88',
-            insurance_class: emp.insurance_class || (emp.employee_number === 1001 ? 'VIP Elite' : 'Class A'),
-            expiry_date: emp.insurance_expiry || '2027-04-30',
-            status: isExpired ? 'منتهي الصلاحية' : 'ساري المفعول'
           });
-        });
-        summary = { totalCount: rows.length, activeCount: rows.filter(r => r.status.includes('ساري')).length };
+          summary = { totalEmployees: rows.length, saudiCount: rows.filter(r => r.nationality === 'سعودي').length };
 
-      } else if (repId === 'leave_report' || repId === 'employee_leave_balances') {
-        // Leave report
-        targetEmployees.forEach(emp => {
-          rows.push({
-            emp_num: emp.employee_number,
-            emp_name: emp.full_name,
-            branch: emp.branch_name || 'الفرع الرئيسي',
-            annual_balance: emp.employee_number === 1034 ? 0 : 30,
-            taken_days: 0,
-            remaining_days: emp.employee_number === 1034 ? 0 : 30,
-            last_leave_date: '--',
-            status: 'مستحق بالكامل'
-          });
-        });
-        summary = { totalCount: rows.length };
+        } else if (repId === 'leave_report') {
+          targetEmployees.forEach((emp, idx) => {
+            const isInsured = emp.is_insured === true || emp.is_insured === 'true';
+            const totalAnnual = isInsured ? 21 : 30;
+            const empLeaves = (leavesList || []).filter(l => String(l.employee_number || l.employee_id) === String(emp.employee_number || emp.id));
+            const takenDays = empLeaves.reduce((acc, l) => acc + (Number(l.days_count) || 0), 0);
+            const remaining = Math.max(0, totalAnnual - takenDays);
 
-      } else {
-        // Default generic row builder
-        targetEmployees.forEach(emp => {
-          rows.push({
-            emp_num: emp.employee_number,
-            emp_name: emp.full_name,
-            branch: emp.branch_name || 'الفرع الرئيسي',
-            job_title: emp.job_title || 'موظف مبيعات',
-            date: fromDate,
-            status: 'معتمد'
+            rows.push({
+              index: idx + 1,
+              emp_num: emp.employee_number,
+              emp_name: emp.full_name,
+              branch: emp.branch_name || 'الفرع الرئيسي',
+              annual_balance: totalAnnual,
+              taken_days: takenDays,
+              remaining_days: remaining,
+              last_leave_date: empLeaves[0]?.start_date || '--',
+              status: remaining > 0 ? 'رصيد متاح' : 'استنفذ الرصيد'
+            });
           });
+          summary = { totalEmployees: rows.length };
+
+        } else if (repId === 'advances_and_loans') {
+          const advs = advancesList && advancesList.length > 0 ? advancesList : getAdvances();
+          advs.forEach((adv, idx) => {
+            const emp = employees.find(e => String(e.employee_number || e.id) === String(adv.employee_number));
+            const matchBranch = filterBranch === 'all' || (emp?.branch_name || '') === filterBranch;
+            const matchEmp = filterEmpId === 'all' || String(adv.employee_number) === String(filterEmpId);
+
+            if (matchBranch && matchEmp) {
+              const total = Number(adv.total_amount) || 0;
+              const paid = Number(adv.paid_amount) || 0;
+              const rem = Math.max(0, total - paid);
+              rows.push({
+                index: idx + 1,
+                emp_num: adv.employee_number,
+                emp_name: emp?.full_name || adv.employee_name || 'موظف',
+                branch: emp?.branch_name || 'الفرع الرئيسي',
+                total_amount: total,
+                monthly_installment: adv.monthly_installment || 0,
+                total_installments: adv.total_installments || 1,
+                paid_amount: paid,
+                remaining_amount: rem,
+                start_month: adv.start_month || '2026-08',
+                status: rem <= 0 ? 'مسددة بالكامل' : 'سارية وقيد الاستقطاع'
+              });
+            }
+          });
+          summary = {
+            totalAdvances: rows.reduce((acc, r) => acc + Number(r.total_amount || 0), 0),
+            totalPaid: rows.reduce((acc, r) => acc + Number(r.paid_amount || 0), 0),
+            totalRemaining: rows.reduce((acc, r) => acc + Number(r.remaining_amount || 0), 0)
+          };
+
+        } else if (repId === 'medical_insurance') {
+          targetEmployees.forEach((emp, idx) => {
+            rows.push({
+              index: idx + 1,
+              emp_num: emp.employee_number,
+              emp_name: emp.full_name,
+              branch: emp.branch_name || 'الفرع الرئيسي',
+              national_id: emp.national_id || '--',
+              policy_num: 'POL-GA-2026-88',
+              insurance_class: String(emp.employee_number) === '1001' ? 'VIP Elite' : 'Class A',
+              expiry_date: emp.insurance_expiry || '2027-04-30',
+              status: 'ساري المفعول'
+            });
+          });
+          summary = { totalCount: rows.length, activeCount: rows.length };
+
+        } else {
+          targetEmployees.forEach((emp, idx) => {
+            rows.push({
+              index: idx + 1,
+              emp_num: emp.employee_number,
+              emp_name: emp.full_name,
+              branch: emp.branch_name || 'الفرع الرئيسي',
+              job_title: emp.job_title || 'موظف',
+              date: fromDate,
+              status: 'معتمد'
+            });
+          });
+          summary = { totalCount: rows.length };
+        }
+
+        setGeneratedData({
+          reportDef: activeDef,
+          rows,
+          summary,
+          generatedAt: new Date().toLocaleString('ar-SA'),
+          filterEmp: filterEmpId === 'all' ? 'كافة الموظفين' : targetEmployees[0]?.full_name || filterEmpId,
+          filterBranch: filterBranch === 'all' ? 'كافة الفروع' : filterBranch,
+          fromDate,
+          toDate
         });
-        summary = { totalCount: rows.length };
+
+      } catch (err) {
+        console.error('Report Generation Error:', err);
+      } finally {
+        setIsGenerating(false);
       }
-
-      setGeneratedData({
-        reportDef: targetReportDef,
-        rows,
-        summary,
-        generatedAt: new Date().toLocaleString('ar-SA'),
-        filterEmp: filterEmpId === 'all' ? 'كافة الموظفين' : targetEmployees[0]?.full_name || filterEmpId,
-        filterBranch: filterBranch === 'all' ? 'كافة الفروع' : filterBranch,
-        fromDate,
-        toDate
-      });
-
-      setIsGenerating(false);
-      toast({ title: `✓ تم استخراج: ${targetReportDef?.title || "التقرير"} بنجاح` });
-    }, 400);
+    }, 50);
   };
 
-  // ─── EXPORT TO EXCEL (.xlsx) ENGINE ───────────────────────────────────────
-  function handleExportExcel() {
-    if (!generatedData || !generatedData.rows.length) {
-      toast({ title: 'لا توجد بيانات لتصديرها', variant: 'destructive' });
-      return;
+  // Auto-generate report when selected or filters change
+  useEffect(() => {
+    if (selectedReportId && employees.length > 0) {
+      generateCurrentReport(selectedReportId);
     }
+  }, [selectedReportId, employees, attendanceLogs, fromDate, toDate, filterEmpId, filterBranch]);
 
+  // Export to Excel
+  const handleExportExcel = () => {
+    if (!generatedData || !generatedData.rows.length) return;
     try {
       const ws = XLSX.utils.json_to_sheet(generatedData.rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'تقرير_رسمي');
-      
-      const fileName = `${generatedData.reportDef.title.replace(/\s+/g, '_')}_${fromDate}_${toDate}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-      toast({ title: `✓ تم تنزيل ملف الإكسيل: ${fileName}` });
+      XLSX.utils.book_append_sheet(wb, ws, 'التقرير');
+      XLSX.writeFile(wb, generatedData.reportDef.title + '_' + generatedData.fromDate + '.xlsx');
+      toast({ title: '✓ تم تصدير ملف الإكسل بنجاح' });
     } catch (e) {
-      console.error('Error exporting excel:', e);
-      toast({ title: 'حدث خطأ أثناء تنزيل الإكسيل', description: e.message, variant: 'destructive' });
+      toast({ title: 'خطأ في التصدير', description: e.message, variant: 'destructive' });
     }
   };
 
-  // Print Report A4
-  function handlePrint() {
+  // Print
+  const handlePrint = () => {
     window.print();
   };
 
   return (
-    <div className="space-y-6" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
+    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto min-h-screen" dir="rtl">
       
-      {/* ═══════════════════════════════════════════════════════════════════════
-          VIEW 1: REPORT CATALOG / DIRECTORY (دليل وفهرس التقارير)
-          ═══════════════════════════════════════════════════════════════════════ */}
+      {/* ─── 1. REPORT CATALOG OVERVIEW (WHEN NO REPORT SELECTED) ─── */}
       {!selectedReportId && (
-        <div className="space-y-6 no-print print:hidden">
+        <div className="space-y-6">
           
-          {/* Top Title & Search */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/20 font-bold shrink-0">
+          {/* Header Banner */}
+          <div className="bg-card p-6 rounded-3xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
                 <FileSpreadsheet className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-heading font-black text-foreground">
+                <h1 className="font-heading font-black text-xl text-foreground">
                   مركز التقارير والتحليلات المؤسسية
                 </h1>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  استخراج وطباعة وتصدير كافة تقارير الحضور، الرواتب، الإجازات، والبيانات الإدارية
+                  استخراج وطباعة وتصدير كافة تقارير الحضور، الرواتب، الإجازات، والبيانات الإدارية.
                 </p>
               </div>
             </div>
 
             {/* Quick Search */}
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-600" />
+            <div className="relative w-full md:w-72">
+              <Search className="w-4 h-4 absolute right-3 top-3 text-muted-foreground" />
               <Input
+                placeholder="ابحث في أسماء التقارير..."
                 value={catalogSearch}
                 onChange={(e) => setCatalogSearch(e.target.value)}
-                placeholder="ابحث في أسماء التقارير..."
-                className="ps-10 rounded-2xl text-xs h-10 bg-slate-50 dark:bg-slate-800/60 border-0"
+                className="pr-9 rounded-xl text-xs font-bold h-10"
               />
             </div>
           </div>
 
-          {/* Category Tabs (Matching Ektefa System Top Tabs) */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+          {/* Category Filter Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
             {[
               { id: 'all', label: 'عرض الكل', count: REPORT_DEFINITIONS.length },
-              { id: 'hr', label: 'الموارد البشرية', count: REPORT_DEFINITIONS.filter(r => r.category === 'hr').length },
               { id: 'attendance', label: 'تقرير الحضور', count: REPORT_DEFINITIONS.filter(r => r.category === 'attendance').length },
               { id: 'payroll', label: 'رواتب الموظفين', count: REPORT_DEFINITIONS.filter(r => r.category === 'payroll').length },
+              { id: 'hr', label: 'الموارد البشرية', count: REPORT_DEFINITIONS.filter(r => r.category === 'hr').length },
               { id: 'admin', label: 'الإدارة والعهد', count: REPORT_DEFINITIONS.filter(r => r.category === 'admin').length },
-            ].map(tab => (
+            ].map(cat => (
               <button
-                key={tab.id}
-                type="button"
-                onClick={() => setCatalogCategory(tab.id)}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold shrink-0 flex items-center gap-2 transition-all ${
-                  catalogCategory === tab.id
-                    ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20 scale-[1.02]'
-                    : 'bg-white dark:bg-slate-900 text-muted-foreground border hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
+                key={cat.id}
+                onClick={() => setCatalogCategory(cat.id)}
+                className={'px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ' + (
+                  catalogCategory === cat.id
+                    ? 'bg-rose-600 text-white shadow-md'
+                    : 'bg-card border text-muted-foreground hover:bg-muted'
+                )}
               >
-                <span>{tab.label}</span>
-                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
-                  catalogCategory === tab.id ? 'bg-white text-sky-800' : 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
-                }`}>
-                  {tab.count}
+                <span>{cat.label}</span>
+                <span className={'text-[10px] px-1.5 py-0.5 rounded-full font-mono ' + (
+                  catalogCategory === cat.id ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'
+                )}>
+                  {cat.count}
                 </span>
               </button>
             ))}
           </div>
 
-          {/* Reports Grid (Cards Matching Ektefa Layout) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCatalog.map(rep => {
-              const Icon = rep.icon;
+              const IconComponent = rep.icon;
               const isStarred = starredReports.includes(rep.id);
 
               return (
                 <Card
                   key={rep.id}
-                  onClick={() => handleSelectReport(rep.id)}
-                  className="p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm hover:shadow-md hover:border-sky-300 transition-all cursor-pointer group flex flex-col justify-between h-44 relative overflow-hidden"
+                  onClick={() => {
+                    setSelectedReportId(rep.id);
+                    setSearchParams({ report: rep.id });
+                  }}
+                  className="p-5 rounded-3xl border hover:border-rose-500 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between space-y-4"
                 >
                   <div className="space-y-3">
-                    
-                    {/* Top Row: Icon + Category Badge + Star */}
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950 text-sky-600 flex items-center justify-center font-bold shadow-sm group-hover:scale-110 transition-transform">
-                        <Icon className="w-5 h-5" />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => handleToggleStar(rep.id, e)}
-                        className="text-amber-400 hover:scale-110 transition-transform"
+                    <div className="flex items-start justify-between">
+                      <div
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-sm"
+                        style={{ backgroundColor: rep.color }}
                       >
-                        <Star className={`w-4 h-4 ${isStarred ? 'fill-amber-400' : 'text-slate-300'}`} />
+                        <IconComponent className="w-5 h-5" />
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStarredReports(prev => {
+                            const next = prev.includes(rep.id) ? prev.filter(x => x !== rep.id) : [...prev, rep.id];
+                            try { localStorage.setItem('ga_starred_reports', JSON.stringify(next)); } catch (err) {}
+                            return next;
+                          });
+                        }}
+                        className="p-1 text-slate-300 hover:text-amber-500 transition-colors"
+                      >
+                        <Star className={'w-4 h-4 ' + (isStarred ? 'fill-amber-400 text-amber-400' : '')} />
                       </button>
                     </div>
 
-                    {/* Title */}
                     <div>
-                      <h3 className="font-heading font-black text-sm text-foreground group-hover:text-sky-600 transition-colors leading-snug">
+                      <h3 className="font-heading font-black text-sm text-foreground group-hover:text-rose-600 transition-colors">
                         {rep.title}
                       </h3>
-                      <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
                         {rep.description}
                       </p>
                     </div>
                   </div>
 
-                  {/* Bottom Footer Tag */}
-                  <div className="flex items-center justify-between pt-2 border-t text-[10px] text-muted-foreground font-bold">
-                    <span>{rep.categoryLabel}</span>
-                    <span className="text-sky-600 flex items-center gap-0.5 group-hover:translate-x-[-2px] transition-transform">
-                      استعراض <ChevronLeft className="w-3 h-3" />
+                  <div className="pt-3 border-t flex items-center justify-between text-xs">
+                    <span className="text-[11px] font-bold text-muted-foreground">{rep.categoryLabel}</span>
+                    <span className="font-bold text-rose-600 flex items-center gap-1 group-hover:translate-x-[-3px] transition-transform">
+                      <span>استعراض</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
                 </Card>
@@ -756,381 +608,336 @@ export default function Reports() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════════
-          VIEW 2: REPORT FILTER & RESULTS GENERATION (شاشة الفلترة والاستعراض)
-          ═══════════════════════════════════════════════════════════════════════ */}
+      {/* ─── 2. ACTIVE REPORT VIEWER (WHEN A REPORT IS SELECTED) ─── */}
       {selectedReportId && currentReportDef && (
         <div className="space-y-6">
-          
-          {/* Top Title Bar with Back Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border shadow-sm">
+
+          {/* Top Bar: Back button & Title */}
+          <div className="bg-card p-5 rounded-3xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleSelectReport(null)}
-                className="rounded-2xl text-xs font-bold gap-1.5 h-9 border-slate-200"
+                onClick={() => {
+                  setSelectedReportId(null);
+                  setSearchParams({});
+                }}
+                className="rounded-2xl gap-1.5 font-bold text-xs h-10 px-4"
               >
                 <ArrowRight className="w-4 h-4" />
-                <span>العودة لدليل التقارير</span>
+                <span>العودة للمركز</span>
               </Button>
 
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl font-heading font-black text-foreground">
-                    {currentReportDef.title}
-                  </h1>
-                  <Badge className="bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 text-xs font-bold">
+                <h2 className="font-heading font-black text-lg text-foreground flex items-center gap-2">
+                  <span>{currentReportDef.title}</span>
+                  <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[10px]">
                     {currentReportDef.categoryLabel}
                   </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {currentReportDef.description}
-                </p>
+                </h2>
+                <p className="text-xs text-muted-foreground">{currentReportDef.description}</p>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleExportExcel}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold gap-1.5 h-9 px-4 shadow-sm"
+              >
+                <Download className="w-4 h-4" />
+                <span>إكسل</span>
+              </Button>
+
+              <Button
+                onClick={handlePrint}
+                className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold gap-1.5 h-9 px-4 shadow-sm"
+              >
+                <Printer className="w-4 h-4" />
+                <span>طباعة A4</span>
+              </Button>
             </div>
           </div>
 
-          {/* ─── FILTERS CARD (فلاتر التقارير المطابقة لصورة المستخدم) ──────── */}
-          <Card className="p-5 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 font-heading font-black text-sm text-foreground border-b pb-3">
-              <Filter className="w-4 h-4 text-sky-600" />
-              <span>فلاتر ومعايير استخراج التقرير:</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          {/* Filter Toolbar */}
+          <Card className="p-5 rounded-3xl border shadow-sm space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               
-              {/* 1. Branch Selector (FIRST) */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span>1. الفرع أو القسم:</span>
-                </label>
-                <Select value={filterBranch} onValueChange={handleBranchChange}>
-                  <SelectTrigger className="rounded-2xl text-xs h-10 font-bold bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                    <SelectValue placeholder="كافة الفروع والأقسام" />
+              {/* Branch Filter */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">الفرع المعتمد:</label>
+                <Select value={filterBranch} onValueChange={setFilterBranch}>
+                  <SelectTrigger className="rounded-xl text-xs font-bold h-9">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">🏢 كافة الفروع والأقسام ({employees.length} موظف)</SelectItem>
-                    {branches.map(b => {
-                      const count = employees.filter(e => (e.branch_name || e.branch || '') === b).length;
-                      return (
-                        <SelectItem key={b} value={b}>
-                          📍 {b} ({count} موظف)
-                        </SelectItem>
-                      );
-                    })}
+                    <SelectItem value="all">كافة الفروع</SelectItem>
+                    {branches.map(b => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* 2. Cascading Employee Selector (SECOND - Filtered by chosen branch) */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" />
-                  <span>2. الموظف المستهدف:</span>
-                </label>
+              {/* Employee Filter */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">الموظف:</label>
                 <Select value={filterEmpId} onValueChange={setFilterEmpId}>
-                  <SelectTrigger className="rounded-2xl text-xs h-10 font-bold bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                    <SelectValue placeholder="اختر الموظف..." />
+                  <SelectTrigger className="rounded-xl text-xs font-bold h-9">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">👥 كافة موظفي الفرع المختار ({branchFilteredEmployees.length} موظف)</SelectItem>
-                    {branchFilteredEmployees.map(e => (
+                    <SelectItem value="all">كافة الموظفين</SelectItem>
+                    {employees.map(e => (
                       <SelectItem key={e.id} value={String(e.employee_number || e.id)}>
-                        #{e.employee_number} - {e.full_name} ({e.national_id || '--'})
+                        {e.full_name} (#{e.employee_number})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* 3. From Date */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-muted-foreground">من تاريخ:</label>
+              {/* From Date */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">من تاريخ:</label>
                 <Input
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="rounded-2xl text-xs h-10 font-mono font-bold bg-slate-50 dark:bg-slate-800/60 border-0"
+                  className="rounded-xl text-xs font-bold h-9"
                 />
               </div>
 
-              {/* 4. To Date */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-muted-foreground">إلى تاريخ:</label>
+              {/* To Date */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-muted-foreground">إلى تاريخ:</label>
                 <Input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="rounded-2xl text-xs h-10 font-mono font-bold bg-slate-50 dark:bg-slate-800/60 border-0"
+                  className="rounded-xl text-xs font-bold h-9"
                 />
               </div>
 
             </div>
-
-            {/* Action Button: استعراض */}
-            <div className="pt-2 flex justify-end">
-              <Button
-                onClick={handleGenerateReport}
-                disabled={isGenerating}
-                className="bg-sky-600 hover:bg-sky-500 text-white rounded-2xl text-xs font-black gap-2 h-10 px-8 shadow-md shadow-sky-500/20"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>جارٍ معالجة واستخراج البيانات...</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4" />
-                    <span>استعراض نتائج التقرير</span>
-                  </>
-                )}
-              </Button>
-            </div>
           </Card>
 
-          {/* ─── GENERATED REPORT RESULTS TABLE ────────────────────────────── */}
+          {/* Results Table */}
           {generatedData && (
-            <div className="space-y-4">
-
-              {/* ─── OFFICIAL ENTERPRISE A4 PRINT HEADER (VISIBLE ONLY IN PRINT) ─── */}
-              <div className="hidden print:block mb-6 border-b-2 border-slate-900 pb-4 text-black" dir="rtl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img src="/green-arrow-logo.png" alt="logo" className="w-12 h-12 object-contain" />
-                    <div>
-                      <h1 className="text-xl font-bold font-heading text-black">Green Arrow HR</h1>
-                      <p className="text-[11px] text-slate-700 font-bold">منظومة الموارد البشرية والرواتب المتكاملة</p>
-                    </div>
-                  </div>
-                  <div className="text-left text-[10px] text-slate-700 font-mono space-y-0.5">
-                    <div>المملكة العربية السعودية</div>
-                    <div>تاريخ الطباعة: {new Date().toLocaleDateString('ar-SA')} {new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</div>
-                    <div>رقم الوثيقة: GA-REP-{Date.now().toString().slice(-6)}</div>
-                  </div>
-                </div>
-
-                <div className="my-3 text-center bg-slate-100 py-2 border border-slate-300 rounded">
-                  <h2 className="text-base font-black text-black font-heading">
-                    {generatedData.reportDef.title}
-                  </h2>
-                  <p className="text-[11px] text-slate-700 mt-0.5">
-                    الفترة من: <span className="font-mono font-bold text-black">{generatedData.fromDate}</span> إلى: <span className="font-mono font-bold text-black">{generatedData.toDate}</span> • الفرع: <span className="font-bold text-black">{generatedData.filterBranch === 'all' ? 'كافة الفروع' : generatedData.filterBranch}</span>
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-mono border border-slate-300 p-2 bg-slate-50">
-                  <div><strong>إجمالي السجلات:</strong> {generatedData.rows.length}</div>
-                  <div><strong>عدد الموظفين:</strong> {generatedData.summary.employeesCount || generatedData.summary.totalEmployees || 1}</div>
-                  <div><strong>إجمالي الساعات:</strong> {generatedData.summary.totalHours || '—'} س</div>
-                  <div><strong>المستخرج:</strong> {user?.full_name || 'مسؤول النظام'}</div>
-                </div>
+            <Card className="p-5 rounded-3xl border shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b pb-3 text-xs">
+                <span className="font-bold text-muted-foreground">
+                  إجمالي السجلات المستخرجة: <strong className="font-mono text-foreground text-sm">{generatedData.rows.length}</strong>
+                </span>
+                <span className="text-[11px] text-muted-foreground font-mono">
+                  تاريخ التوليد: {generatedData.generatedAt}
+                </span>
               </div>
 
-              
-              {/* Results Top Header & Export Buttons (Matching Ektefa Luxury Style) */}
-              <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border shadow-sm space-y-4 no-print print:hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
-                      <FileSpreadsheet className="w-5 h-5" />
-                    </div>
-                    <h3 className="font-heading font-black text-base text-foreground">
-                      استعراض الطباعة
-                    </h3>
-                  </div>
+              <div className="overflow-x-auto max-h-[600px]">
+                <Table className="text-right text-xs">
+                  <TableHeader className="sticky top-0 bg-card z-10">
+                    <TableRow>
+                      <TableHead className="w-10">#</TableHead>
+                      <TableHead>الموظف</TableHead>
+                      <TableHead>الفرع</TableHead>
 
-                  {/* Print & Excel Buttons */}
-                  <div className="flex items-center gap-2">
-                    {/* Download Excel */}
-                    <Button
-                      onClick={handleExportExcel}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold gap-1.5 h-9 px-4 shadow-sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>التصدير إلى إكسل</span>
-                    </Button>
-
-                    {/* Print */}
-                    <Button
-                      onClick={handlePrint}
-                      className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold gap-1.5 h-9 px-4 shadow-sm"
-                    >
-                      <Printer className="w-4 h-4" />
-                      <span>طباعة</span>
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Ektefa Meta Box (الفرع، الإدارة، تاريخ التقرير) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-muted-foreground">تقرير عن:</span>
-                    <span className="font-mono font-bold text-foreground" dir="ltr">{generatedData.fromDate} -- {generatedData.toDate}</span>
-                  </div>
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="font-bold text-muted-foreground">الفرع:</span>
-                    <span className="font-bold text-foreground truncate">{generatedData.filterBranch === 'all' ? 'مكتب الإدارة، الفرع الرئيسي، فرع كيا ( السليم )، فرع هونداي ( الرواف )' : generatedData.filterBranch}</span>
-                  </div>
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="font-bold text-muted-foreground">الإدارة:</span>
-                    <span className="font-bold text-foreground truncate">درة السيارة لقطع الغيار</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Data Table */}
-              <Card className="rounded-3xl border shadow-sm overflow-hidden bg-white dark:bg-slate-900">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs print-table print:text-[10px]" style={{ direction: 'rtl' }}>
-                    <thead>
-                      <tr className="bg-sky-600 text-white font-heading font-black border-b border-sky-700">
-                        {(selectedReportId === 'daily_biometrics' || selectedReportId === 'branch_biometrics_advanced') && (
-                          <>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-12">#</th>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-24">الرقم الوظيفي</th>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right font-bold min-w-[160px]">اسم الموظف</th>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-28">التاريخ</th>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-20">يوم</th>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right font-bold min-w-[150px]">الفترة</th>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold min-w-[170px]">وقت الفترة</th>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold min-w-[220px]">الطابع الزمني</th>
-                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-24">الحالة</th>
-                          </>
-                        )}
-                      </tr>
-                    </thead>
-
-                    <tbody className="divide-y divide-border/60">
-                      {generatedData.rows.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="py-12 text-center text-muted-foreground font-bold">
-                            لا توجد بيانات مطابقة لمعايير الفلترة المحددة
-                          </td>
-                        </tr>
-                      ) : (
-                        generatedData.rows.map((row, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors font-mono">
-                            
-                            {selectedReportId === 'daily_biometrics' && (
-                              <>
-                                <td className="py-3 px-3 font-bold text-foreground">
-                                  {row.date} ({row.day_name})
-                                </td>
-                                <td className="py-3 px-3 font-sans font-bold">
-                                  {row.emp_name} <span className="text-muted-foreground text-[10px]">({row.branch})</span>
-                                </td>
-                                <td className="py-3 px-3 font-sans text-muted-foreground">{row.shift}</td>
-                                <td className="py-3 px-3 text-emerald-600 font-bold">{row.check_in}</td>
-                                <td className="py-3 px-3 text-rose-600 font-bold">{row.check_out}</td>
-                                <td className="py-3 px-3 font-black text-foreground">{row.actual_hours} س</td>
-                                <td className="py-3 px-3 text-rose-600 font-bold">{row.late_minutes > 0 ? `${row.late_minutes} د` : '0'}</td>
-                                <td className="py-3 px-3">
-                                  <Badge className={`text-[10px] font-sans ${
-                                    row.status === 'حاضر' ? 'bg-emerald-100 text-emerald-800' : row.status === 'متأخر' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
-                                  }`}>
-                                    {row.status}
-                                  </Badge>
-                                </td>
-                              </>
-                            )}
-
-                            {selectedReportId === 'payroll_details' && (
-                              <>
-                                <td className="py-3 px-3 font-sans font-bold">
-                                  {row.emp_name} <span className="text-muted-foreground font-mono">(#{row.emp_num})</span>
-                                </td>
-                                <td className="py-3 px-3 font-sans text-muted-foreground">{row.branch}</td>
-                                <td className="py-3 px-3">{Number(row.basic_salary).toLocaleString()} ر.س</td>
-                                <td className="py-3 px-3">{Number((row.housing_allowance || 0) + (row.transport_allowance || 0)).toLocaleString()} ر.س</td>
-                                <td className="py-3 px-3 text-emerald-600 font-bold">+{Number(row.extra_hours_bonus || 0).toLocaleString()} ر.س</td>
-                                <td className="py-3 px-3 text-rose-600 font-bold">-{Number(row.total_deductions || 0).toLocaleString()} ر.س</td>
-                                <td className="py-3 px-3 text-purple-600 font-bold">{Number(row.advance_deduction || 0).toLocaleString()} ر.س</td>
-                                <td className="py-3 px-3 font-black text-sky-700 text-sm">{Number(row.net_salary).toLocaleString()} ر.س</td>
-                              </>
-                            )}
-
-                            {selectedReportId === 'employee_master_data' && (
-                              <>
-                                <td className="py-3 px-3 font-bold">#{row.emp_num}</td>
-                                <td className="py-3 px-3 font-sans font-bold text-foreground">{row.name_ar}</td>
-                                <td className="py-3 px-3 text-muted-foreground">{row.name_en}</td>
-                                <td className="py-3 px-3">{row.national_id}</td>
-                                <td className="py-3 px-3 font-sans">{row.branch} - {row.job_title}</td>
-                                <td className="py-3 px-3">{row.join_date}</td>
-                                <td className="py-3 px-3 font-black">{Number(row.basic_salary).toLocaleString()} ر.س</td>
-                              </>
-                            )}
-
-                            {selectedReportId === 'advances_and_loans' && (
-                              <>
-                                <td className="py-3 px-3 font-sans font-bold">{row.emp_name} (#{row.emp_num})</td>
-                                <td className="py-3 px-3 font-bold">{Number(row.total_amount).toLocaleString()} ر.س</td>
-                                <td className="py-3 px-3 text-purple-700">{Number(row.monthly_installment).toLocaleString()} ر.س ({row.total_installments} ش)</td>
-                                <td className="py-3 px-3 text-emerald-600">{Number(row.paid_amount).toLocaleString()} ر.س</td>
-                                <td className="py-3 px-3 text-rose-600 font-bold">{Number(row.remaining_amount).toLocaleString()} ر.س</td>
-                                <td className="py-3 px-3">{row.start_month}</td>
-                                <td className="py-3 px-3"><Badge className="text-[10px] font-sans">{row.status}</Badge></td>
-                              </>
-                            )}
-
-                            {selectedReportId === 'medical_insurance' && (
-                              <>
-                                <td className="py-3 px-3 font-sans font-bold">{row.emp_name} (#{row.emp_num})</td>
-                                <td className="py-3 px-3 font-sans">{row.branch}</td>
-                                <td className="py-3 px-3">{row.policy_num}</td>
-                                <td className="py-3 px-3 font-bold text-pink-700">{row.insurance_class}</td>
-                                <td className="py-3 px-3">{row.expiry_date}</td>
-                                <td className="py-3 px-3"><Badge className="text-[10px] font-sans">{row.status}</Badge></td>
-                              </>
-                            )}
-
-                            {!['daily_biometrics', 'payroll_details', 'employee_master_data', 'advances_and_loans', 'medical_insurance'].includes(selectedReportId) && (
-                              <>
-                                <td className="py-3 px-3 font-sans font-bold">{row.emp_name} (#{row.emp_num})</td>
-                                <td className="py-3 px-3 font-sans">{row.branch}</td>
-                                <td className="py-3 px-3 font-sans">{row.job_title}</td>
-                                <td className="py-3 px-3">{row.date}</td>
-                                <td className="py-3 px-3"><Badge className="text-[10px] font-sans">{row.status}</Badge></td>
-                              </>
-                            )}
-
-                          </tr>
-                        ))
+                      {/* Dynamic Columns based on Report Type */}
+                      {(selectedReportId === 'daily_biometrics' || selectedReportId === 'branch_biometrics_advanced') && (
+                        <>
+                          <TableHead>التاريخ</TableHead>
+                          <TableHead>اليوم</TableHead>
+                          <TableHead>الدخول</TableHead>
+                          <TableHead>الخروج</TableHead>
+                          <TableHead className="text-center">ساعات العمل</TableHead>
+                          <TableHead className="text-center">الحالة</TableHead>
+                        </>
                       )}
-                    </tbody>
-                  </table>
-                </div>
 
-                {/* ─── OFFICIAL ENTERPRISE A4 PRINT FOOTER (VISIBLE ONLY IN PRINT) ─── */}
-                <div className="hidden print:block mt-8 pt-4 border-t-2 border-slate-900 text-black text-xs" dir="rtl">
-                  <div className="grid grid-cols-3 gap-6 text-center">
-                    <div className="space-y-8">
-                      <div className="font-bold">إعداد ومطابقة (الموارد البشرية)</div>
-                      <div className="border-b border-dashed border-slate-500 w-32 mx-auto"></div>
-                      <div className="text-[10px] text-slate-600">التوقيع: ............................</div>
-                    </div>
-                    <div className="space-y-8">
-                      <div className="font-bold">مراجعة وتدقيق (الإدارة المالية)</div>
-                      <div className="border-b border-dashed border-slate-500 w-32 mx-auto"></div>
-                      <div className="text-[10px] text-slate-600">التوقيع: ............................</div>
-                    </div>
-                    <div className="space-y-8">
-                      <div className="font-bold">اعتماد ومصادقة (المدير العام)</div>
-                      <div className="border-b border-dashed border-slate-500 w-32 mx-auto"></div>
-                      <div className="text-[10px] text-slate-600">الختم والتوقيع: ............................</div>
-                    </div>
-                  </div>
-                  <div className="mt-6 text-center text-[9px] text-slate-500 font-mono">
-                    تم استخراج هذا التقرير آلياً عبر نظام Green Arrow HR - وثيقة رسمية معتمدة
-                  </div>
-                </div>
+                      {selectedReportId === 'payroll_details' && (
+                        <>
+                          <TableHead>الأساسي</TableHead>
+                          <TableHead>البدلات</TableHead>
+                          <TableHead className="text-emerald-600">المكافآت</TableHead>
+                          <TableHead className="text-rose-600">الاستقطاعات</TableHead>
+                          <TableHead className="text-purple-600">قسط السلفة</TableHead>
+                          <TableHead className="font-bold text-sky-600">صافي الراتب</TableHead>
+                        </>
+                      )}
 
-              </Card>
+                      {selectedReportId === 'employee_master_data' && (
+                        <>
+                          <TableHead>رقم الهوية / الإقامة</TableHead>
+                          <TableHead>الجنسية</TableHead>
+                          <TableHead>المسمى الوظيفي</TableHead>
+                          <TableHead>تاريخ المباشرة</TableHead>
+                          <TableHead>الراتب الأساسي</TableHead>
+                          <TableHead>الحالة</TableHead>
+                        </>
+                      )}
 
-            </div>
+                      {selectedReportId === 'leave_report' && (
+                        <>
+                          <TableHead className="text-center">الرصيد السنوي</TableHead>
+                          <TableHead className="text-center text-rose-600">المستهلك</TableHead>
+                          <TableHead className="text-center text-emerald-600 font-bold">المتبقي</TableHead>
+                          <TableHead>آخر إجازة</TableHead>
+                          <TableHead className="text-center">الحالة</TableHead>
+                        </>
+                      )}
+
+                      {selectedReportId === 'advances_and_loans' && (
+                        <>
+                          <TableHead>إجمالي السلفة</TableHead>
+                          <TableHead>القسط الشهري</TableHead>
+                          <TableHead className="text-emerald-600">المسدد</TableHead>
+                          <TableHead className="text-rose-600 font-bold">المتبقي</TableHead>
+                          <TableHead>تاريخ البدء</TableHead>
+                          <TableHead className="text-center">حالة السداد</TableHead>
+                        </>
+                      )}
+
+                      {selectedReportId === 'medical_insurance' && (
+                        <>
+                          <TableHead>رقم الوثيقة</TableHead>
+                          <TableHead>فئة التأمين</TableHead>
+                          <TableHead>تاريخ الانتهاء</TableHead>
+                          <TableHead className="text-center">الحالة</TableHead>
+                        </>
+                      )}
+
+                      {!['daily_biometrics', 'branch_biometrics_advanced', 'payroll_details', 'employee_master_data', 'leave_report', 'advances_and_loans', 'medical_insurance'].includes(selectedReportId) && (
+                        <>
+                          <TableHead>المسمى الوظيفي</TableHead>
+                          <TableHead>التاريخ</TableHead>
+                          <TableHead className="text-center">الحالة</TableHead>
+                        </>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {generatedData.rows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="py-12 text-center text-muted-foreground font-bold">
+                          لا توجد بيانات مطابقة لمعايير الفلترة المحددة
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      generatedData.rows.map((row, idx) => (
+                        <TableRow key={idx} className="hover:bg-muted/40 font-medium">
+                          <TableCell className="font-mono text-muted-foreground">{row.index}</TableCell>
+                          <TableCell className="font-bold">
+                            <div>{row.emp_name || row.name_ar}</div>
+                            <div className="text-[10px] text-muted-foreground font-mono">#{row.emp_num}</div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{row.branch}</TableCell>
+
+                          {/* Dynamic Row Cells */}
+                          {(selectedReportId === 'daily_biometrics' || selectedReportId === 'branch_biometrics_advanced') && (
+                            <>
+                              <TableCell className="font-mono">{row.date}</TableCell>
+                              <TableCell>{row.day_name}</TableCell>
+                              <TableCell className="font-mono text-emerald-600 font-bold">{row.check_in}</TableCell>
+                              <TableCell className="font-mono text-rose-600 font-bold">{row.check_out}</TableCell>
+                              <TableCell className="font-mono text-center font-bold">{row.actual_hours} س</TableCell>
+                              <TableCell className="text-center">
+                                <Badge className={'text-[10px] ' + (
+                                  row.status === 'حاضر' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+                                )}>
+                                  {row.status}
+                                </Badge>
+                              </TableCell>
+                            </>
+                          )}
+
+                          {selectedReportId === 'payroll_details' && (
+                            <>
+                              <TableCell className="font-mono">{Number(row.basic_salary).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono">{Number((row.housing_allowance || 0) + (row.transport_allowance || 0)).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono text-emerald-600 font-bold">+{Number(row.extra_hours_bonus || 0).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono text-rose-600 font-bold">-{Number(row.total_deductions || 0).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono text-purple-600 font-bold">{Number(row.advance_deduction || 0).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono font-bold text-sky-600 text-sm">{Number(row.net_salary).toLocaleString()} ر.س</TableCell>
+                            </>
+                          )}
+
+                          {selectedReportId === 'employee_master_data' && (
+                            <>
+                              <TableCell className="font-mono">{row.national_id}</TableCell>
+                              <TableCell>{row.nationality}</TableCell>
+                              <TableCell>{row.job_title}</TableCell>
+                              <TableCell className="font-mono">{row.join_date}</TableCell>
+                              <TableCell className="font-mono font-bold">{Number(row.basic_salary).toLocaleString()} ر.س</TableCell>
+                              <TableCell>
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
+                                  {row.status}
+                                </Badge>
+                              </TableCell>
+                            </>
+                          )}
+
+                          {selectedReportId === 'leave_report' && (
+                            <>
+                              <TableCell className="font-mono text-center">{row.annual_balance} يوم</TableCell>
+                              <TableCell className="font-mono text-center text-rose-600 font-bold">{row.taken_days} يوم</TableCell>
+                              <TableCell className="font-mono text-center text-emerald-600 font-bold">{row.remaining_days} يوم</TableCell>
+                              <TableCell className="font-mono">{row.last_leave_date}</TableCell>
+                              <TableCell className="text-center">
+                                <Badge className={'text-[10px] ' + (
+                                  row.remaining_days > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+                                )}>
+                                  {row.status}
+                                </Badge>
+                              </TableCell>
+                            </>
+                          )}
+
+                          {selectedReportId === 'advances_and_loans' && (
+                            <>
+                              <TableCell className="font-mono font-bold">{Number(row.total_amount).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono text-purple-700">{Number(row.monthly_installment).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono text-emerald-600 font-bold">{Number(row.paid_amount).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono text-rose-600 font-bold">{Number(row.remaining_amount).toLocaleString()} ر.س</TableCell>
+                              <TableCell className="font-mono">{row.start_month}</TableCell>
+                              <TableCell className="text-center">
+                                <Badge className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                  {row.status}
+                                </Badge>
+                              </TableCell>
+                            </>
+                          )}
+
+                          {selectedReportId === 'medical_insurance' && (
+                            <>
+                              <TableCell className="font-mono">{row.policy_num}</TableCell>
+                              <TableCell className="font-bold text-pink-600">{row.insurance_class}</TableCell>
+                              <TableCell className="font-mono">{row.expiry_date}</TableCell>
+                              <TableCell className="text-center">
+                                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
+                                  {row.status}
+                                </Badge>
+                              </TableCell>
+                            </>
+                          )}
+
+                          {!['daily_biometrics', 'branch_biometrics_advanced', 'payroll_details', 'employee_master_data', 'leave_report', 'advances_and_loans', 'medical_insurance'].includes(selectedReportId) && (
+                            <>
+                              <TableCell>{row.job_title}</TableCell>
+                              <TableCell className="font-mono">{row.date}</TableCell>
+                              <TableCell className="text-center">
+                                <Badge className="bg-slate-100 text-slate-700 text-[10px]">{row.status}</Badge>
+                              </TableCell>
+                            </>
+                          )}
+
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
           )}
 
         </div>
