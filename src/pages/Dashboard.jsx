@@ -896,29 +896,51 @@ export default function Dashboard() {
                   ))}
                 </div>
               </div>
-              <div className="space-y-2 pt-1">
+              {/* Weekday Column Headers */}
+              <div className="flex items-center gap-2 text-xs pt-1">
+                <span className="w-14 text-muted-foreground font-bold text-[10px] shrink-0 text-center">الأسبوع</span>
+                <div className="flex-1 grid grid-cols-7 gap-1.5 text-center">
+                  <div className="font-bold text-[11px] text-slate-700 dark:text-slate-300 py-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg">السبت</div>
+                  <div className="font-bold text-[11px] text-slate-700 dark:text-slate-300 py-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg">الأحد</div>
+                  <div className="font-bold text-[11px] text-slate-700 dark:text-slate-300 py-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg">الإثنين</div>
+                  <div className="font-bold text-[11px] text-slate-700 dark:text-slate-300 py-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg">الثلاثاء</div>
+                  <div className="font-bold text-[11px] text-slate-700 dark:text-slate-300 py-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg">الأربعاء</div>
+                  <div className="font-bold text-[11px] text-slate-700 dark:text-slate-300 py-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg">الخميس</div>
+                  <div className="font-bold text-[11px] text-indigo-700 dark:text-indigo-300 py-1 bg-indigo-50 dark:bg-indigo-950/60 rounded-lg">الجمعة ★</div>
+                </div>
+              </div>
+
+              {/* Weekly Matrix Rows */}
+              <div className="space-y-2">
                 {weeklyAttendanceMatrix.map((wk, wi) => (
                   <div key={wi} className="flex items-center gap-2 text-xs">
                     <span className="w-14 text-muted-foreground font-mono text-[11px] font-bold shrink-0">{wk.label}</span>
                     <div className="flex-1 grid grid-cols-7 gap-1.5">
                       {wk.days.map((d, di) => {
                         const isSelected = selectedMatrixDay?.dayNum === d.dayNum;
+                        if (!d.inMonth) {
+                          return (
+                            <div
+                              key={di}
+                              className="h-8 rounded-xl bg-slate-50/40 dark:bg-slate-900/20 border border-dashed border-slate-200/50 dark:border-slate-800/40 opacity-20 cursor-default"
+                            />
+                          );
+                        }
+
                         return (
                           <button
                             key={di}
                             type="button"
-                            disabled={!d.inMonth}
-                            onClick={() => d.inMonth && setSelectedMatrixDay(d)}
-                            title={d.inMonth ? `${d.dateStr}: ${d.presentCount}/${d.totalEmps} حاضر (${d.presentPct}%)` : ''}
-                            className={`h-7 rounded-xl transition-all flex items-center justify-center text-[10px] font-mono font-black relative group shadow-sm ${
-                              !d.inMonth
-                                ? 'bg-slate-50 dark:bg-slate-800/30 text-transparent opacity-30 cursor-default'
-                                : isSelected
-                                ? `${d.colorClass} ring-2 ring-sky-400 scale-110 shadow-lg z-10 font-extrabold`
+                            onClick={() => setSelectedMatrixDay(d)}
+                            title={`${d.dateStr} (${d.dayNum} أغسطس): ${d.presentCount}/${d.totalEmps} حاضر (${d.presentPct}%)`}
+                            className={`h-8 rounded-xl transition-all flex flex-col items-center justify-center text-[10px] font-mono font-black relative group shadow-sm ${
+                              isSelected
+                                ? `${d.colorClass} ring-2 ring-sky-400 scale-105 shadow-lg z-10 font-extrabold`
                                 : d.colorClass
                             }`}
                           >
-                            {d.inMonth ? (d.isFuture ? '—' : d.isFriday ? '★' : `${d.presentPct}%`) : '—'}
+                            <span className="text-[9px] opacity-75 leading-none">{d.dayNum}</span>
+                            <span className="leading-none mt-0.5">{d.isFuture ? '—' : d.isFriday ? '★' : `${d.presentPct}%`}</span>
                           </button>
                         );
                       })}
