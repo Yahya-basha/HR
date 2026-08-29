@@ -214,12 +214,26 @@ export default function Announcements() {
     return notifications.filter(n => !n.is_read).length;
   }, [notifications]);
 
-  // Filtered Messages List
+    // Filtered Messages List with recipient targeting
   const filteredMessages = useMemo(() => {
+    const userEmpNum = String(user?.employee_number || user?.id || '').replace('emp_', '');
+    const isAdmin = user?.role === 'admin' || !user?.role;
+    const userBranch = user?.branch_name || user?.branch || '';
+
     return messages.filter(m => {
       const matchFolder = currentFolder === 'starred' 
         ? m.is_starred 
         : m.folder === currentFolder;
+
+      let isForMe = true;
+      if (!isAdmin && currentFolder === 'inbox') {
+        if (m.recipient_type === 'emp') {
+          const target = String(m.recipient_id || m.recipient_target || m.recipient_emp_num || '');
+          isForMe = target === userEmpNum;
+        } else if (m.recipient_type === 'branch') {
+          isForMe = userBranch && (m.recipient_target === userBranch || m.recipient_label?.includes(userBranch));
+        }
+      }
 
       const matchBranch = branchFilter === 'all' 
         || m.sender_branch === branchFilter 
@@ -231,9 +245,9 @@ export default function Announcements() {
         || (m.sender_name && m.sender_name.toLowerCase().includes(q))
         || (m.content && m.content.toLowerCase().includes(q));
 
-      return matchFolder && matchBranch && matchQuery;
+      return matchFolder && isForMe && matchBranch && matchQuery;
     });
-  }, [messages, currentFolder, branchFilter, searchQuery]);
+  }, [messages, currentFolder, branchFilter, searchQuery, user]);
 
   // Actions
   const handleOpenMessage = (msg) => {
@@ -283,18 +297,25 @@ export default function Announcements() {
     toast({ title: 'تم الحذف', description: 'تم حذف الرسائل المحددة بنجاح.' });
   };
 
-  const handleSendMessage = () => {
+    const handleSendMessage = () => {
     if (!composeForm.subject.trim() || !composeForm.content.trim()) {
       toast({ title: 'بيانات ناقصة', description: 'يرجى إدخال الموضوع ومحتوى الرسالة.', variant: 'destructive' });
       return;
     }
 
     let recipientLabel = 'كافة منسوبي المنشأة';
+    let recipientId = 'all';
+    let recipientName = 'كافة الموظفين';
+
     if (composeForm.recipient_type === 'branch') {
       recipientLabel = `فرع: ${composeForm.recipient_target || 'الفرع الرئيسي'}`;
+      recipientId = composeForm.recipient_target;
+      recipientName = composeForm.recipient_target;
     } else if (composeForm.recipient_type === 'emp') {
-      const foundEmp = employees.find(e => String(e.employee_number || e.id) === composeForm.recipient_target);
-      recipientLabel = foundEmp ? `الموظف: ${foundEmp.full_name}` : 'موظف محدد';
+      const foundEmp = employees.find(e => String(e.employee_number || e.id) === String(composeForm.recipient_target));
+      recipientId = foundEmp ? String(foundEmp.employee_number) : composeForm.recipient_target;
+      recipientName = foundEmp ? foundEmp.full_name : 'موظف محدد';
+      recipientLabel = foundEmp ? `الموظف: ${foundEmp.full_name} (#${foundEmp.employee_number})` : 'موظف محدد';
     }
 
     const newMsg = {
@@ -302,7 +323,12 @@ export default function Announcements() {
       sender_name: user?.full_name || 'يحيي محمد عبدالغفار باشا',
       sender_role: user?.job_title || 'مسؤول الموارد البشرية',
       sender_branch: user?.branch || 'مكتب الإدارة',
+      sender_id: user?.id || 'usr_1022',
       recipient_type: composeForm.recipient_type,
+      recipient_target: composeForm.recipient_target,
+      recipient_id: recipientId,
+      recipient_emp_num: recipientId,
+      recipient_name: recipientName,
       recipient_label: recipientLabel,
       subject: composeForm.subject,
       content: composeForm.content,
@@ -316,6 +342,17 @@ export default function Announcements() {
     const updated = [newMsg, ...messages];
     persistMessages(updated);
 
+    // Also add to Notifications tab for seamless alert visibility
+    const newNotif = {
+      id: 'notif_' + Date.now(),
+      title: `رسالة داخلية: ${composeForm.subject}`,
+      description: `أرسل ${user?.full_name || 'مسؤول الموارد البشرية'} مراسلة إدارية إلى (${recipientLabel}).`,
+      date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      type: composeForm.category === 'urgent' ? 'warning' : 'info',
+      is_read: false
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+
     setComposeOpen(false);
     setComposeForm({
       recipient_type: 'all',
@@ -325,7 +362,10 @@ export default function Announcements() {
       content: ''
     });
 
-    toast({ title: 'تم إرسال الرسالة بنجاح', description: 'تم تعميم الرسالة الرسمية وإشعار المستلمين.' });
+    toast({ 
+      title: 'تم إرسال الرسالة بنجاح ✅', 
+      description: `تم توجيه الرسالة وإشعار (${recipientLabel}) فوراً.` 
+    });
   };
 
   return (

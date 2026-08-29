@@ -33,20 +33,35 @@ export default function Header({ onOpenMobileMenu }) {
 
   const { isDark, toggleDarkMode } = useTheme();
 
-  // ─── DYNAMIC REAL UNREAD MESSAGES COUNT (NO HARDCODED NUMBERS) ───────────
+    // ─── DYNAMIC REAL UNREAD MESSAGES COUNT TAILORED TO LOGGED-IN USER ─────
   const getRealUnreadCount = useCallback(() => {
     try {
+      const userEmpNum = String(user?.employee_number || user?.id || '').replace('emp_', '');
+      const isAdmin = user?.role === 'admin' || !user?.role;
+      const userBranch = user?.branch_name || user?.branch || '';
+
       const saved = localStorage.getItem('hr_flow_announcements_messages');
       if (saved) {
         const msgs = JSON.parse(saved);
         if (Array.isArray(msgs)) {
-          return msgs.filter(m => m.folder === 'inbox' && !m.is_read).length;
+          return msgs.filter(m => {
+            if (m.folder !== 'inbox' || m.is_read) return false;
+            if (isAdmin) return true;
+            if (m.recipient_type === 'all' || !m.recipient_type) return true;
+            if (m.recipient_type === 'branch') {
+              return userBranch && (m.recipient_target === userBranch || m.recipient_label?.includes(userBranch));
+            }
+            if (m.recipient_type === 'emp') {
+              const target = String(m.recipient_id || m.recipient_target || m.recipient_emp_num || '');
+              return target === userEmpNum;
+            }
+            return true;
+          }).length;
         }
       }
     } catch {}
-    // Default 1 unread message from active inbox
-    return 1;
-  }, []);
+    return 0;
+  }, [user]);
 
   const [unreadCount, setUnreadCount] = useState(getRealUnreadCount);
 
