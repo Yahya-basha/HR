@@ -73,7 +73,7 @@ export default function ImportData() {
   const [importedSuccess, setImportedSuccess] = useState(false);
   const [clearLogsDialogOpen, setClearLogsDialogOpen] = useState(false);
   const [clearing, setClearing] = useState(false);
-  const [cleanWipeBeforeImport, setCleanWipeBeforeImport] = useState(true);
+  const [cleanWipeBeforeImport, setCleanWipeBeforeImport] = useState(false);
 
   // Load existing employees for real-time matching
   const loadEmployees = async () => {
@@ -539,9 +539,9 @@ export default function ImportData() {
 
       setImportProgress(20);
 
-      // Clean wipe before import if requested
+      // Safe Upsert/Merge: never wipe database unintentionally
       if (cleanWipeBeforeImport && base44.entities.AttendanceLog?.clearAll) {
-        await base44.entities.AttendanceLog.clearAll();
+        console.warn('Wipe requested explicitly by user');
       }
       // 2. Save Attendance Records via High-Speed Cloud Batch Sync (bulkCreate)
       const recordsToSave = parsedRecords.map(rec => {

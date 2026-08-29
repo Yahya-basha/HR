@@ -973,18 +973,19 @@ function createEntityHandler(entityName) {
       return { success: true };
     },
 
-    async bulkCreate(records) {
+        async bulkCreate(records) {
       if (!Array.isArray(records) || records.length === 0) return [];
       
       if (isSupabaseConfigured) {
         try {
           const dbRows = records.map(r => toDbRecord(entityName, r));
-          const chunkSize = 150;
+          const chunkSize = 100;
           for (let i = 0; i < dbRows.length; i += chunkSize) {
             const chunk = dbRows.slice(i, i + chunkSize);
-            const { error } = await supabase.from(tableName).insert(chunk);
+            const { error } = await supabase.from(tableName).upsert(chunk, { onConflict: 'id', ignoreDuplicates: false });
             if (error) {
-              console.warn('Supabase batch insert error on ' + tableName + ':', error);
+              // Fallback to insert
+              await supabase.from(tableName).insert(chunk);
             }
           }
         } catch (e) {
