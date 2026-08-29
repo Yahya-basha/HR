@@ -325,7 +325,7 @@ export default function Reports() {
 
 
   // ─── GENERATE REPORT ENGINE ───────────────────────────────────────────────
-  const handleGenerateReport = () => {
+  function handleGenerateReport() {
     setIsGenerating(true);
 
     setTimeout(() => {
@@ -602,7 +602,7 @@ export default function Reports() {
   };
 
   // ─── EXPORT TO EXCEL (.xlsx) ENGINE ───────────────────────────────────────
-  const handleExportExcel = () => {
+  function handleExportExcel() {
     if (!generatedData || !generatedData.rows.length) {
       toast({ title: 'لا توجد بيانات لتصديرها', variant: 'destructive' });
       return;
@@ -623,7 +623,7 @@ export default function Reports() {
   };
 
   // Print Report A4
-  const handlePrint = () => {
+  function handlePrint() {
     window.print();
   };
 
