@@ -883,26 +883,35 @@ function createEntityHandler(entityName) {
   const tableName = getTableName(entityName);
 
   return {
-    async list(orderBy = null, limit = 2000) {
+    async list(orderBy = null, limit = 5000) {
       if (isSupabaseConfigured) {
         try {
-          let query = supabase.from(tableName).select('*');
+          let allFetched = [];
+          const batchSize = 1000;
+          const maxToFetch = limit || 5000;
           
-          if (entityName === 'AttendanceLog') {
-            query = query.order('log_date', { ascending: false });
-          } else if (orderBy) {
-            const isDesc = orderBy.startsWith('-');
-            const col = isDesc ? orderBy.slice(1) : orderBy;
-            query = query.order(col, { ascending: !isDesc });
+          for (let offset = 0; offset < maxToFetch; offset += batchSize) {
+            let query = supabase.from(tableName).select('*');
+            
+            if (entityName === 'AttendanceLog') {
+              query = query.order('log_date', { ascending: false });
+            } else if (orderBy) {
+              const isDesc = orderBy.startsWith('-');
+              const col = isDesc ? orderBy.slice(1) : orderBy;
+              query = query.order(col, { ascending: !isDesc });
+            }
+
+            query = query.range(offset, offset + batchSize - 1);
+
+            const { data, error } = await query;
+            if (error || !data || data.length === 0) break;
+
+            allFetched = allFetched.concat(data);
+            if (data.length < batchSize) break;
           }
 
-          if (limit) {
-            query = query.limit(limit);
-          }
-
-          const { data, error } = await query;
-          if (!error && Array.isArray(data) && data.length > 0) {
-            const mapped = data.map(r => fromDbRecord(entityName, r));
+          if (allFetched.length > 0) {
+            const mapped = allFetched.map(r => fromDbRecord(entityName, r));
             saveLocalItems(entityName, mapped);
             return mapped;
           }
