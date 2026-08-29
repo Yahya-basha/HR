@@ -46,6 +46,16 @@ import { computeEmployeePayroll, getPayrollSettings, getAdvances } from '@/lib/p
 // ─── REPORT DEFINITIONS CATALOG (MATCHING EKTEFA SYSTEM) ─────────────────────
 const REPORT_DEFINITIONS = [
   {
+    id: 'branch_biometrics_advanced',
+    title: 'البصمات (حسب الفرع) - مطور',
+    category: 'attendance',
+    categoryLabel: 'تقرير الحضور',
+    description: 'سجل تفصيلي متطور للبصمات وحركات الدخول والخروج والورديات اليومية بطراز جدول الإكسيل المعتمد',
+    icon: Clock,
+    color: '#0284c7'
+  },
+
+  {
     id: 'daily_biometrics',
     title: 'تقرير البصمات اليومي',
     category: 'attendance',
@@ -316,7 +326,7 @@ export default function Reports() {
 
       const repId = currentReportDef?.id;
 
-      if (repId === 'daily_biometrics') {
+      if (repId === 'daily_biometrics' || repId === 'branch_biometrics_advanced') {
         // Daily attendance logs between fromDate and toDate using verified master engine
         const monthKey = fromDate.slice(0, 7) || '2026-08';
         const settings = getPayrollSettings();
@@ -341,34 +351,87 @@ export default function Reports() {
               if (!isNaN(dt.getTime())) dayName = daysAr[dt.getDay()];
             }
 
+            // Find matching raw log for exact punches
+            const matchingLog = attendanceLogs.find(l => 
+              (l.user_id === emp.id || l.employee_id === emp.id || String(l.employee_number) === String(emp.employee_number) || l.employee_name === emp.full_name) &&
+              (l.log_date === logDate)
+            );
+
+            // Shift Times
+            let shiftTimes = '08:00 -- 16:00';
+            const empShiftName = emp.shift || d.shiftName || 'فترة عمل غير سعودي';
+            if (empShiftName.includes('غير سعودي') || empShiftName.includes('دوامين')) {
+              shiftTimes = '08:00 -- 12:00 & 16:00 -- 20:00';
+            } else if (empShiftName.includes('صباحي')) {
+              shiftTimes = '08:00 -- 13:00';
+            } else if (empShiftName.includes('مسائي')) {
+              shiftTimes = '16:00 -- 21:00';
+            } else if (empShiftName.includes('المدير') || empShiftName.includes('إدارة')) {
+              shiftTimes = '07:00 -- 06:59';
+            }
+
+            // Exact Biometric Timestamps string (matching Ektefa style)
+            let biometricPunches = '--:--';
+            if (matchingLog) {
+              if (matchingLog.timestamp_raw && matchingLog.timestamp_raw.includes('&')) {
+                biometricPunches = matchingLog.timestamp_raw;
+              } else if (matchingLog.period_1_in && matchingLog.period_2_out) {
+                biometricPunches = `${matchingLog.period_1_in} -- ${matchingLog.period_1_out || '--:--'} & ${matchingLog.period_2_in || '--:--'} -- ${matchingLog.period_2_out}`;
+              } else if (matchingLog.check_in && matchingLog.check_out && matchingLog.check_in !== matchingLog.check_out) {
+                biometricPunches = `${matchingLog.check_in} -- ${matchingLog.check_out}`;
+              } else if (matchingLog.check_in) {
+                biometricPunches = `${matchingLog.check_in} -- --:--`;
+              }
+            } else if (d.firstCheckIn && d.lastCheckOut && d.firstCheckIn !== '—') {
+              biometricPunches = `${d.firstCheckIn} -- ${d.lastCheckOut}`;
+            }
+
+            if (empShiftName.includes('المدير') || emp.employee_number === '1001') {
+              biometricPunches = 'حضور معفى آلياً';
+            }
+
             const checkIn = d.firstCheckIn && d.firstCheckIn !== '—' ? d.firstCheckIn : (d.check_in || d.checkIn || '--:--');
             const checkOut = d.lastCheckOut && d.lastCheckOut !== '—' ? d.lastCheckOut : (d.check_out || d.checkOut || '--:--');
             const actualHrs = d.actualMinutes ? (d.actualMinutes / 60).toFixed(1) : (d.actualHours || 0);
 
+            let statusLabel = 'حاضر';
+            if (emp.employee_number === '1001' || d.isExempt) {
+              statusLabel = 'معفى';
+            } else if (d.status === 'absent' || (!matchingLog && !d.hasAttendance)) {
+              statusLabel = 'غياب';
+            } else if (d.lateMinutes > 0 || d.status === 'late') {
+              statusLabel = 'متأخر';
+            } else if (d.status?.includes('إجازة')) {
+              statusLabel = 'إجازة';
+            }
+
             rows.push({
+              emp_num: emp.employee_number,
+              emp_name: emp.full_name,
               date: logDate,
               day_name: dayName || 'يوم عمل',
-              emp_name: emp.full_name,
-              emp_num: emp.employee_number,
+              shift: empShiftName,
+              shift_times: shiftTimes,
+              biometric_punches: biometricPunches,
               branch: emp.branch_name || emp.branch || 'الفرع الرئيسي',
-              shift: emp.shift_name || d.shiftName || 'الوردية الصباحية',
+              department: emp.department_name || emp.department || 'درة السيارة لقطع الغيار',
               check_in: checkIn,
               check_out: checkOut,
               actual_hours: actualHrs,
               late_minutes: d.lateMinutes || 0,
               early_leave: d.earlyMinutes || 0,
-              status: d.statusLabel || (d.status === 'present' ? 'حاضر ومنضبط' : d.status === 'late' ? 'متأخر' : d.status === 'absent' ? 'غائب' : 'عطلة/معفى')
+              status: statusLabel
             });
           });
         });
 
-        // Sort by date desc
-        rows.sort((a, b) => b.date.localeCompare(a.date));
+        // Sort by employee_number and date
+        rows.sort((a, b) => a.date.localeCompare(b.date) || a.emp_num.localeCompare(b.emp_num));
         summary = {
           totalRows: rows.length,
           totalHours: rows.reduce((acc, r) => acc + Number(r.actual_hours || 0), 0).toFixed(1),
           totalLateMins: rows.reduce((acc, r) => acc + Number(r.late_minutes || 0), 0),
-          presentDays: rows.filter(r => r.status.includes('حاضر') || r.status.includes('متأخر')).length,
+          presentDays: rows.filter(r => r.status.includes('حاضر') || r.status.includes('معفى') || r.status.includes('متأخر')).length,
           employeesCount: targetEmployees.length
         };
       } else if (repId === 'payroll_details') {
@@ -844,43 +907,54 @@ export default function Reports() {
               </div>
 
               
-              {/* Results Top Header & Export Buttons */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-3xl border shadow-sm no-print print:hidden">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading font-black text-sm text-foreground">
-                      نتائج {generatedData.reportDef.title} ({generatedData.rows.length} سجل)
+              {/* Results Top Header & Export Buttons (Matching Ektefa Luxury Style) */}
+              <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border shadow-sm space-y-4 no-print print:hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                      <FileSpreadsheet className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-heading font-black text-base text-foreground">
+                      استعراض الطباعة
                     </h3>
-                    <p className="text-[10px] text-muted-foreground font-mono">
-                      النطاق: {generatedData.fromDate} إلى {generatedData.toDate} • الفرع: {generatedData.filterBranch}
-                    </p>
+                  </div>
+
+                  {/* Print & Excel Buttons */}
+                  <div className="flex items-center gap-2">
+                    {/* Download Excel */}
+                    <Button
+                      onClick={handleExportExcel}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold gap-1.5 h-9 px-4 shadow-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>التصدير إلى إكسل</span>
+                    </Button>
+
+                    {/* Print */}
+                    <Button
+                      onClick={handlePrint}
+                      className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold gap-1.5 h-9 px-4 shadow-sm"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>طباعة</span>
+                    </Button>
                   </div>
                 </div>
 
-                {/* Print & Excel Buttons */}
-                <div className="flex items-center gap-2">
-                  
-                  {/* Download Excel */}
-                  <Button
-                    onClick={handleExportExcel}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold gap-1.5 h-9 px-4 shadow-sm"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>تنزيل كملف إكسيل (Excel .xlsx)</span>
-                  </Button>
-
-                  {/* Print A4 */}
-                  <Button
-                    onClick={handlePrint}
-                    variant="outline"
-                    className="rounded-2xl text-xs font-bold gap-1.5 h-9 px-4 border-slate-300"
-                  >
-                    <Printer className="w-4 h-4 text-sky-600" />
-                    <span>طباعة التقرير A4</span>
-                  </Button>
+                {/* Ektefa Meta Box (الفرع، الإدارة، تاريخ التقرير) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-muted-foreground">تقرير عن:</span>
+                    <span className="font-mono font-bold text-foreground" dir="ltr">{generatedData.fromDate} -- {generatedData.toDate}</span>
+                  </div>
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-bold text-muted-foreground">الفرع:</span>
+                    <span className="font-bold text-foreground truncate">{generatedData.filterBranch === 'all' ? 'مكتب الإدارة، الفرع الرئيسي، فرع كيا ( السليم )، فرع هونداي ( الرواف )' : generatedData.filterBranch}</span>
+                  </div>
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-bold text-muted-foreground">الإدارة:</span>
+                    <span className="font-bold text-foreground truncate">درة السيارة لقطع الغيار</span>
+                  </div>
                 </div>
               </div>
 
@@ -890,74 +964,17 @@ export default function Reports() {
                   <table className="w-full text-right text-xs print-table print:text-[10px]" style={{ direction: 'rtl' }}>
                     <thead>
                       <tr className="bg-sky-600 text-white font-heading font-black border-b border-sky-700">
-                        {selectedReportId === 'daily_biometrics' && (
+                        {(selectedReportId === 'daily_biometrics' || selectedReportId === 'branch_biometrics_advanced') && (
                           <>
-                            <th className="py-3 px-3">التاريخ واليوم</th>
-                            <th className="py-3 px-3">الموظف والفرع</th>
-                            <th className="py-3 px-3">الوردية</th>
-                            <th className="py-3 px-3">دخول</th>
-                            <th className="py-3 px-3">خروج</th>
-                            <th className="py-3 px-3">ساعات العمل</th>
-                            <th className="py-3 px-3">تأخير (دقيقة)</th>
-                            <th className="py-3 px-3">الحالة</th>
-                          </>
-                        )}
-
-                        {selectedReportId === 'payroll_details' && (
-                          <>
-                            <th className="py-3 px-3"># الموظف</th>
-                            <th className="py-3 px-3">الفرع والمسمى</th>
-                            <th className="py-3 px-3">الأساسي</th>
-                            <th className="py-3 px-3">البدلات</th>
-                            <th className="py-3 px-3">المكافآت والحوافز</th>
-                            <th className="py-3 px-3">الاستقطاعات</th>
-                            <th className="py-3 px-3">قسط السلفة</th>
-                            <th className="py-3 px-3">صافي الراتب</th>
-                          </>
-                        )}
-
-                        {selectedReportId === 'employee_master_data' && (
-                          <>
-                            <th className="py-3 px-3"># الرقم الوظيفي</th>
-                            <th className="py-3 px-3">الاسم بالعربي</th>
-                            <th className="py-3 px-3">الاسم بالإنجليزي</th>
-                            <th className="py-3 px-3">الهوية / الإقامة</th>
-                            <th className="py-3 px-3">الفرع والمسمى</th>
-                            <th className="py-3 px-3">تاريخ الالتحاق</th>
-                            <th className="py-3 px-3">الراتب الأساسي</th>
-                          </>
-                        )}
-
-                        {selectedReportId === 'advances_and_loans' && (
-                          <>
-                            <th className="py-3 px-3">الموظف</th>
-                            <th className="py-3 px-3">إجمالي السلفة</th>
-                            <th className="py-3 px-3">القسط والمدة</th>
-                            <th className="py-3 px-3">المسدد</th>
-                            <th className="py-3 px-3">المتبقي</th>
-                            <th className="py-3 px-3">شهر البدء</th>
-                            <th className="py-3 px-3">الحالة</th>
-                          </>
-                        )}
-
-                        {selectedReportId === 'medical_insurance' && (
-                          <>
-                            <th className="py-3 px-3">الموظف</th>
-                            <th className="py-3 px-3">الفرع</th>
-                            <th className="py-3 px-3">رقم الوثيقة</th>
-                            <th className="py-3 px-3">فئة التأمين</th>
-                            <th className="py-3 px-3">تاريخ الانتهاء</th>
-                            <th className="py-3 px-3">الحالة</th>
-                          </>
-                        )}
-
-                        {!['daily_biometrics', 'payroll_details', 'employee_master_data', 'advances_and_loans', 'medical_insurance'].includes(selectedReportId) && (
-                          <>
-                            <th className="py-3 px-3"># الموظف</th>
-                            <th className="py-3 px-3">الفرع</th>
-                            <th className="py-3 px-3">البيان</th>
-                            <th className="py-3 px-3">التاريخ</th>
-                            <th className="py-3 px-3">الحالة</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-12">#</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-24">الرقم الوظيفي</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right font-bold min-w-[160px]">اسم الموظف</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-28">التاريخ</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-20">يوم</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right font-bold min-w-[150px]">الفترة</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold min-w-[170px]">وقت الفترة</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold min-w-[220px]">الطابع الزمني</th>
+                            <th className="py-2.5 px-3 border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-center font-bold w-24">الحالة</th>
                           </>
                         )}
                       </tr>
