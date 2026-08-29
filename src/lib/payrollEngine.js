@@ -337,10 +337,18 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   ) || null;
   const shiftHours = getShiftRequiredHours(shift);
 
+    const empNum = String(emp.employee_number || '').trim();
+  const empId = String(emp.id || '').trim();
+  const empName = (emp.full_name || '').trim();
+
   const empLogs = (allLogs || []).filter(l => {
-    const match = l.user_id === emp.id ||
-      (l.employee_number && l.employee_number.toString() === emp.employee_number?.toString()) ||
-      (l.employee_name && l.employee_name.trim() === emp.full_name?.trim());
+    const lUser = String(l.user_id || l.employee_id || '').trim();
+    const lNum = String(l.employee_number || '').trim();
+    const lName = (l.employee_name || '').trim();
+
+    const match = (lUser && (lUser === empId || lUser === empNum || lUser === `emp_${empNum}`)) ||
+                  (lNum && (lNum === empNum || lNum === empId || `emp_${lNum}` === empId)) ||
+                  (lName && empName && (lName === empName || lName.includes(empName) || empName.includes(lName)));
     if (!match) return false;
     if (monthPrefix && l.log_date && !l.log_date.startsWith(monthPrefix)) return false;
     return true;
@@ -348,7 +356,16 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
 
   const dateMap = {};
   empLogs.forEach(l => {
-    if (!dateMap[l.log_date] || hasRealBiometricPunches(l)) dateMap[l.log_date] = l;
+    const existing = dateMap[l.log_date];
+    if (!existing) {
+      dateMap[l.log_date] = l;
+    } else {
+      const existingHrs = Number(existing.total_hours || calcActualMinutes(existing)) || 0;
+      const newHrs = Number(l.total_hours || calcActualMinutes(l)) || 0;
+      if (newHrs >= existingHrs) {
+        dateMap[l.log_date] = l;
+      }
+    }
   });
   const uniqueLogs = Object.values(dateMap).sort((a, b) => (a.log_date || '').localeCompare(b.log_date || ''));
 

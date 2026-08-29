@@ -792,126 +792,43 @@ function toDbRecord(entityName, item) {
     };
   }
 
-  if (entityName === 'AttendanceLog') {
-    return {
-      id: item.id || ('att_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
-      employee_id: item.user_id || item.employee_id || item.employee_number || null,
-      employee_name: item.employee_name || '',
-      log_date: item.log_date || null,
-      check_in: item.check_in || null,
-      check_out: item.check_out || null,
-      status: item.status || 'present',
-      notes: JSON.stringify({
-        employee_number: item.employee_number || item.user_id,
-        user_id: item.user_id || item.employee_id,
-        timestamp_raw: item.timestamp_raw || '',
-        total_hours: item.total_hours || 0,
-        period_1_in: item.period_1_in || '',
-        period_1_out: item.period_1_out || '',
-        period_2_in: item.period_2_in || '',
-        period_2_out: item.period_2_out || '',
-        required_hours: item.required_hours || 8,
-        note: item.notes || ''
-      }),
-      created_at: item.created_at || new Date().toISOString()
-    };
-  }
-
-  if (entityName === 'LeaveRequest') {
-    return {
-      id: item.id || ('lr_' + Date.now()),
-      employee_id: item.employee_id || item.employee_number || null,
-      employee_name: item.employee_name || '',
-      leave_type: item.leave_type || 'إجازة سنوية',
-      start_date: item.start_date || null,
-      end_date: item.end_date || null,
-      days_count: Number(item.days_count) || 1,
-      reason: item.reason || '',
-      status: item.status || 'pending',
-      created_at: item.created_at || new Date().toISOString()
-    };
-  }
-
-  if (entityName === 'Announcement') {
-    return {
-      id: item.id || ('ann_' + Date.now()),
-      title: item.title || '',
-      category: item.category || item.type || 'circular',
-      date: item.date || new Date().toISOString().split('T')[0],
-      content: item.content || item.body || '',
-      status: item.status || 'active',
-      created_at: item.created_at || new Date().toISOString()
-    };
-  }
-
-  return item;
-}
-
-function fromDbRecord(entityName, row) {
-  if (!row) return row;
-
-  if (entityName === 'Employee') {
-    let is_insured = true;
-    let gosi_number = '';
-    let manager_name = row.manager_name;
-    let company = 'درة السيارة لقطع غيار السيارات';
-    let marital_status = 'أعزب';
-    let contract_type = 'محدد';
-    let contract_end_date = null;
-
-    if (row.manager_name && typeof row.manager_name === 'string') {
-      if (row.manager_name.startsWith('{')) {
-        try {
-          const meta = JSON.parse(row.manager_name);
-          if (meta.is_insured !== undefined) {
-            is_insured = meta.is_insured === true || meta.is_insured === 'true';
-          }
-          if (meta.gosi_number !== undefined) {
-            gosi_number = meta.gosi_number;
-          }
-          if (meta.manager_name !== undefined) {
-            manager_name = meta.manager_name;
-          }
-          if (meta.company !== undefined) {
-            company = meta.company;
-          }
-          if (meta.marital_status !== undefined) {
-            marital_status = meta.marital_status;
-          }
-          if (meta.contract_type !== undefined) {
-            contract_type = meta.contract_type;
-          }
-          if (meta.contract_end_date !== undefined) {
-            contract_end_date = meta.contract_end_date;
-          }
-        } catch (e) {}
-      }
-    }
-
-    return {
-      ...row,
-      is_insured,
-      gosi_number,
-      manager_name,
-      company,
-      marital_status,
-      contract_type,
-      contract_end_date,
-      department: row.department_name,
-      branch: row.branch_name
-    };
-  }
-
-  if (entityName === 'AttendanceLog') {
+      if (entityName === 'AttendanceLog') {
     let extra = {};
     if (row.notes) {
       try {
-        extra = JSON.parse(row.notes);
+        let p = typeof row.notes === 'string' ? JSON.parse(row.notes) : row.notes;
+        if (typeof p.note === 'string' && p.note.startsWith('{')) {
+          try { p = { ...p, ...JSON.parse(p.note) }; } catch(e) {}
+        }
+        extra = p;
       } catch (e) {}
     }
+
+    const p1In = extra.period_1_in || (row.check_in ? String(row.check_in).replace(/^.*T/, '').slice(0, 5) : '');
+    const p1Out = extra.period_1_out || '';
+    const p2In = extra.period_2_in || '';
+    const p2Out = extra.period_2_out || (row.check_out ? String(row.check_out).replace(/^.*T/, '').slice(0, 5) : '');
+
+    let raw = extra.timestamp_raw || '';
+    if (!raw && p1In && p2Out) {
+      raw = `${p1In}:00 -- ${p1Out || '--:--'}:00 & ${p2In || '--:--'}:00 -- ${p2Out}:00`;
+    } else if (!raw && p1In && p1Out) {
+      raw = `${p1In}:00 -- ${p1Out}:00`;
+    }
+
+    const totalHours = Number(extra.total_hours) || (row.total_hours ? Number(row.total_hours) : 0);
+
     return {
       ...row,
       ...extra,
+      period_1_in: p1In,
+      period_1_out: p1Out,
+      period_2_in: p2In,
+      period_2_out: p2Out,
+      timestamp_raw: raw,
+      total_hours: totalHours,
+      employee_number: extra.employee_number || String(row.employee_id || '').replace('emp_', ''),
+      user_id: row.employee_id || extra.user_id,
       notes: extra.note || row.notes || ''
     };
   }
