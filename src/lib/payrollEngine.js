@@ -147,9 +147,15 @@ export function isDayExempt(log) {
   if (!log) return false;
   const status = (log.status || '').toLowerCase();
   const label = (log.statusLabel || log.status_label || '').toLowerCase();
-  if (status === 'exempt' || status === 'معفى' || status.includes('عطلة') || status === 'weekend') return true;
-  if (label.includes('معفى') || label.includes('عطلة')) return true;
-  if (status === 'on_leave' || status === 'leave' || label.includes('إجازة') || label.includes('اجاز')) return true;
+  
+  // Paid leaves and exemptions (Zero shortfall deduction)
+  if (status === 'annual_leave' || status === 'إجازة سنوية' || status === 'اجازة سنوية' ||
+      status === 'sick_leave' || status === 'إجازة مرضية' || status === 'اجازة مرضية' ||
+      status === 'emergency_leave' || status === 'إجازة اضطرارية' ||
+      status === 'exempt' || status === 'معفى' || status.includes('عطلة') || status === 'weekend' ||
+      status === 'on_leave' || status === 'leave' || label.includes('إجازة') || label.includes('اجاز') || label.includes('معفى')) {
+    return true;
+  }
   return false;
 }
 

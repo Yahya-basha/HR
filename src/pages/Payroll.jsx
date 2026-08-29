@@ -266,16 +266,36 @@ export default function Payroll() {
   // ─── ACTION HANDLERS ────────────────────────────────────────────────────────
 
   // Stage 1: Edit Biometric Log (Admin Only)
-  const handleSavePunchEdit = async () => {
+    const handleSavePunchEdit = async () => {
     if (!editPunchModal) return;
     try {
-      const { log, newCheckIn, newCheckOut, newStatus } = editPunchModal;
+      const { log, emp, newCheckIn, newCheckOut, newStatus } = editPunchModal;
       
+      const empId = emp ? emp.id : (log.employee_id || log.user_id);
+      const empNum = emp ? String(emp.employee_number) : (log.employee_number || '1000');
+      const empName = emp ? emp.full_name : (log.employee_name || 'موظف');
+
+      const isLeave = newStatus === 'annual_leave' || newStatus === 'sick_leave' || newStatus === 'emergency_leave' || newStatus === 'unpaid_leave';
+
       const updatedItem = {
         ...log,
-        check_in: newCheckIn ? `${log.log_date}T${newCheckIn}` : log.check_in,
-        check_out: newCheckOut ? `${log.log_date}T${newCheckOut}` : log.check_out,
-        status: newStatus || log.status,
+        id: log.id || ('att_edit_' + Date.now()),
+        employee_id: empId,
+        user_id: empId,
+        employee_number: empNum,
+        employee_name: empName,
+        log_date: log.log_date,
+        check_in: newCheckIn ? `${log.log_date}T${newCheckIn}` : (isLeave ? null : log.check_in),
+        check_out: newCheckOut ? `${log.log_date}T${newCheckOut}` : (isLeave ? null : log.check_out),
+        status: newStatus || log.status || 'present',
+        notes: JSON.stringify({
+          employee_number: empNum,
+          user_id: empId,
+          leave_type: isLeave ? newStatus : null,
+          deduction_from_annual_balance: newStatus === 'annual_leave',
+          manual_edit_by: user?.full_name || 'مدير الموارد البشرية',
+          manual_edit_at: new Date().toISOString()
+        })
       };
 
       if (log.id) {
@@ -284,7 +304,31 @@ export default function Payroll() {
         await base44.entities.AttendanceLog.create(updatedItem);
       }
 
-      toast({ title: '✓ تم تعديل واعتماد البصمة بنجاح' });
+      // If user selected Annual Leave, sync with LeaveRequest table
+      if (newStatus === 'annual_leave' || newStatus === 'sick_leave' || newStatus === 'emergency_leave') {
+        try {
+          await base44.entities.LeaveRequest.create({
+            id: 'leave_sync_' + Date.now(),
+            employee_id: empId,
+            employee_number: empNum,
+            employee_name: empName,
+            leave_type: newStatus === 'annual_leave' ? 'سنوية' : (newStatus === 'sick_leave' ? 'مرضية' : 'اضطرارية'),
+            start_date: log.log_date,
+            end_date: log.log_date,
+            days_count: 1,
+            reason: `إجازة معتمدة من مسير الرواتب (تخصم من رصيد الإجازات السنوية)`,
+            status: 'approved',
+            created_at: new Date().toISOString()
+          });
+        } catch (e) {
+          console.warn('Leave sync warning:', e);
+        }
+      }
+
+      toast({ 
+        title: '✓ تم تعديل واعتماد حالة اليوم بنجاح',
+        description: newStatus === 'annual_leave' ? 'تم توثيق الإجازة وخصمها من رصيد الإجازات السنوية بدون عجز ساعات.' : undefined
+      });
       setEditPunchModal(null);
       await loadData();
     } catch (e) {
@@ -1476,14 +1520,19 @@ export default function Payroll() {
                   value={editPunchModal.newStatus}
                   onValueChange={(v) => setEditPunchModal(prev => ({ ...prev, newStatus: v }))}
                 >
-                  <SelectTrigger className="rounded-xl">
+                  <SelectTrigger className="rounded-xl font-bold text-xs h-10">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="present">حاضر (منضبط)</SelectItem>
-                    <SelectItem value="late">متأخر</SelectItem>
-                    <SelectItem value="exempt">معفى / عطلة</SelectItem>
-                    <SelectItem value="absent">غائب</SelectItem>
+                  <SelectContent className="rounded-2xl max-h-72">
+                    <SelectItem value="present" className="font-bold text-emerald-700 py-2">✓ حاضر (دوام منضبط مكتمل)</SelectItem>
+                    <SelectItem value="late" className="font-bold text-amber-700 py-2">⏰ متأخر (مع احتساب التأخير)</SelectItem>
+                    <SelectItem value="annual_leave" className="font-bold text-teal-700 py-2">🏖️ إجازة سنوية (تخصم من رصيد الإجازات - مدفوعة)</SelectItem>
+                    <SelectItem value="sick_leave" className="font-bold text-purple-700 py-2">🏥 إجازة مرضية (بتقرير طبي - مدفوعة)</SelectItem>
+                    <SelectItem value="emergency_leave" className="font-bold text-indigo-700 py-2">⚠️ إجازة اضطرارية (تخصم من الرصيد)</SelectItem>
+                    <SelectItem value="unpaid_leave" className="font-bold text-rose-700 py-2">⏳ إجازة بدون راتب (خصم من الراتب)</SelectItem>
+                    <SelectItem value="unexcused_absence" className="font-bold text-rose-800 py-2">🚫 غياب بدون إذن (خصم يوم كامل)</SelectItem>
+                    <SelectItem value="exempt" className="font-bold text-slate-700 py-2">✨ معفى إدارياً / عطلة رسمية</SelectItem>
+                    <SelectItem value="absent" className="font-bold text-rose-600 py-2">غائب</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

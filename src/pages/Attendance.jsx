@@ -732,9 +732,14 @@ export default function Attendance() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl">
-                        <SelectItem value="present">حاضر (دوام مكتمل ✓)</SelectItem>
-                        <SelectItem value="late">متأخر (مع احتساب تأخير)</SelectItem>
-                        <SelectItem value="exempt">معفى إدارياً</SelectItem>
+                        <SelectItem value="present">✓ حاضر (دوام منضبط مكتمل)</SelectItem>
+                        <SelectItem value="late">⏰ متأخر (مع احتساب التأخير)</SelectItem>
+                        <SelectItem value="annual_leave">🏖️ إجازة سنوية (تخصم من رصيد الإجازات - مدفوعة)</SelectItem>
+                        <SelectItem value="sick_leave">🏥 إجازة مرضية (بتقرير طبي - مدفوعة)</SelectItem>
+                        <SelectItem value="emergency_leave">⚠️ إجازة اضطرارية (تخصم من الرصيد)</SelectItem>
+                        <SelectItem value="unpaid_leave">⏳ إجازة بدون راتب (خصم من الراتب)</SelectItem>
+                        <SelectItem value="unexcused_absence">🚫 غياب بدون إذن (خصم يوم كامل)</SelectItem>
+                        <SelectItem value="exempt">✨ معفى إدارياً / عطلة رسمية</SelectItem>
                         <SelectItem value="absent">غائب</SelectItem>
                       </SelectContent>
                     </Select>
