@@ -2326,51 +2326,50 @@ function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls
               </div>
             </div>
 
-            {/* Official Stamp & Signatures */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center pt-6 border-t-2 border-dashed border-border/80">
+            {/* Official Employee Receipt & Settlement Declaration */}
+            <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs space-y-1.5">
+              <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                <span>📝 إقرار وتصفية استلام الراتب من الموظف:</span>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-[11px]">
+                أقر أنا الموظف الموضح بياناتي أعلاه بأنني راجعت كافة بنود الاستحقاقات والاستقطاعات المذكورة في هذا المسير، واستلمت كامل صافي راتبي ومستحقاتي عن شهر <strong>{extractedData.month}</strong> دون أي نقص أو تحفظ، وتعتبر ذمة المنشأة بريئة تماماً من أي مستحقات عن هذه الفترة حتى تاريخه.
+              </p>
+            </div>
+
+            {/* Official Signatures & Approvals (Employee + HR + General Manager) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start pt-4 border-t-2 border-dashed border-border/80 text-xs">
               
-              {/* Accountant */}
-              <div className="text-center space-y-2">
-                <div className="text-xs text-muted-foreground font-bold">إعداد وتدقيق المحاسب المالي:</div>
-                <div className="font-black text-sm text-foreground">هشام ابوالفضل زغلول</div>
-                <div className="font-mono text-[10px] text-muted-foreground">مدير الحسابات والرواتب</div>
-                <div className="h-10 flex items-center justify-center">
-                  <span className="font-cursive text-base text-slate-700 dark:text-slate-300 italic border-b border-slate-400 px-6">H. Zaghloul</span>
+              {/* 1. Employee Signature */}
+              <div className="text-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border space-y-2">
+                <div className="text-muted-foreground font-bold text-[11px]">توقيع واستلام الموظف:</div>
+                <div className="font-black text-xs text-foreground">{extractedData.employee.full_name}</div>
+                <div className="text-[10px] text-muted-foreground font-mono">#{extractedData.employee.employee_number}</div>
+                <div className="h-12 border-b border-dashed border-slate-400 dark:border-slate-600 flex items-end justify-center pb-1">
+                  <span className="text-[10px] text-slate-400">(التوقيع / البصمة هنا)</span>
                 </div>
+                <div className="text-[9px] text-muted-foreground font-mono">التاريخ: ____ / ____ / 2026م</div>
               </div>
 
-              {/* Circular Certified Stamp */}
-              <div className="flex justify-center">
-                <div className="relative border-4 border-double border-emerald-700 dark:border-emerald-500 rounded-full w-44 h-44 flex flex-col items-center justify-center text-center p-2.5 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-inner select-none rotate-[-6deg]">
-                  <div className="text-[9px] font-black text-emerald-800 dark:text-emerald-300 tracking-wider border-b border-emerald-600/40 pb-0.5 w-full">
-                    شركة درة السيارة لقطع الغيار
-                  </div>
-                  <div className="my-1">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mx-auto" />
-                    <div className="text-[11px] font-black text-emerald-900 dark:text-emerald-100">
-                      مصادق ومطابق رسمياً
-                    </div>
-                    <div className="text-[8px] font-bold text-emerald-700 dark:text-emerald-300">
-                      إدارة الحسابات المالية
-                    </div>
-                  </div>
-                  <div className="text-[8px] font-black text-emerald-800 dark:text-emerald-300 border-t border-emerald-600/40 pt-0.5 w-full">
-                    المحاسب: هشام ابوالفضل
-                  </div>
-                  <div className="text-[7px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                    {extractedData.month} • تم الاعتماد
-                  </div>
+              {/* 2. HR Manager */}
+              <div className="text-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border space-y-2">
+                <div className="text-muted-foreground font-bold text-[11px]">إعداد وتدقيق الموارد البشرية:</div>
+                <div className="font-black text-xs text-foreground">يحيى محمد عبدالغفار باشا</div>
+                <div className="text-[10px] text-muted-foreground">مسؤول الموارد البشرية وشؤون الموظفين</div>
+                <div className="h-12 border-b border-dashed border-slate-400 dark:border-slate-600 flex items-end justify-center pb-1">
+                  <span className="font-cursive text-sm text-slate-700 dark:text-slate-300 italic">Yahya Basha</span>
                 </div>
+                <div className="text-[9px] text-emerald-600 font-bold font-mono">تم التدقيق والمطابقة ✓</div>
               </div>
 
-              {/* General Manager */}
-              <div className="text-center space-y-2">
-                <div className="text-xs text-muted-foreground font-bold">اعتماد وتصديق المدير العام:</div>
-                <div className="font-black text-sm text-foreground">فهد ناصر محمد الجوعي</div>
-                <div className="font-mono text-[10px] text-muted-foreground">المدير العام للمنشأة</div>
-                <div className="h-10 flex items-center justify-center">
-                  <span className="font-cursive text-base text-slate-700 dark:text-slate-300 italic border-b border-slate-400 px-6">Fahad Al-Jouei</span>
+              {/* 3. General Manager */}
+              <div className="text-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border space-y-2">
+                <div className="text-muted-foreground font-bold text-[11px]">اعتماد ومصادقة المدير العام:</div>
+                <div className="font-black text-xs text-foreground">فهد ناصر محمد الجوعي</div>
+                <div className="text-[10px] text-muted-foreground">المدير العام للمنشأة</div>
+                <div className="h-12 border-b border-dashed border-slate-400 dark:border-slate-600 flex items-end justify-center pb-1">
+                  <span className="font-cursive text-sm text-slate-700 dark:text-slate-300 italic">Fahad Al-Jouei</span>
                 </div>
+                <div className="text-[9px] text-emerald-600 font-bold font-mono">معتمد ومصرح بالصرف ✓</div>
               </div>
 
             </div>
@@ -2383,7 +2382,6 @@ function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls
     </div>
   );
 }
-
 
 // ─── DEDICATED ADVANCES & LOANS MANAGEMENT HUB COMPONENT ─────────────────────
 function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAdvance, onPrintAdvance, fmtNum }) {
