@@ -4,6 +4,10 @@ import { useAuth } from '@/lib/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Clock,
+  Sun,
+  Moon,
+  Coffee,
+  Sparkles,
   Fingerprint,
   Search,
   Download,
@@ -53,6 +57,7 @@ export default function Attendance() {
   const [selectedBranch, setSelectedBranch] = useState('all');
 
   const [employees, setEmployees] = useState([]);
+  const [shifts, setShifts] = useState([]);
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,10 +67,75 @@ export default function Attendance() {
   const [manualForm, setManualForm] = useState({
     employee_id: '',
     log_date: todayStr(),
-    check_in: '08:00',
-    check_out: '16:00',
-    status: 'present'
+    status: 'present',
+    // Single Shift Punches
+    check_in: '16:00',
+    check_out: '21:00',
+    // Dual / Multi Shift Punches (4 punches)
+    period_1_in: '09:00',
+    period_1_out: '13:00',
+    period_2_in: '16:00',
+    period_2_out: '21:00'
   });
+
+  // Automatically adapt defaults when employee is selected
+  const handleSelectEmployeeForPunch = (empId) => {
+    const emp = employees.find(e => String(e.id) === String(empId) || String(e.employee_number) === String(empId));
+    const empShift = emp?.shift || '';
+    
+    if (empShift.includes('9 ساعات') || emp?.employee_number === '1022' || emp?.employee_number === '1005') {
+      setManualForm(prev => ({
+        ...prev,
+        employee_id: empId,
+        period_1_in: '09:00',
+        period_1_out: '13:00',
+        period_2_in: '16:00',
+        period_2_out: '21:00',
+        check_in: '09:00',
+        check_out: '21:00'
+      }));
+    } else if (empShift.includes('غير سعودي') || empShift.includes('8 ساعات') || (emp?.nationality !== 'سعودي' && emp?.employee_number !== '1001')) {
+      setManualForm(prev => ({
+        ...prev,
+        employee_id: empId,
+        period_1_in: '08:00',
+        period_1_out: '12:00',
+        period_2_in: '16:00',
+        period_2_out: '20:00',
+        check_in: '08:00',
+        check_out: '20:00'
+      }));
+    } else if (empShift.includes('مسائي')) {
+      setManualForm(prev => ({
+        ...prev,
+        employee_id: empId,
+        check_in: '16:00',
+        check_out: '21:00',
+        period_1_in: '16:00',
+        period_1_out: '21:00',
+        period_2_in: '',
+        period_2_out: ''
+      }));
+    } else if (empShift.includes('صباحي')) {
+      setManualForm(prev => ({
+        ...prev,
+        employee_id: empId,
+        check_in: '08:00',
+        check_out: '13:00',
+        period_1_in: '08:00',
+        period_1_out: '13:00',
+        period_2_in: '',
+        period_2_out: ''
+      }));
+    } else {
+      setManualForm(prev => ({
+        ...prev,
+        employee_id: empId,
+        check_in: '09:00',
+        check_out: '17:00'
+      }));
+    }
+  };
 
   // Modals
   const [editLogModal, setEditLogModal] = useState(null);
@@ -73,11 +143,13 @@ export default function Attendance() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [emps, logs] = await Promise.all([
+      const [emps, logs, sList] = await Promise.all([
+        base44.entities.Shift.list(),
         base44.entities.Employee.list(),
         base44.entities.AttendanceLog.list('-log_date', 2000),
       ]);
       setEmployees(emps || []);
+      if (sList && sList.length > 0) setShifts(sList);
       setAttendanceLogs(logs || []);
     } catch (e) {
       console.error('Error loading biometrics:', e);
@@ -241,6 +313,13 @@ export default function Attendance() {
       const empId = emp ? emp.id : manualForm.employee_id;
       const empNum = emp ? String(emp.employee_number) : '';
       const empName = emp ? emp.full_name : 'موظف';
+      const empShift = emp?.shift || '';
+
+      const isSplitShift = empShift.includes('فترتين') || 
+        empShift.includes('غير سعودي') || 
+        empShift.includes('9 ساعات') || 
+        empShift.includes('8 ساعات') || 
+        (emp?.nationality !== 'سعودي' && emp?.employee_number !== '1001');
 
       const parseM = (t) => {
         if (!t) return null;
@@ -248,19 +327,42 @@ export default function Attendance() {
         const p = clean.split(':');
         return p.length >= 2 ? (parseInt(p[0], 10) * 60 + parseInt(p[1], 10)) : null;
       };
+
       let totalHrs = 0;
-      if (manualForm.check_in && manualForm.check_out) {
+      let rawPunches = '';
+      let checkInFinal = null;
+      let checkOutFinal = null;
+
+      if (isSplitShift) {
+        // Calculate both morning and evening shifts
+        const m1In = parseM(manualForm.period_1_in);
+        const m1Out = parseM(manualForm.period_1_out);
+        const m2In = parseM(manualForm.period_2_in);
+        const m2Out = parseM(manualForm.period_2_out);
+
+        let dur1 = 0;
+        if (m1In !== null && m1Out !== null) {
+          dur1 = m1Out >= m1In ? m1Out - m1In : (m1Out + 1440) - m1In;
+        }
+        let dur2 = 0;
+        if (m2In !== null && m2Out !== null) {
+          dur2 = m2Out >= m2In ? m2Out - m2In : (m2Out + 1440) - m2In;
+        }
+        totalHrs = Math.round(((dur1 + dur2) / 60) * 10) / 10;
+        rawPunches = `${manualForm.period_1_in || '09:00'}:00 -- ${manualForm.period_1_out || '13:00'}:00 & ${manualForm.period_2_in || '16:00'}:00 -- ${manualForm.period_2_out || '21:00'}:00`;
+        checkInFinal = manualForm.period_1_in ? `${manualForm.log_date}T${manualForm.period_1_in}:00` : null;
+        checkOutFinal = manualForm.period_2_out ? `${manualForm.log_date}T${manualForm.period_2_out}:00` : null;
+      } else {
         const inM = parseM(manualForm.check_in);
         const outM = parseM(manualForm.check_out);
         if (inM !== null && outM !== null) {
           const diff = outM >= inM ? outM - inM : (outM + 1440) - inM;
           totalHrs = Math.round((diff / 60) * 10) / 10;
         }
+        rawPunches = `${manualForm.check_in || '16:00'}:00 -- ${manualForm.check_out || '21:00'}:00`;
+        checkInFinal = manualForm.check_in ? `${manualForm.log_date}T${manualForm.check_in}:00` : null;
+        checkOutFinal = manualForm.check_out ? `${manualForm.log_date}T${manualForm.check_out}:00` : null;
       }
-
-      const rawPunches = (manualForm.check_in && manualForm.check_out) 
-        ? `${manualForm.check_in}:00 -- ${manualForm.check_out}:00` 
-        : (manualForm.check_in || '');
 
       const logPayload = {
         id: 'att_man_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
@@ -269,18 +371,25 @@ export default function Attendance() {
         employee_name: empName,
         employee_number: empNum,
         log_date: manualForm.log_date,
-        check_in: manualForm.check_in ? `${manualForm.log_date}T${manualForm.check_in}:00` : null,
-        check_out: manualForm.check_out ? `${manualForm.log_date}T${manualForm.check_out}:00` : null,
+        check_in: checkInFinal,
+        check_out: checkOutFinal,
         status: manualForm.status || 'present',
         timestamp_raw: rawPunches,
         total_hours: totalHrs,
-        period_1_in: manualForm.check_in || '',
-        period_1_out: manualForm.check_out || '',
+        period_1_in: isSplitShift ? manualForm.period_1_in : manualForm.check_in,
+        period_1_out: isSplitShift ? manualForm.period_1_out : manualForm.check_out,
+        period_2_in: isSplitShift ? manualForm.period_2_in : '',
+        period_2_out: isSplitShift ? manualForm.period_2_out : '',
         notes: JSON.stringify({
           employee_number: empNum,
           user_id: empId,
           total_hours: totalHrs,
           timestamp_raw: rawPunches,
+          shift_name: empShift,
+          period_1_in: isSplitShift ? manualForm.period_1_in : manualForm.check_in,
+          period_1_out: isSplitShift ? manualForm.period_1_out : manualForm.check_out,
+          period_2_in: isSplitShift ? manualForm.period_2_in : '',
+          period_2_out: isSplitShift ? manualForm.period_2_out : '',
           manual_edit_by: user?.full_name || 'مدير الموارد البشرية',
           manual_edit_at: new Date().toISOString()
         })
@@ -290,18 +399,11 @@ export default function Attendance() {
       setAttendanceLogs(prev => [logPayload, ...prev]);
 
       toast({ 
-        title: '✓ تم تسجيل البصمة يدوياً بنجاح', 
-        description: `تم توثيق حركة البصمة للموظف (${empName}) وحفظها مباشرة في قاعدة البيانات السحابية.` 
+        title: '✓ تم تسجيل البصمات الأربعة واعتمادها بنجاح', 
+        description: `تم توثيق بصمات اليوم بالكامل (${totalHrs} ساعات) للموظف ${empName} وحفظها في السحابة.` 
       });
 
       setManualPunchOpen(false);
-      setManualForm({
-        employee_id: '',
-        log_date: todayStr(),
-        check_in: '08:00',
-        check_out: '16:00',
-        status: 'present'
-      });
       await loadData();
     } catch (e) {
       toast({ title: 'خطأ أثناء تسجيل البصمة', description: e.message, variant: 'destructive' });
@@ -554,94 +656,196 @@ export default function Attendance() {
 
       {/* ─── MODAL: MANUAL PUNCH REGISTRATION (HR ADMIN) ────────────────── */}
       <Dialog open={manualPunchOpen} onOpenChange={setManualPunchOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl" dir="rtl">
+        <DialogContent className="sm:max-w-xl rounded-3xl" dir="rtl">
           <DialogHeader>
             <DialogTitle className="font-heading font-black text-base text-foreground flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                 <Fingerprint className="w-4 h-4" />
               </div>
-              <span>تسجيل حركة بصمة يدوية (صلاحية HR Admin)</span>
+              <span>تسجيل وتوثيق بصمات اليوم للموظف (صلاحية HR Admin)</span>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3.5 py-2 text-xs">
-            <div className="space-y-1">
-              <Label className="font-bold">اختر الموظف *:</Label>
-              <Select 
-                value={manualForm.employee_id} 
-                onValueChange={(v) => setManualForm(prev => ({ ...prev, employee_id: v }))}
-              >
-                <SelectTrigger className="rounded-xl text-xs font-bold">
-                  <SelectValue placeholder="اختر الموظف..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl max-h-60">
-                  {employees.map(e => (
-                    <SelectItem key={e.id} value={String(e.id)} className="text-xs font-bold py-1.5">
-                      {e.full_name} (#{e.employee_number}) — {e.branch_name || e.branch}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {(() => {
+            const selectedEmp = employees.find(e => String(e.id) === String(manualForm.employee_id) || String(e.employee_number) === String(manualForm.employee_id));
+            const empShift = selectedEmp?.shift || '';
+            const isSplitShift = empShift.includes('فترتين') || 
+              empShift.includes('غير سعودي') || 
+              empShift.includes('9 ساعات') || 
+              empShift.includes('8 ساعات') || 
+              (selectedEmp && selectedEmp.nationality !== 'سعودي' && selectedEmp.employee_number !== '1001');
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="font-bold">تاريخ البصمة *:</Label>
-                <Input 
-                  type="date" 
-                  value={manualForm.log_date} 
-                  onChange={(e) => setManualForm(prev => ({ ...prev, log_date: e.target.value }))}
-                  className="rounded-xl font-mono text-xs h-9"
-                />
-              </div>
+            return (
+              <div className="space-y-4 py-2 text-xs">
+                
+                {/* 1. Select Employee & Date */}
+                <div className="space-y-1">
+                  <Label className="font-bold">اختر الموظف المستهدف *:</Label>
+                  <Select 
+                    value={manualForm.employee_id} 
+                    onValueChange={handleSelectEmployeeForPunch}
+                  >
+                    <SelectTrigger className="rounded-xl text-xs font-bold h-10">
+                      <SelectValue placeholder="اختر الموظف لتسجيل بصماته..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl max-h-60">
+                      {employees.map(e => (
+                        <SelectItem key={e.id} value={String(e.id)} className="text-xs font-bold py-2">
+                          {e.full_name} (#{e.employee_number}) — {e.shift || 'فترة عمل'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-1">
-                <Label className="font-bold">الحالة المعتمدة:</Label>
-                <Select 
-                  value={manualForm.status} 
-                  onValueChange={(v) => setManualForm(prev => ({ ...prev, status: v }))}
-                >
-                  <SelectTrigger className="rounded-xl text-xs font-bold h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
-                    <SelectItem value="present">حاضر (دوام مكتمل)</SelectItem>
-                    <SelectItem value="late">متأخر (مع عذر)</SelectItem>
-                    <SelectItem value="exempt">معفى إدارياً</SelectItem>
-                    <SelectItem value="absent">غائب</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                {/* Shift Info Banner */}
+                {selectedEmp && (
+                  <div className="p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/60 dark:border-sky-900/60 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-sky-900 dark:text-sky-200">الوردية المعتمدة: </span>
+                      <span className="font-bold text-sky-700 dark:text-sky-300">{empShift || 'فترة عمل'}</span>
+                    </div>
+                    <Badge className="bg-sky-600 text-white font-bold text-[10px]">
+                      {isSplitShift ? 'دوام فترتين (4 بصمات)' : 'دوام فترة واحدة (بصمتين)'}
+                    </Badge>
+                  </div>
+                )}
 
-            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-border/60">
-              <div className="space-y-1">
-                <Label className="font-bold flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>وقت الحضور (Check In):</span>
-                </Label>
-                <Input 
-                  type="time" 
-                  value={manualForm.check_in} 
-                  onChange={(e) => setManualForm(prev => ({ ...prev, check_in: e.target.value }))}
-                  className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900"
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="font-bold">تاريخ البصمة *:</Label>
+                    <Input 
+                      type="date" 
+                      value={manualForm.log_date} 
+                      onChange={(e) => setManualForm(prev => ({ ...prev, log_date: e.target.value }))}
+                      className="rounded-xl font-mono text-xs h-9 font-bold"
+                    />
+                  </div>
 
-              <div className="space-y-1">
-                <Label className="font-bold flex items-center gap-1 text-indigo-700 dark:text-indigo-400">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>وقت الانصراف (Check Out):</span>
-                </Label>
-                <Input 
-                  type="time" 
-                  value={manualForm.check_out} 
-                  onChange={(e) => setManualForm(prev => ({ ...prev, check_out: e.target.value }))}
-                  className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900"
-                />
+                  <div className="space-y-1">
+                    <Label className="font-bold">الحالة المعتمدة:</Label>
+                    <Select 
+                      value={manualForm.status} 
+                      onValueChange={(v) => setManualForm(prev => ({ ...prev, status: v }))}
+                    >
+                      <SelectTrigger className="rounded-xl text-xs font-bold h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl">
+                        <SelectItem value="present">حاضر (دوام مكتمل ✓)</SelectItem>
+                        <SelectItem value="late">متأخر (مع احتساب تأخير)</SelectItem>
+                        <SelectItem value="exempt">معفى إدارياً</SelectItem>
+                        <SelectItem value="absent">غائب</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* 2. Biometric Punches Input based on Shift Type */}
+                {isSplitShift ? (
+                  /* ─── 4 PUNCHES (DUAL SHIFT) ──────────────────────────────────── */
+                  <div className="space-y-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-border/80">
+                    <div className="flex items-center justify-between font-bold text-xs text-foreground">
+                      <span className="flex items-center gap-1.5 text-amber-600">
+                        <Sun className="w-4 h-4" />
+                        <span>بصمات الفترة الصباحية:</span>
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">الفترة 1</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground font-bold">1. دخول صباحي (Check In 1)</Label>
+                        <Input 
+                          type="time" 
+                          value={manualForm.period_1_in} 
+                          onChange={(e) => setManualForm(prev => ({ ...prev, period_1_in: e.target.value }))}
+                          className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900 mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground font-bold">2. خروج صباحي (Check Out 1)</Label>
+                        <Input 
+                          type="time" 
+                          value={manualForm.period_1_out} 
+                          onChange={(e) => setManualForm(prev => ({ ...prev, period_1_out: e.target.value }))}
+                          className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900 mt-1"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Break indicator */}
+                    <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 flex items-center justify-between text-[11px] text-amber-800 dark:text-amber-300">
+                      <span className="flex items-center gap-1">
+                        <Coffee className="w-3.5 h-3.5 text-amber-600" />
+                        <span>فترة الاستراحة الرسمية (البريك)</span>
+                      </span>
+                      <span className="font-mono font-bold" dir="ltr">1:00 PM - 4:00 PM</span>
+                    </div>
+
+                    <div className="flex items-center justify-between font-bold text-xs text-foreground pt-1">
+                      <span className="flex items-center gap-1.5 text-indigo-600">
+                        <Moon className="w-4 h-4" />
+                        <span>بصمات الفترة المسائية:</span>
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">الفترة 2</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground font-bold">3. دخول مسائي (Check In 2)</Label>
+                        <Input 
+                          type="time" 
+                          value={manualForm.period_2_in} 
+                          onChange={(e) => setManualForm(prev => ({ ...prev, period_2_in: e.target.value }))}
+                          className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900 mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground font-bold">4. خروج مسائي (Check Out 2)</Label>
+                        <Input 
+                          type="time" 
+                          value={manualForm.period_2_out} 
+                          onChange={(e) => setManualForm(prev => ({ ...prev, period_2_out: e.target.value }))}
+                          className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900 mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ─── 2 PUNCHES (SINGLE SHIFT) ─────────────────────────────────── */
+                  <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-border/80">
+                    <div className="space-y-1">
+                      <Label className="font-bold flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>1. وقت الحضور (Check In):</span>
+                      </Label>
+                      <Input 
+                        type="time" 
+                        value={manualForm.check_in} 
+                        onChange={(e) => setManualForm(prev => ({ ...prev, check_in: e.target.value }))}
+                        className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="font-bold flex items-center gap-1 text-indigo-700 dark:text-indigo-400">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>2. وقت الانصراف (Check Out):</span>
+                      </Label>
+                      <Input 
+                        type="time" 
+                        value={manualForm.check_out} 
+                        onChange={(e) => setManualForm(prev => ({ ...prev, check_out: e.target.value }))}
+                        className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900"
+                      />
+                    </div>
+                  </div>
+                )}
+
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setManualPunchOpen(false)} className="rounded-xl font-bold text-xs">
@@ -649,9 +853,10 @@ export default function Attendance() {
             </Button>
             <Button 
               onClick={handleCreateManualPunch} 
-              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md gap-1.5"
             >
-              حفظ واعتماد البصمة 💾
+              <CheckCircle2 className="w-4 h-4" />
+              <span>حفظ وتوثيق بصمات اليوم 💾</span>
             </Button>
           </DialogFooter>
         </DialogContent>
