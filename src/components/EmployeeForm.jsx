@@ -10,12 +10,12 @@ import { useI18n } from '@/lib/i18n';
 import { useToast } from '@/components/ui/use-toast';
 
 const defaultShifts = [
-  { id: 'sh_1', name: 'فترة عمل غير سعودي', working_hours: 8, start_time: '08:00', end_time: '20:00' },
-  { id: 'sh_2', name: 'فترة عمل سعودي صباحي', working_hours: 5, start_time: '08:00', end_time: '13:00' },
-  { id: 'sh_3', name: 'فترة عمل سعودي مسائي', working_hours: 5, start_time: '16:00', end_time: '21:00' },
-  { id: 'sh_4', name: 'شفت رمضان', working_hours: 5.5, start_time: '20:30', end_time: '02:00' },
-  { id: 'sh_5', name: 'شفت المدير العام', working_hours: 8, start_time: '09:00', end_time: '17:00' },
-  { id: 'sh_6', name: 'شفت مرن', working_hours: 8, start_time: '08:00', end_time: '16:00' }
+  { id: 'sh_non_saudi_overtime', name: 'فترة عمل غير سعودي (9 ساعات + إضافي 100 ريال)', working_hours: 9, start_time: '09:00', end_time: '21:00' },
+  { id: 'sh_non_saudi', name: 'فترة عمل غير سعودي (الأساسي 8 ساعات)', working_hours: 8, start_time: '08:00', end_time: '20:00' },
+  { id: 'sh_saudi_morning', name: 'فترة عمل سعودي صباحي', working_hours: 5, start_time: '08:00', end_time: '13:00' },
+  { id: 'sh_saudi_evening', name: 'فترة عمل سعودي مسائي', working_hours: 5, start_time: '16:00', end_time: '21:00' },
+  { id: 'sh_gm', name: 'شفت المدير العام', working_hours: 8, start_time: '09:00', end_time: '17:00' },
+  { id: 'sh_ramadan', name: 'شفت رمضان', working_hours: 5.5, start_time: '20:30', end_time: '02:00' }
 ];
 
 const defaultBranches = [

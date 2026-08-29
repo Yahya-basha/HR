@@ -48,6 +48,14 @@ export default function Employees() {
   const navigate = useNavigate();
 
   const [employees, setEmployees] = useState([]);
+  const [shifts, setShifts] = useState([
+    { id: 'sh_non_saudi_overtime', name: 'فترة عمل غير سعودي (9 ساعات + إضافي 100 ريال)', working_hours: 9 },
+    { id: 'sh_non_saudi', name: 'فترة عمل غير سعودي (الأساسي 8 ساعات)', working_hours: 8 },
+    { id: 'sh_saudi_morning', name: 'فترة عمل سعودي صباحي', working_hours: 5 },
+    { id: 'sh_saudi_evening', name: 'فترة عمل سعودي مسائي', working_hours: 5 },
+    { id: 'sh_gm', name: 'شفت المدير العام', working_hours: 8 },
+    { id: 'sh_ramadan', name: 'شفت رمضان', working_hours: 5.5 }
+  ]);
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
@@ -742,17 +750,19 @@ export default function Employees() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="font-bold">فترة العمل (الوردية):</Label>
+                <Label className="font-bold text-xs flex items-center justify-between">
+                  <span>فترة العمل (الوردية المعتمدة):</span>
+                </Label>
                 <Select value={form.shift} onValueChange={(val) => setForm(prev => ({ ...prev, shift: val }))}>
-                  <SelectTrigger className="rounded-xl text-xs">
-                    <SelectValue />
+                  <SelectTrigger className="rounded-xl text-xs font-bold">
+                    <SelectValue placeholder="اختر الوردية..." />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="فترة عمل السعودي الصباح">فترة عمل السعودي الصباح</SelectItem>
-                    <SelectItem value="فترة عمل السعودي المساء">فترة عمل السعودي المساء</SelectItem>
-                    <SelectItem value="فترة عمل غير السعوديين">فترة عمل غير السعوديين</SelectItem>
-                    <SelectItem value="فترة عمل غير السعوديين (745)">فترة عمل غير السعوديين (745)</SelectItem>
-                    <SelectItem value="فترة عمل الاداره">فترة عمل الاداره</SelectItem>
+                  <SelectContent className="rounded-2xl shadow-xl border-border">
+                    {shifts.map((s) => (
+                      <SelectItem key={s.id || s.name} value={s.name} className="text-xs font-bold py-2">
+                        {s.name} {s.working_hours ? `(${s.working_hours} ساعات)` : ''}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
