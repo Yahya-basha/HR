@@ -105,22 +105,33 @@ export const initialData = {
       emergency_days: 0 
     }
   ],
-  Shift: [
+    Shift: [
     {
-      id: 'sh_1',
-      name: 'فترة عمل غير سعودي',
+      id: 'sh_non_saudi_overtime',
+      name: 'فترة عمل غير سعودي (9 ساعات + إضافي 100 ريال)',
+      type: 'multi',
+      start_time: '09:00',
+      end_time: '21:00',
+      break_start: '13:00',
+      break_end: '16:00',
+      working_hours: 9,
+      grace_minutes: 15,
+      description: 'دوام فترتين مخصص (يحيى باشا & هشام زغلول): 9:00 ص إلى 1:00 م & 4:00 ع إلى 9:00 م (ساعة إضافية يومية = 100 ريال)'
+    },
+    {
+      id: 'sh_non_saudi',
+      name: 'فترة عمل غير سعودي (الأساسي 8 ساعات)',
       type: 'multi',
       start_time: '08:00',
       end_time: '20:00',
       break_start: '12:00',
       break_end: '16:00',
       working_hours: 8,
-      total_hours: 8,
       grace_minutes: 15,
-      description: 'دوامين: 8 ص - 12 ظهراً، ومن 4 عصراً - 8 مساءً مع استراحة'
+      description: 'دوام فترتين أساسي: 8:00 ص إلى 12:00 م & 4:00 ع إلى 8:00 م مع استراحة 4 ساعات'
     },
     {
-      id: 'sh_2',
+      id: 'sh_saudi_morning',
       name: 'فترة عمل سعودي صباحي',
       type: 'morning',
       start_time: '08:00',
@@ -128,38 +139,23 @@ export const initialData = {
       break_start: '',
       break_end: '',
       working_hours: 5,
-      total_hours: 5,
       grace_minutes: 15,
-      description: 'دوام سعودي صباحي من 8 ص حتى 1 ظهراً'
+      description: 'دوام صباحي 5 ساعات للكوادر الوطنية'
     },
     {
-      id: 'sh_3',
+      id: 'sh_saudi_evening',
       name: 'فترة عمل سعودي مسائي',
       type: 'evening',
-      start_time: '16:00',
-      end_time: '21:00',
+      start_time: '15:30',
+      end_time: '21:30',
       break_start: '',
       break_end: '',
-      working_hours: 5,
-      total_hours: 5,
+      working_hours: 6,
       grace_minutes: 15,
-      description: 'دوام سعودي مسائي من 4 عصراً حتى 9 مساءً'
+      description: 'دوام مسائي للكوادر الوطنية 6 ساعات'
     },
     {
-      id: 'sh_4',
-      name: 'شفت رمضان',
-      type: 'ramadan',
-      start_time: '20:30',
-      end_time: '02:00',
-      break_start: '',
-      break_end: '',
-      working_hours: 5.5,
-      total_hours: 5.5,
-      grace_minutes: 20,
-      description: 'دوام رمضان من 8:30 مساءً حتى 2 صباحاً'
-    },
-    {
-      id: 'sh_5',
+      id: 'sh_gm',
       name: 'شفت المدير العام',
       type: 'flexible',
       start_time: '09:00',
@@ -167,22 +163,20 @@ export const initialData = {
       break_start: '',
       break_end: '',
       working_hours: 8,
-      total_hours: 8,
       grace_minutes: 0,
-      description: 'حضور تلقائي — لا يحتاج إلى بصمة، خاص بالمدير'
+      description: 'دوام الإدارة العامة حضور وانصراف مرن ومعفى آلياً'
     },
     {
-      id: 'sh_6',
-      name: 'شفت مرن',
-      type: 'flexible',
-      start_time: '08:00',
-      end_time: '16:00',
+      id: 'sh_ramadan',
+      name: 'شفت رمضان',
+      type: 'ramadan',
+      start_time: '20:30',
+      end_time: '02:00',
       break_start: '',
       break_end: '',
-      working_hours: 8,
-      total_hours: 8,
-      grace_minutes: 15,
-      description: 'فترة مرنة تقبل أول دخول وآخر خروج'
+      working_hours: 5.5,
+      grace_minutes: 20,
+      description: 'دوام شهر رمضان المبارك المسائي'
     }
   ],
   Employee: [
