@@ -78,12 +78,15 @@ const initialShifts = [
     "id": "sh_saudi_evening",
     "name": "فترة عمل سعودي مسائي",
     "type": "evening",
-    "start_time": "15:30",
-    "end_time": "21:30",
-    "working_hours": 6,
-    "total_hours": 6,
-    "grace_minutes": 15,
-    "description": "دوام مسائي للكوادر الوطنية 6 ساعات (3:30 م إلى 9:30 م)"
+    "start_time": "16:00",
+    "end_time": "21:00",
+    "working_hours": 5,
+    "total_hours": 5,
+    "early_checkin_grace": 60,
+    "grace_minutes": 10,
+    "overtime_grace": 60,
+    "has_netting": true,
+    "description": "دوام مسائي 5 ساعات (4:00 م إلى 9:00 م) - سماحية حضور مبكر 60 دقيقة، سماحية تأخير 10 دقائق، احتساب خروج وإضافي حتى 60 دقيقة ومقاصة شهرية للإضافي مع التأخير"
   },
   {
     "id": "sh_gm",
