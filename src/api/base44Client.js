@@ -25,7 +25,7 @@ function normalizeEmployeeBranches(list) {
 // ============================================================================
 // AUTO DATABASE SYNC v8 (Guarantees zero cache mismatch across all browsers)
 // ============================================================================
-const CURRENT_DB_VERSION = 'v10_clean_attendance_ready';
+const CURRENT_DB_VERSION = 'v11_strict_realtime_biometrics';
 try {
   if (typeof window !== 'undefined' && window.localStorage) {
     if (localStorage.getItem('hr_flow_db_ver') !== CURRENT_DB_VERSION) {
@@ -43,7 +43,7 @@ try {
   console.warn('Storage sync:', e);
 }
 
-const STORAGE_PREFIX = 'hr_flow_v10_dora_';
+const STORAGE_PREFIX = 'hr_flow_v11_dora_';
 
 
 

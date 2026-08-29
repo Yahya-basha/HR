@@ -64,6 +64,19 @@ const todayStr = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+
+const formatPunchTime = (val) => {
+  if (!val || val === '--:--') return '--:--';
+  if (typeof val === 'string' && val.includes('T')) {
+    const timePart = val.split('T')[1];
+    return timePart ? timePart.substring(0, 5) : val;
+  }
+  if (typeof val === 'string' && val.length >= 5) {
+    return val.substring(0, 5);
+  }
+  return String(val);
+};
+
 const daysUntil = (dateStr) => {
   if (!dateStr) return null;
   const target = new Date(dateStr);
@@ -158,8 +171,8 @@ export default function Dashboard() {
     
     if (log && (log.check_in || (log.punches && log.punches.length > 0))) {
       const punches = (log.punches || []).filter(Boolean);
-      let p1In = log.check_in || log.check_in_time || '--:--';
-      let p1Out = log.check_out || log.check_out_time || '--:--';
+      let p1In = formatPunchTime(log.check_in || log.check_in_time || '--:--');
+      let p1Out = formatPunchTime(log.check_out || log.check_out_time || '--:--');
       let p2In = '--:--';
       let p2Out = '--:--';
 
@@ -481,7 +494,7 @@ export default function Dashboard() {
 
         // Dynamic Color Scale based on percentage
         let colorTier = 'red';
-        let colorClass = 'bg-rose-600 hover:bg-rose-500 text-white';
+        let colorClass = isToday && presentCount === 0 ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700' : 'bg-rose-600 hover:bg-rose-500 text-white';
         let tierLabel = 'غياب كامل 0% (أحمر)';
 
         if (isFriday) {
