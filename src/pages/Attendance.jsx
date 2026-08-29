@@ -22,6 +22,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useSearchParams } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
@@ -37,6 +39,7 @@ const yesterdayStr = () => {
 };
 
 export default function Attendance() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role === 'admin' || true;
@@ -55,7 +58,7 @@ export default function Attendance() {
 
   // Selected Checkboxes
   const [selectedRows, setSelectedRows] = useState([]);
-  const [manualPunchOpen, setManualPunchOpen] = useState(false);
+  const [manualPunchOpen, setManualPunchOpen] = useState(() => searchParams.get('mode') === 'manual');
   const [manualForm, setManualForm] = useState({
     employee_id: '',
     log_date: todayStr(),
@@ -87,6 +90,12 @@ export default function Attendance() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (searchParams.get('mode') === 'manual') {
+      setManualPunchOpen(true);
+    }
+  }, [searchParams]);
 
   // Set date filter when filterMode changes
   useEffect(() => {
