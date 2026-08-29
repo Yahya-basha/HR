@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
 import {
   Users,
+  ChevronLeft,
+  ChevronRight,
   Megaphone,
   Clock,
   CalendarDays,
