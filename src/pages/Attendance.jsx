@@ -55,6 +55,14 @@ export default function Attendance() {
 
   // Selected Checkboxes
   const [selectedRows, setSelectedRows] = useState([]);
+  const [manualPunchOpen, setManualPunchOpen] = useState(false);
+  const [manualForm, setManualForm] = useState({
+    employee_id: '',
+    log_date: todayStr(),
+    check_in: '08:00',
+    check_out: '16:00',
+    status: 'present'
+  });
 
   // Modals
   const [editLogModal, setEditLogModal] = useState(null);
@@ -207,6 +215,90 @@ export default function Attendance() {
     toast({ title: '✓ تم تصدير ملف البصمات بنجاح' });
   };
 
+  const handleCreateManualPunch = async () => {
+    if (!manualForm.employee_id || !manualForm.log_date) {
+      toast({ title: 'بيانات ناقصة', description: 'يرجى اختيار الموظف والتاريخ.', variant: 'destructive' });
+      return;
+    }
+
+    const isHrAdmin = !user?.role || user?.role === 'admin' || user?.job_title?.includes('موارد') || user?.job_title?.includes('مدير') || user?.employee_number === '1001' || user?.employee_number === '1022';
+    if (!isHrAdmin) {
+      toast({ title: 'غير مصرح ⚠️', description: 'تسجيل البصمات اليدوية مخصص فقط لمدير الموارد البشرية.', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      const emp = employees.find(e => String(e.id) === String(manualForm.employee_id) || String(e.employee_number) === String(manualForm.employee_id));
+      const empId = emp ? emp.id : manualForm.employee_id;
+      const empNum = emp ? String(emp.employee_number) : '';
+      const empName = emp ? emp.full_name : 'موظف';
+
+      const parseM = (t) => {
+        if (!t) return null;
+        const clean = t.replace(/[^0-9:]/g, '');
+        const p = clean.split(':');
+        return p.length >= 2 ? (parseInt(p[0], 10) * 60 + parseInt(p[1], 10)) : null;
+      };
+      let totalHrs = 0;
+      if (manualForm.check_in && manualForm.check_out) {
+        const inM = parseM(manualForm.check_in);
+        const outM = parseM(manualForm.check_out);
+        if (inM !== null && outM !== null) {
+          const diff = outM >= inM ? outM - inM : (outM + 1440) - inM;
+          totalHrs = Math.round((diff / 60) * 10) / 10;
+        }
+      }
+
+      const rawPunches = (manualForm.check_in && manualForm.check_out) 
+        ? `${manualForm.check_in}:00 -- ${manualForm.check_out}:00` 
+        : (manualForm.check_in || '');
+
+      const logPayload = {
+        id: 'att_man_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        employee_id: empId,
+        user_id: empId,
+        employee_name: empName,
+        employee_number: empNum,
+        log_date: manualForm.log_date,
+        check_in: manualForm.check_in ? `${manualForm.log_date}T${manualForm.check_in}:00` : null,
+        check_out: manualForm.check_out ? `${manualForm.log_date}T${manualForm.check_out}:00` : null,
+        status: manualForm.status || 'present',
+        timestamp_raw: rawPunches,
+        total_hours: totalHrs,
+        period_1_in: manualForm.check_in || '',
+        period_1_out: manualForm.check_out || '',
+        notes: JSON.stringify({
+          employee_number: empNum,
+          user_id: empId,
+          total_hours: totalHrs,
+          timestamp_raw: rawPunches,
+          manual_edit_by: user?.full_name || 'مدير الموارد البشرية',
+          manual_edit_at: new Date().toISOString()
+        })
+      };
+
+      await base44.entities.AttendanceLog.create(logPayload);
+      setAttendanceLogs(prev => [logPayload, ...prev]);
+
+      toast({ 
+        title: '✓ تم تسجيل البصمة يدوياً بنجاح', 
+        description: `تم توثيق حركة البصمة للموظف (${empName}) وحفظها مباشرة في قاعدة البيانات السحابية.` 
+      });
+
+      setManualPunchOpen(false);
+      setManualForm({
+        employee_id: '',
+        log_date: todayStr(),
+        check_in: '08:00',
+        check_out: '16:00',
+        status: 'present'
+      });
+      await loadData();
+    } catch (e) {
+      toast({ title: 'خطأ أثناء تسجيل البصمة', description: e.message, variant: 'destructive' });
+    }
+  };
+
   const handleDeletePunch = async (punch) => {
     if (!confirm(`هل أنت متأكد من حذف بصمة ${punch.employee_name}?`)) return;
     try {
@@ -287,15 +379,25 @@ export default function Attendance() {
       {/* ─── 2. SEARCH & ACTION TOOLBAR (EKTEFA SPEC) ──────────────────────── */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border shadow-sm">
         
-        {/* Left Action: Export Data */}
-        <Button
-          onClick={exportCSV}
-          variant="outline"
-          className="rounded-xl text-xs font-bold gap-2 h-9 border-border/80 hover:bg-slate-50"
-        >
-          <Download className="w-4 h-4 text-sky-600" />
-          <span>تصدير البيانات</span>
-        </Button>
+        {/* Left Actions: Manual Punch & Export Data */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setManualPunchOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold gap-2 h-9 shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ تسجيل بصمة يدوية للموظف</span>
+          </Button>
+
+          <Button
+            onClick={exportCSV}
+            variant="outline"
+            className="rounded-xl text-xs font-bold gap-2 h-9 border-border/80 hover:bg-slate-50"
+          >
+            <Download className="w-4 h-4 text-sky-600" />
+            <span>تصدير البيانات</span>
+          </Button>
+        </div>
 
         {/* Right Search Input & Filters */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -440,6 +542,111 @@ export default function Attendance() {
           </table>
         </div>
       </Card>
+
+      {/* ─── MODAL: MANUAL PUNCH REGISTRATION (HR ADMIN) ────────────────── */}
+      <Dialog open={manualPunchOpen} onOpenChange={setManualPunchOpen}>
+        <DialogContent className="sm:max-w-md rounded-3xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-black text-base text-foreground flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                <Fingerprint className="w-4 h-4" />
+              </div>
+              <span>تسجيل حركة بصمة يدوية (صلاحية HR Admin)</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3.5 py-2 text-xs">
+            <div className="space-y-1">
+              <Label className="font-bold">اختر الموظف *:</Label>
+              <Select 
+                value={manualForm.employee_id} 
+                onValueChange={(v) => setManualForm(prev => ({ ...prev, employee_id: v }))}
+              >
+                <SelectTrigger className="rounded-xl text-xs font-bold">
+                  <SelectValue placeholder="اختر الموظف..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl max-h-60">
+                  {employees.map(e => (
+                    <SelectItem key={e.id} value={String(e.id)} className="text-xs font-bold py-1.5">
+                      {e.full_name} (#{e.employee_number}) — {e.branch_name || e.branch}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="font-bold">تاريخ البصمة *:</Label>
+                <Input 
+                  type="date" 
+                  value={manualForm.log_date} 
+                  onChange={(e) => setManualForm(prev => ({ ...prev, log_date: e.target.value }))}
+                  className="rounded-xl font-mono text-xs h-9"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="font-bold">الحالة المعتمدة:</Label>
+                <Select 
+                  value={manualForm.status} 
+                  onValueChange={(v) => setManualForm(prev => ({ ...prev, status: v }))}
+                >
+                  <SelectTrigger className="rounded-xl text-xs font-bold h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl">
+                    <SelectItem value="present">حاضر (دوام مكتمل)</SelectItem>
+                    <SelectItem value="late">متأخر (مع عذر)</SelectItem>
+                    <SelectItem value="exempt">معفى إدارياً</SelectItem>
+                    <SelectItem value="absent">غائب</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-border/60">
+              <div className="space-y-1">
+                <Label className="font-bold flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>وقت الحضور (Check In):</span>
+                </Label>
+                <Input 
+                  type="time" 
+                  value={manualForm.check_in} 
+                  onChange={(e) => setManualForm(prev => ({ ...prev, check_in: e.target.value }))}
+                  className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="font-bold flex items-center gap-1 text-indigo-700 dark:text-indigo-400">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>وقت الانصراف (Check Out):</span>
+                </Label>
+                <Input 
+                  type="time" 
+                  value={manualForm.check_out} 
+                  onChange={(e) => setManualForm(prev => ({ ...prev, check_out: e.target.value }))}
+                  className="rounded-xl font-mono text-xs font-bold h-9 bg-white dark:bg-slate-900"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setManualPunchOpen(false)} className="rounded-xl font-bold text-xs">
+              إلغاء
+            </Button>
+            <Button 
+              onClick={handleCreateManualPunch} 
+              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md"
+            >
+              حفظ واعتماد البصمة 💾
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
