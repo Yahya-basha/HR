@@ -607,6 +607,9 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const basicSalary = Number(emp.salary) || 0;
   const housing = Number(emp.housing_allowance) || 0;
   const transport = Number(emp.transport_allowance) || 0;
+  const electricity = Number(emp.electricity_allowance) || 0;
+  const phone = Number(emp.phone_allowance) || 0;
+  const otherAllowance = Number(emp.other_allowance) || 0;
   const hourlyRate = calcHourlyRate(basicSalary, shiftHours, daysPerMonth);
   const dailySalaryRate = Math.round((basicSalary / daysPerMonth) * 100) / 100;
 
@@ -675,7 +678,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   }
 
   // TOTALS CALCULATION
-  const totalAdditions = housing + transport + fridayAllowance + dailyOvertimeAllowance + customBonusesTotal;
+  const totalAdditions = housing + transport + electricity + phone + otherAllowance + fridayAllowance + dailyOvertimeAllowance + customBonusesTotal;
   const totalDeductions = approvedShortfallDeduction + proposedAbsenceDeduction + proposedUnpaidLeaveDeduction + customPenaltiesTotal + advanceInstallment;
   const netSalary = Math.max(0, basicSalary + totalAdditions - totalDeductions);
 
@@ -704,6 +707,9 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     basicSalary,
     housing,
     transport,
+    electricity,
+    phone,
+    otherAllowance,
     fridayAllowance,
     fridayNote,
     fridayDailyRate,

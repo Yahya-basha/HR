@@ -23,6 +23,7 @@ import Leave from '@/pages/Leave';
 import Departments from '@/pages/Departments';
 import Profile from '@/pages/Profile';
 import Payroll from '@/pages/Payroll';
+import Allowances from '@/pages/Allowances';
 import Settings from '@/pages/Settings';
 import Contracts from '@/pages/Contracts';
 import Branches from '@/pages/Branches';
@@ -78,6 +79,7 @@ const AuthenticatedApp = () => {
           <Route path="/departments" element={<Departments />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/payroll" element={<Payroll />} />
+          <Route path="/allowances" element={<Allowances />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/branches" element={<Branches />} />

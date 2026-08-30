@@ -5,6 +5,7 @@ import {
   Users,
   Briefcase,
   Wallet,
+  Coins,
   Settings,
   UserCheck,
   CalendarDays,
@@ -85,6 +86,7 @@ export const navigationModules = [
       { to: '/branches', label: 'الفروع ومواقع العمل', icon: GitBranch, admin: true },
       { to: '/departments', label: 'الأقسام والهيكل الإداري', icon: Layers, admin: true },
       { to: '/contracts', label: 'العقود ومسيرات التوظيف', icon: FileText, admin: true },
+      { to: '/allowances', label: 'سجل وإدارة البدلات والمزايا', icon: Coins, admin: true },
       { to: '/shifts', label: 'الورديات ومواعيد العمل', icon: CalendarRange, admin: true },
     ]
   },
@@ -114,6 +116,7 @@ export const navigationModules = [
       { to: '/payroll?stage=3', label: '3. اعتماد الاستحقاقات والمكافئات', icon: Award, admin: true },
       { to: '/payroll?stage=4', label: '4. المراجعة والإقفال النهائي', icon: FileSpreadsheet, admin: true },
       { to: '/payroll?stage=5', label: '5. رواتب الشهور السابقة والمصادقة', icon: FileText, admin: true },
+      { to: '/allowances', label: 'سجل وإدارة البدلات والمزايا', icon: Coins, admin: true },
       { to: '/payroll?tab=advances', label: 'نظام السلف والقروض', icon: CreditCard, admin: true },
       { to: '/end-of-service', label: 'حاسبة مكافأة نهاية الخدمة', icon: Calculator, admin: true },
     ]
