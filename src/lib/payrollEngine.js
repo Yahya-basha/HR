@@ -161,15 +161,100 @@ export function isDayExempt(log) {
   return false;
 }
 
-export function isFridayAttendance(log) {
+export function isFriday(log) {
   if (!log) return false;
-  const isFri = (log.day_name && (log.day_name.includes('جمع') || log.day_name.toLowerCase().includes('fri'))) ||
-                (log.log_date && new Date(log.log_date).getDay() === 5);
-  if (!isFri) return false;
-  if (!hasRealBiometricPunches(log)) return false;
-  const status = (log.status || '').toLowerCase();
-  if (status === 'absent' || status === 'not_started') return false;
-  return true;
+  if (log.log_date) {
+    const d = new Date(log.log_date + 'T12:00:00Z');
+    if (d.getUTCDay() === 5) return true; // 5 = Friday
+  }
+  const name = (log.day_name || '').toLowerCase();
+  if (name.includes('جمع') || name.includes('fri')) return true;
+  return false;
+}
+
+export function isFridayAttendance(log) {
+  return isFriday(log);
+}
+
+export function getStandardShiftPunches(shiftNameOrObj) {
+  const name = (typeof shiftNameOrObj === 'string' ? shiftNameOrObj : (shiftNameOrObj?.name || '')).toLowerCase();
+  
+  if (name.includes('9 ساعات') || name.includes('إضافي 100')) {
+    return {
+      isSplit: true,
+      p1In: '09:00',
+      p1Out: '13:00',
+      p2In: '16:00',
+      p2Out: '21:00',
+      totalHours: 9,
+      raw: '09:00:00 -- 13:00:00 & 16:00:00 -- 21:00:00'
+    };
+  }
+  if (name.includes('غير سعودي') || name.includes('8 ساعات') || name.includes('فترتين')) {
+    return {
+      isSplit: true,
+      p1In: '08:00',
+      p1Out: '12:00',
+      p2In: '16:00',
+      p2Out: '20:00',
+      totalHours: 8,
+      raw: '08:00:00 -- 12:00:00 & 16:00:00 -- 20:00:00'
+    };
+  }
+  if (name.includes('سعودي صباحي') || name.includes('صباحي')) {
+    return {
+      isSplit: false,
+      p1In: '08:00',
+      p1Out: '13:00',
+      p2In: '',
+      p2Out: '',
+      totalHours: 5,
+      raw: '08:00:00 -- 13:00:00'
+    };
+  }
+  if (name.includes('سعودي مسائي') || name.includes('مسائي')) {
+    return {
+      isSplit: false,
+      p1In: '16:00',
+      p1Out: '21:00',
+      p2In: '',
+      p2Out: '',
+      totalHours: 5,
+      raw: '16:00:00 -- 21:00:00'
+    };
+  }
+  if (name.includes('مدير') || name.includes('الإدارة العامة')) {
+    return {
+      isSplit: false,
+      p1In: '09:00',
+      p1Out: '17:00',
+      p2In: '',
+      p2Out: '',
+      totalHours: 8,
+      raw: '09:00:00 -- 17:00:00'
+    };
+  }
+  if (name.includes('رمضان')) {
+    return {
+      isSplit: false,
+      p1In: '20:30',
+      p1Out: '02:00',
+      p2In: '',
+      p2Out: '',
+      totalHours: 5.5,
+      raw: '20:30:00 -- 02:00:00'
+    };
+  }
+  // Default 8-hour single shift
+  return {
+    isSplit: false,
+    p1In: '08:00',
+    p1Out: '16:00',
+    p2In: '',
+    p2Out: '',
+    totalHours: 8,
+    raw: '08:00:00 -- 16:00:00'
+  };
 }
 
 // ============================================================================
@@ -383,8 +468,8 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     const isExecutive = (emp.job_title || '').includes('المدير العام') || String(emp.employee_number || '') === '1001' || (emp.shift || '').includes('المدير العام') || (emp.shift || '').includes('إدارة عامة');
 
   const dailyDetails = uniqueLogs.map(log => {
-    const isFriday = isFridayAttendance(log);
-    const exempt = isDayExempt(log) || (isExecutive && !isFriday);
+    const isFri = isFriday(log);
+    const exempt = isDayExempt(log) || (isExecutive && !isFri);
     const hasAtt = hasRealBiometricPunches(log) || (isExecutive && !!log.check_in);
     const status = (log.status || 'present').toLowerCase();
     let actualMins = calcActualMinutes(log);
@@ -396,7 +481,27 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
 
     let requiredMins = 0, shortfallMins = 0;
 
-    if (!exempt && !isFriday && hasAtt) {
+    if (isFri) {
+      // IT IS FRIDAY (Weekly Official Holiday - Never marked as Absent!)
+      requiredMins = 0;
+      shortfallMins = 0;
+      fridayDays++;
+      if (hasAtt) {
+        // Punched on Friday -> Attendance on Weekend / Overtime credited
+        presentDays++;
+        actualMins = actualMins || (shiftHours * 60);
+      } else {
+        actualMins = 0;
+      }
+    } else if (exempt) {
+      // EXEMPT / PAID LEAVE DAY (0 required, 0 shortfall)
+      requiredMins = 0;
+      shortfallMins = 0;
+      actualMins = actualMins || 0;
+      if (status.includes('إجازة') || status === 'on_leave' || status === 'leave') leaveDays++;
+      else if (isExecutive) presentDays++;
+    } else if (hasAtt) {
+      // REGULAR WORKING DAY WITH ATTENDANCE
       requiredMins = shiftHours * 60;
       totalRequiredMinutes += requiredMins;
       const actual = actualMins || 0;
@@ -404,31 +509,27 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
       shortfallMins = Math.max(0, requiredMins - actual);
       totalShortfallMinutes += shortfallMins;
       presentDays++;
-    } else if (isExecutive && !isFriday && (log.check_in || hasAtt)) {
+    } else if (isExecutive && (log.check_in || hasAtt)) {
+      // EXECUTIVE
       requiredMins = shiftHours * 60;
       totalRequiredMinutes += requiredMins;
       totalActualMinutes += requiredMins;
       shortfallMins = 0;
       presentDays++;
-    } else if (!exempt && !isFriday && !hasAtt && (status === 'absent' || status === 'غائب')) {
+    } else {
+      // ABSENCE DAY (Regular working day, not Friday, not exempt, no attendance)
       absentDays++;
       requiredMins = shiftHours * 60;
       totalRequiredMinutes += requiredMins;
       shortfallMins = requiredMins;
       totalShortfallMinutes += shortfallMins;
-    } else if (exempt) {
-      if (status.includes('إجازة') || status === 'on_leave' || status === 'leave') leaveDays++;
-      else if (isExecutive) presentDays++;
+      actualMins = 0;
     }
-    
-    if (isFriday && hasAtt) {
-      fridayDays++;
-      presentDays++;
-    }
-    
-    const hasOT = !isFriday && !!(shift && shift.has_overtime) && hasAtt && !exempt;
+
+    const hasOT = !isFri && !!(shift && shift.has_overtime) && hasAtt && !exempt;
     if (hasOT) overtimeDays++;
 
+    // Format display values
     const displayCheckIn = (hasAtt || isExecutive) ? (log.check_in || '') : '';
     const displayCheckOut = (hasAtt || isExecutive) ? (log.check_out || (isExecutive ? '16:00' : '')) : '';
     const displayP1In = (hasAtt || isExecutive) ? (log.period_1_in || '') : '';
@@ -436,11 +537,22 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     const displayP2In = (hasAtt || isExecutive) ? (log.period_2_in || '') : '';
     const displayP2Out = (hasAtt || isExecutive) ? (log.period_2_out || '') : '';
 
+    let rowStatus = 'present';
+    if (isFri) {
+      rowStatus = 'weekend';
+    } else if (exempt) {
+      rowStatus = 'exempt';
+    } else if (!hasAtt) {
+      rowStatus = 'absent';
+    } else {
+      rowStatus = log.status || 'present';
+    }
+
     return {
       ...log,
       log_date: log.log_date,
       day_name: log.day_name || '',
-      status: isFriday ? 'weekend' : (isExecutive && (log.check_in || hasAtt)) ? 'present' : (hasAtt ? (log.status || 'present') : 'absent'),
+      status: rowStatus,
       check_in: displayCheckIn,
       check_out: displayCheckOut,
       period_1_in: displayP1In,
@@ -448,7 +560,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
       period_2_in: displayP2In,
       period_2_out: displayP2Out,
       timestamp_raw: hasAtt ? (log.timestamp_raw || '') : '',
-      isFriday,
+      isFriday: isFri,
       isExempt: exempt,
       hasAttendance: hasAtt,
       requiredMinutes: requiredMins,

@@ -25,6 +25,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   computeEmployeePayroll,
+  getStandardShiftPunches,
+  isFriday,
   getPayrollSettings,
   saveShortfallApproval,
   getAuditLog,
@@ -226,7 +228,14 @@ export default function Payroll() {
 
   // Currently Selected Employee in Stage 1/2/3
   const currentSelectedEmp = useMemo(() => {
-    return employees.find(e => String(e.employee_number || e.id) === String(selectedEmpId)) || employees[0] || null;
+    if (!employees || employees.length === 0) return null;
+    if (!selectedEmpId) return employees[0];
+    const sId = String(selectedEmpId).replace('emp_', '');
+    return employees.find(e => {
+      const eNum = String(e.employee_number || '').replace('emp_', '');
+      const eId = String(e.id || '').replace('emp_', '');
+      return eNum === sId || eId === sId || String(e.id) === String(selectedEmpId) || String(e.employee_number) === String(selectedEmpId);
+    }) || employees[0];
   }, [employees, selectedEmpId]);
 
   const currentSelectedPayroll = useMemo(() => {
@@ -385,7 +394,9 @@ export default function Payroll() {
         description: `تم توثيق ساعات العمل (${totalHrs} س) وحفظها في قاعدة البيانات المركزية.`
       });
       setEditPunchModal(null);
+      const currentEmpToKeep = selectedEmpId || String(empNum);
       await loadData();
+      if (currentEmpToKeep) setSelectedEmpId(currentEmpToKeep);
     } catch (e) {
       toast({ title: 'خطأ أثناء التعديل', description: e.message, variant: 'destructive' });
     }
@@ -790,47 +801,63 @@ export default function Payroll() {
                               </td>
                               <td className="py-2.5 px-4 text-center">
                                 {isAdmin && !isLocked && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      const empShift = currentSelectedEmp?.shift || '';
-                                      const isSplit = empShift.includes('فترتين') || 
-                                        empShift.includes('غير سعودي') || 
-                                        empShift.includes('9 ساعات') || 
-                                        empShift.includes('8 ساعات') || 
-                                        (currentSelectedEmp?.nationality !== 'سعودي' && currentSelectedEmp?.employee_number !== '1001');
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    {/* 1-Click Fast Standard Attendance Approval */}
+                                    {!d.isFriday && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleQuickStandardPunch(d)}
+                                        title="اعتماد حضور منضبط فوري بمواعيد الشفت القياسية بدون عجز دوام"
+                                        className="h-7 text-[10px] font-bold rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900 px-2.5 gap-1 transition-all border border-emerald-200/60 dark:border-emerald-800"
+                                      >
+                                        <Sparkles className="w-3 h-3 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                                        <span>حضور منضبط ⚡</span>
+                                      </Button>
+                                    )}
 
-                                      // Parse raw times if available
-                                      const rawStr = d.timestamp_raw || '';
-                                      const times = (rawStr.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g) || []);
+                                    {/* Full Modal Edit Button */}
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        const empShift = currentSelectedEmp?.shift || '';
+                                        const isSplit = empShift.includes('فترتين') || 
+                                          empShift.includes('غير سعودي') || 
+                                          empShift.includes('9 ساعات') || 
+                                          empShift.includes('8 ساعات') || 
+                                          (currentSelectedEmp?.nationality !== 'سعودي' && currentSelectedEmp?.employee_number !== '1001');
 
-                                      let p1In = d.period_1_in || (times[0] || (d.check_in ? String(d.check_in).slice(11, 16) : '09:00'));
-                                      let p1Out = d.period_1_out || (times[1] || (isSplit ? '13:00' : ''));
-                                      let p2In = d.period_2_in || (times[2] || (isSplit ? '16:00' : ''));
-                                      let p2Out = d.period_2_out || (times[3] || times[times.length - 1] || (d.check_out ? String(d.check_out).slice(11, 16) : (isSplit ? '21:00' : '')));
+                                        const rawStr = d.timestamp_raw || '';
+                                        const times = (rawStr.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g) || []);
 
-                                      let singleIn = p1In || (d.check_in ? String(d.check_in).slice(11, 16) : '16:00');
-                                      let singleOut = p2Out || p1Out || (d.check_out ? String(d.check_out).slice(11, 16) : '21:00');
+                                        let p1In = d.period_1_in || (times[0] || (d.check_in ? String(d.check_in).slice(11, 16) : '09:00'));
+                                        let p1Out = d.period_1_out || (times[1] || (isSplit ? '13:00' : ''));
+                                        let p2In = d.period_2_in || (times[2] || (isSplit ? '16:00' : ''));
+                                        let p2Out = d.period_2_out || (times[3] || times[times.length - 1] || (d.check_out ? String(d.check_out).slice(11, 16) : (isSplit ? '21:00' : '')));
 
-                                      setEditPunchModal({
-                                        log: d,
-                                        emp: currentSelectedEmp,
-                                        isSplitShift: isSplit,
-                                        p1In: p1In || (empShift.includes('8 ساعات') ? '08:00' : '09:00'),
-                                        p1Out: p1Out || (empShift.includes('8 ساعات') ? '12:00' : '13:00'),
-                                        p2In: p2In || '16:00',
-                                        p2Out: p2Out || (empShift.includes('8 ساعات') ? '20:00' : '21:00'),
-                                        newCheckIn: singleIn,
-                                        newCheckOut: singleOut,
-                                        newStatus: d.status || 'present'
-                                      });
-                                    }}
-                                    className="h-7 text-[11px] font-bold rounded-lg text-blue-600 hover:bg-blue-50"
-                                  >
-                                    <Edit3 className="w-3 h-3 ml-1" />
-                                    تعديل
-                                  </Button>
+                                        let singleIn = p1In || (d.check_in ? String(d.check_in).slice(11, 16) : '16:00');
+                                        let singleOut = p2Out || p1Out || (d.check_out ? String(d.check_out).slice(11, 16) : '21:00');
+
+                                        setEditPunchModal({
+                                          log: d,
+                                          emp: currentSelectedEmp,
+                                          isSplitShift: isSplit,
+                                          p1In: p1In || (empShift.includes('8 ساعات') ? '08:00' : '09:00'),
+                                          p1Out: p1Out || (empShift.includes('8 ساعات') ? '12:00' : '13:00'),
+                                          p2In: p2In || '16:00',
+                                          p2Out: p2Out || (empShift.includes('8 ساعات') ? '20:00' : '21:00'),
+                                          newCheckIn: singleIn,
+                                          newCheckOut: singleOut,
+                                          newStatus: d.isFriday ? 'exempt' : (d.hasAttendance ? (d.status || 'present') : 'absent')
+                                        });
+                                      }}
+                                      className="h-7 text-[11px] font-bold rounded-xl text-sky-700 hover:bg-sky-50 dark:text-sky-300 dark:hover:bg-sky-950/60 px-2 gap-1 border border-sky-200/60 dark:border-sky-800"
+                                    >
+                                      <Edit3 className="w-3 h-3" />
+                                      <span>تعديل</span>
+                                    </Button>
+                                  </div>
                                 )}
                               </td>
                             </tr>
@@ -1575,14 +1602,38 @@ export default function Payroll() {
             <div className="space-y-4 py-2 text-xs">
               
               {/* Shift Banner */}
-              <div className="p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/60 flex items-center justify-between">
+              <div className="p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200/60 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="font-bold text-sky-900 dark:text-sky-200">الوردية المعتمدة: </span>
                   <span className="font-bold text-sky-700 dark:text-sky-300">{editPunchModal.emp?.shift || 'فترة عمل'}</span>
                 </div>
-                <Badge className="bg-sky-600 text-white font-bold text-[10px]">
-                  {editPunchModal.isSplitShift ? 'دوام فترتين (4 بصمات)' : 'دوام فترة واحدة (بصمتين)'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-sky-600 text-white font-bold text-[10px]">
+                    {editPunchModal.isSplitShift ? 'دوام فترتين (4 بصمات)' : 'دوام فترة واحدة (بصمتين)'}
+                  </Badge>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      const std = getStandardShiftPunches(editPunchModal.emp?.shift || '');
+                      setEditPunchModal(prev => ({
+                        ...prev,
+                        newStatus: 'present',
+                        p1In: std.p1In,
+                        p1Out: std.p1Out,
+                        p2In: std.p2In,
+                        p2Out: std.p2Out,
+                        newCheckIn: std.p1In,
+                        newCheckOut: std.isSplit ? std.p2Out : std.p1Out
+                      }));
+                      toast({ title: '⚡ تم ملء البصمات القياسية للشفت بنجاح' });
+                    }}
+                    className="h-7 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl gap-1 shadow-sm"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>ملء حضور منضبط تلقائياً</span>
+                  </Button>
+                </div>
               </div>
 
               {/* Date & Status */}
