@@ -707,7 +707,7 @@ export default function Payroll() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-24" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
-      <PayrollRunBanner month={selectedMonth} year={selectedYear} user={user} />
+      <PayrollRunBanner month={(monthPrefix || "2026-08").split("-")[1] || "08"} year={(monthPrefix || "2026-08").split("-")[0] || "2026"} user={user} />
       
       {/* ─── DEDICATED ADVANCES & LOANS MANAGEMENT HUB (?tab=advances) ──────── */}
       {tabParam === 'advances' ? (
