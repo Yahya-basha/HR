@@ -429,6 +429,11 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     s.name === shiftName || s.id === shiftName || (s.name && shiftName && s.name.includes(shiftName))
   ) || null;
   const shiftHours = getShiftRequiredHours(shift);
+  const is9HourShift = shiftHours === 9 || 
+    shiftName.includes('9 ساعات') || 
+    shiftName.includes('إضافي 100') ||
+    (shift && shift.working_hours === 9) ||
+    (shift && (shift.has_overtime || shift.id === 'sh_non_saudi_overtime'));
 
   const empNum = String(emp.employee_number || '').trim();
   const empId = String(emp.id || '').trim();
@@ -548,7 +553,8 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
       actualMins = 0;
     }
 
-    const hasOT = !isFri && !!(shift && shift.has_overtime) && hasAtt && !exempt;
+    // 9-Hour Daily Overtime (+100 SAR / day) when attending working day
+    const hasOT = !isFri && is9HourShift && hasAtt && !exempt && (actualMins >= 510 || (actualMins >= (shiftHours * 60) - 30));
     if (hasOT) overtimeDays++;
 
     // Format display values

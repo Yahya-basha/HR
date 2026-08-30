@@ -1383,7 +1383,7 @@ export default function Payroll() {
                   <div className="flex items-center justify-between border-b pb-3">
                     <div className="flex items-center gap-2">
                       <Clock className="w-5 h-5 text-blue-600" />
-                      <h3 className="font-heading font-black text-sm text-foreground">2. إضافي دوام 9 ساعات</h3>
+                      <h3 className="font-heading font-black text-sm text-foreground">2. إضافي دوام 9 ساعات (100 ر.س / يوم)</h3>
                     </div>
                     <Badge className="bg-blue-100 text-blue-800 text-xs font-mono font-bold border-0">
                       {currentSelectedPayroll.overtimeDays} يوم
