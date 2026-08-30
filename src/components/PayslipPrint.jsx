@@ -44,6 +44,25 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
     dailyDetails
   } = payroll;
 
+  
+  const effectivePayoutMethod = payroll.payoutMethod || emp.payout_method || (emp.iban ? 'bank_full' : 'cash_full');
+  let effectiveBankAmount = payroll.bankTransferAmount;
+  let effectiveCashAmount = payroll.cashPayoutAmount;
+
+  if (effectiveBankAmount === undefined) {
+    if (effectivePayoutMethod === 'bank_full') {
+      effectiveBankAmount = netSalary;
+      effectiveCashAmount = 0;
+    } else if (effectivePayoutMethod === 'cash_full') {
+      effectiveBankAmount = 0;
+      effectiveCashAmount = netSalary;
+    } else if (effectivePayoutMethod === 'split_bank_cash') {
+      const fixedBank = Number(emp.bank_transfer_amount || emp.insured_salary || emp.basic_salary) || 0;
+      effectiveBankAmount = Math.min(fixedBank, netSalary);
+      effectiveCashAmount = Math.max(0, netSalary - effectiveBankAmount);
+    }
+  }
+
   const company = getCompanyProfile();
   const payslipNumber = 'PAY-' + (monthLabel?.replace(/[^0-9]/g, '') || '202608') + '-' + (emp.employee_number || emp.id);
   const issueDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -312,20 +331,20 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
               <span style={{ fontWeight: '800', fontSize: '11.5px', color: '#0f172a' }}>
                 طريقة استلام وصرف الراتب وتوزيع المستحقات المالية:
               </span>
-              <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: payrollItem.payoutMethod === 'split_bank_cash' ? '#fef3c7' : payrollItem.payoutMethod === 'cash_full' ? '#fee2e2' : '#dcfce7', color: payrollItem.payoutMethod === 'split_bank_cash' ? '#92400e' : payrollItem.payoutMethod === 'cash_full' ? '#991b1b' : '#166534' }}>
-                {payrollItem.payoutMethod === 'split_bank_cash' ? 'تحويل بنكي جزئي + تسليم كاش 🔀' : payrollItem.payoutMethod === 'cash_full' ? 'تسليم نقدي كامل (كاش) 💵' : 'تحويل بنكي كامل (WPS) 🏦'}
+              <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: effectivePayoutMethod === 'split_bank_cash' ? '#fef3c7' : effectivePayoutMethod === 'cash_full' ? '#fee2e2' : '#dcfce7', color: effectivePayoutMethod === 'split_bank_cash' ? '#92400e' : effectivePayoutMethod === 'cash_full' ? '#991b1b' : '#166534' }}>
+                {effectivePayoutMethod === 'split_bank_cash' ? 'تحويل بنكي جزئي + تسليم كاش 🔀' : effectivePayoutMethod === 'cash_full' ? 'تسليم نقدي كامل (كاش) 💵' : 'تحويل بنكي كامل (WPS) 🏦'}
               </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: (payrollItem.cashPayoutAmount > 0 && payrollItem.bankTransferAmount > 0) ? '1fr 1fr' : '1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: (effectiveCashAmount > 0 && effectiveBankAmount > 0) ? '1fr 1fr' : '1fr', gap: '12px' }}>
               
               {/* Bank Portion */}
-              {(payrollItem.bankTransferAmount > 0 || payrollItem.payoutMethod === 'bank_full') && (
+              {(effectiveBankAmount > 0 || effectivePayoutMethod === 'bank_full') && (
                 <div style={{ background: '#fff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '10.5px', color: '#1e40af', fontWeight: '700' }}>🏦 المحول عبر الحساب البنكي (WPS):</span>
                     <span style={{ fontSize: '14px', fontWeight: '900', color: '#1e3a8a', fontFamily: 'monospace' }}>
-                      {fmtSAR(payrollItem.bankTransferAmount !== undefined ? payrollItem.bankTransferAmount : netSalary)} ر.س
+                      {fmtSAR(effectiveBankAmount !== undefined ? effectiveBankAmount : netSalary)} ر.س
                     </span>
                   </div>
                   <div style={{ fontSize: '9.5px', color: '#64748b', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
@@ -336,12 +355,12 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
               )}
 
               {/* Cash Portion */}
-              {(payrollItem.cashPayoutAmount > 0 || payrollItem.payoutMethod === 'cash_full') && (
+              {(effectiveCashAmount > 0 || effectivePayoutMethod === 'cash_full') && (
                 <div style={{ background: '#fff', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '10.5px', color: '#991b1b', fontWeight: '700' }}>💵 المسلم نقداً من الخزينة (كاش):</span>
                     <span style={{ fontSize: '14px', fontWeight: '900', color: '#dc2626', fontFamily: 'monospace' }}>
-                      {fmtSAR(payrollItem.cashPayoutAmount !== undefined ? payrollItem.cashPayoutAmount : 0)} ر.س
+                      {fmtSAR(effectiveCashAmount !== undefined ? effectiveCashAmount : 0)} ر.س
                     </span>
                   </div>
                   <div style={{ fontSize: '9.5px', color: '#64748b', marginTop: '4px' }}>
@@ -353,9 +372,9 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
             </div>
 
             {/* Cash Handout Signature Undertaking */}
-            {payrollItem.cashPayoutAmount > 0 && (
+            {effectiveCashAmount > 0 && (
               <div style={{ marginTop: '8px', padding: '6px 10px', background: '#fffbeb', border: '1px dashed #f59e0b', borderRadius: '6px', fontSize: '9.5px', color: '#92400e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>إقرار استلام الكاش: أقر أنا الموظف باستلام مبلغ ({fmtSAR(payrollItem.cashPayoutAmount)} ر.س) نقداً من خزينة المنشأة عن شهر {monthLabel}.</span>
+                <span>إقرار استلام الكاش: أقر أنا الموظف باستلام مبلغ ({fmtSAR(effectiveCashAmount)} ر.س) نقداً من خزينة المنشأة عن شهر {monthLabel}.</span>
                 <span style={{ fontWeight: '700', textDecoration: 'underline' }}>توقيع الاستلام: ....................</span>
               </div>
             )}
