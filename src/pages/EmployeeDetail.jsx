@@ -300,13 +300,18 @@ export default function EmployeeDetail() {
         insurance_category: insuranceForm.insurance_category,
         insurance_policy_number: insuranceForm.insurance_policy_number,
         insurance_expiry: insuranceForm.insurance_expiry,
-        gosi_number: insuranceForm.gosi_number,
-        is_insured: insuranceForm.is_insured
+        gosi_number: insuranceForm.is_insured ? (insuranceForm.gosi_number || ('GSI-' + (employee.employee_number || '1001'))) : '',
+        insured_salary: Number(insuranceForm.insured_salary) || Number(employee.salary) || 0,
+        is_insured: insuranceForm.is_insured,
+        payout_method: insuranceForm.payout_method,
+        bank_transfer_amount: Number(insuranceForm.bank_transfer_amount) || 0,
+        bank_name: insuranceForm.bank_name || 'مصرف الراجحي',
+        iban: insuranceForm.iban || ''
       };
       await base44.entities.Employee.update(employee.id, updated);
       setEmployee(updated);
       setEditInsuranceModal(false);
-      toast({ title: '✓ تم تحديث بيانات التأمين والتأمينات الاجتماعية بنجاح في السحابة' });
+      toast({ title: '✓ تم تحديث بيانات التأمين وطريقة الصرف المالي بنجاح في السحابة' });
     } catch (e) {
       toast({ title: 'خطأ أثناء الحفظ', description: e.message, variant: 'destructive' });
     }
@@ -1336,69 +1341,237 @@ export default function EmployeeDetail() {
 
       {/* ─── MODAL 1: EDIT INSURANCE & GOSI ──────────────────────────────── */}
       <Dialog open={editInsuranceModal} onOpenChange={setEditInsuranceModal}>
-        <DialogContent className="sm:max-w-md rounded-3xl" dir="rtl">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-6" dir="rtl">
           <DialogHeader>
             <DialogTitle className="text-base font-heading font-black flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-sky-600" />
-              <span>تعديل وتحديث بيانات التأمين والتأمينات</span>
+              <ShieldCheck className="w-5 h-5 text-indigo-600" />
+              <span>تعديل بيانات التأمين وطريقة الصرف المالي (بنك / كاش)</span>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3.5 py-2 text-xs">
-            <div className="space-y-1">
-              <Label className="font-bold">الشركة المؤمنة:</Label>
-              <Select value={insuranceForm.insurance_company} onValueChange={(v) => setInsuranceForm(prev => ({ ...prev, insurance_company: v }))}>
-                <SelectTrigger className="rounded-xl font-bold text-xs h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  <SelectItem value="شركة بوبا العربية للتأمين التعاوني (Bupa)">شركة بوبا العربية للتأمين التعاوني (Bupa)</SelectItem>
-                  <SelectItem value="شركة التعاونية للتأمين (Tawuniya)">شركة التعاونية للتأمين (Tawuniya)</SelectItem>
-                  <SelectItem value="تكافل الراجحي (Al Rajhi Takaful)">تكافل الراجحي (Al Rajhi Takaful)</SelectItem>
-                  <SelectItem value="شركة ميدغلف للتأمين (MedGulf)">شركة ميدغلف للتأمين (MedGulf)</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-4 py-2 text-xs">
+            
+            {/* 1. GOSI Social Insurance Status Switcher */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-emerald-600" />
+                  <span>حالة التأمينات الاجتماعية (GOSI)</span>
+                </div>
+                <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border">
+                  <button
+                    type="button"
+                    onClick={() => setInsuranceForm(prev => ({ ...prev, is_insured: true }))}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                      insuranceForm.is_insured ? 'bg-emerald-600 text-white shadow-sm' : 'text-muted-foreground'
+                    }`}
+                  >
+                    مؤمن عليه ✓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInsuranceForm(prev => ({ ...prev, is_insured: false }))}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                      !insuranceForm.is_insured ? 'bg-rose-600 text-white shadow-sm' : 'text-muted-foreground'
+                    }`}
+                  >
+                    غير مؤمن عليه
+                  </button>
+                </div>
+              </div>
+
+              {insuranceForm.is_insured && (
+                <div className="grid grid-cols-2 gap-3 pt-1 border-t border-border/60">
+                  <div className="space-y-1">
+                    <Label className="font-bold text-[11px]">رقم المشترك بالتأمينات (GOSI):</Label>
+                    <Input
+                      value={insuranceForm.gosi_number}
+                      onChange={(e) => setInsuranceForm(prev => ({ ...prev, gosi_number: e.target.value }))}
+                      placeholder="GSI-10042918"
+                      className="rounded-xl font-mono text-xs font-bold h-9"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="font-bold text-[11px]">الراتب الخاضع للاشتراك (ر.س):</Label>
+                    <Input
+                      type="number"
+                      value={insuranceForm.insured_salary}
+                      onChange={(e) => setInsuranceForm(prev => ({ ...prev, insured_salary: Number(e.target.value) }))}
+                      className="rounded-xl font-mono text-xs font-bold h-9"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* 2. Payout Split Method (Bank Transfer vs Cash Handout) */}
+            <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 space-y-3">
+              <div className="font-bold text-xs text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-indigo-600" />
+                <span>طريقة استلام وصرف الراتب</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-1.5 bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-indigo-100 dark:border-indigo-900">
+                <button
+                  type="button"
+                  onClick={() => setInsuranceForm(prev => ({ ...prev, payout_method: 'bank_full' }))}
+                  className={`py-2 px-1 rounded-xl text-[11px] font-bold text-center transition-all ${
+                    insuranceForm.payout_method === 'bank_full'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  🏦 بنك كامل 100%
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setInsuranceForm(prev => ({ ...prev, payout_method: 'split_bank_cash' }))}
+                  className={`py-2 px-1 rounded-xl text-[11px] font-bold text-center transition-all ${
+                    insuranceForm.payout_method === 'split_bank_cash'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  🔀 بنك جزئي + كاش
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setInsuranceForm(prev => ({ ...prev, payout_method: 'cash_full' }))}
+                  className={`py-2 px-1 rounded-xl text-[11px] font-bold text-center transition-all ${
+                    insuranceForm.payout_method === 'cash_full'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  💵 كاش كامل 100%
+                </button>
+              </div>
+
+              {/* Split Breakdown Details */}
+              {insuranceForm.payout_method === 'split_bank_cash' && (
+                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="font-bold text-[11px]">مبلغ التحويل البنكي (ر.س) *:</Label>
+                      <Input
+                        type="number"
+                        value={insuranceForm.bank_transfer_amount}
+                        onChange={(e) => setInsuranceForm(prev => ({ ...prev, bank_transfer_amount: Number(e.target.value) }))}
+                        className="rounded-xl font-mono text-xs font-black text-indigo-700 h-9"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="font-bold text-[11px]">المتبقي التقريبي كاش (ر.س):</Label>
+                      <div className="font-mono font-black text-rose-600 text-sm h-9 flex items-center bg-slate-50 dark:bg-slate-800 px-3 rounded-xl border">
+                        {Math.max(0, (Number(employee?.salary) || 0) - (Number(insuranceForm.bank_transfer_amount) || 0)).toLocaleString('en-US')} ر.س
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    سيتم تحويل ({Number(insuranceForm.bank_transfer_amount || 0).toLocaleString('en-US')} ر.س) عبر نظام حماية الأجور بالبنك وتسليم الباقي نقداً بسند استلام.
+                  </p>
+                </div>
+              )}
+
+              {/* Bank & IBAN Fields (Visible if not 100% cash) */}
+              {insuranceForm.payout_method !== 'cash_full' && (
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1">
+                    <Label className="font-bold text-[11px]">اسم البنك المعتمد:</Label>
+                    <Select
+                      value={insuranceForm.bank_name}
+                      onValueChange={(v) => setInsuranceForm(prev => ({ ...prev, bank_name: v }))}
+                    >
+                      <SelectTrigger className="rounded-xl font-bold text-xs h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl">
+                        <SelectItem value="مصرف الراجحي">مصرف الراجحي</SelectItem>
+                        <SelectItem value="البنك الأهلي السعودي (SNB)">البنك الأهلي السعودي (SNB)</SelectItem>
+                        <SelectItem value="مصرف الإنماء">مصرف الإنماء</SelectItem>
+                        <SelectItem value="بنك البلاد">بنك البلاد</SelectItem>
+                        <SelectItem value="بنك الرياض">بنك الرياض</SelectItem>
+                        <SelectItem value="البنك العربي الوطني (ANB)">البنك العربي الوطني (ANB)</SelectItem>
+                        <SelectItem value="بنك الجزيرة">بنك الجزيرة</SelectItem>
+                        <SelectItem value="البنك السعودي الفرنسي">البنك السعودي الفرنسي</SelectItem>
+                        <SelectItem value="البنك السعودي الأول (SAB)">البنك السعودي الأول (SAB)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="font-bold text-[11px]">رقم الآيبان (IBAN):</Label>
+                    <Input
+                      value={insuranceForm.iban}
+                      onChange={(e) => setInsuranceForm(prev => ({ ...prev, iban: e.target.value }))}
+                      placeholder="SA4480000000000000000000"
+                      className="rounded-xl font-mono text-xs font-bold h-9"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Medical Health Insurance */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-3">
+              <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-sky-600" />
+                <span>وثيقة التأمين الطبي</span>
+              </div>
+
               <div className="space-y-1">
-                <Label className="font-bold">فئة التأمين:</Label>
-                <Select value={insuranceForm.insurance_category} onValueChange={(v) => setInsuranceForm(prev => ({ ...prev, insurance_category: v }))}>
+                <Label className="font-bold text-[11px]">الشركة المؤمنة:</Label>
+                <Select value={insuranceForm.insurance_company} onValueChange={(v) => setInsuranceForm(prev => ({ ...prev, insurance_company: v }))}>
                   <SelectTrigger className="rounded-xl font-bold text-xs h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
-                    <SelectItem value="VIP - الفئة الذهبية الشاملة">VIP - الفئة الذهبية</SelectItem>
-                    <SelectItem value="Class A - الفئة الفضية الممتازة">Class A - الفئة الفضية</SelectItem>
-                    <SelectItem value="Class B - الفئة المعتمدة">Class B - الفئة المعتمدة</SelectItem>
+                    <SelectItem value="شركة بوبا العربية للتأمين التعاوني (Bupa)">شركة بوبا العربية للتأمين التعاوني (Bupa)</SelectItem>
+                    <SelectItem value="شركة التعاونية للتأمين (Tawuniya)">شركة التعاونية للتأمين (Tawuniya)</SelectItem>
+                    <SelectItem value="تكافل الراجحي (Al Rajhi Takaful)">تكافل الراجحي (Al Rajhi Takaful)</SelectItem>
+                    <SelectItem value="شركة ميدغلف للتأمين (MedGulf)">شركة ميدغلف للتأمين (MedGulf)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-1">
-                <Label className="font-bold">رقم الوثيقة:</Label>
-                <Input value={insuranceForm.insurance_policy_number} onChange={(e) => setInsuranceForm(prev => ({ ...prev, insurance_policy_number: e.target.value }))} className="rounded-xl font-mono text-xs font-bold h-9" />
-              </div>
-            </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="font-bold text-[11px]">فئة التأمين:</Label>
+                  <Select value={insuranceForm.insurance_category} onValueChange={(v) => setInsuranceForm(prev => ({ ...prev, insurance_category: v }))}>
+                    <SelectTrigger className="rounded-xl font-bold text-xs h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      <SelectItem value="VIP - الفئة الذهبية الشاملة">VIP - الفئة الذهبية</SelectItem>
+                      <SelectItem value="Class A - الفئة الفضية الممتازة">Class A - الفئة الفضية</SelectItem>
+                      <SelectItem value="Class B - الفئة المعتمدة">Class B - الفئة المعتمدة</SelectItem>
+                      <SelectItem value="بدون تأمين طبي">بدون تأمين طبي</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="font-bold text-[11px]">رقم الوثيقة:</Label>
+                  <Input value={insuranceForm.insurance_policy_number} onChange={(e) => setInsuranceForm(prev => ({ ...prev, insurance_policy_number: e.target.value }))} className="rounded-xl font-mono text-xs font-bold h-9" />
+                </div>
+              </div>
+
               <div className="space-y-1">
-                <Label className="font-bold">تاريخ انتهاء الوثيقة:</Label>
+                <Label className="font-bold text-[11px]">تاريخ انتهاء الوثيقة:</Label>
                 <Input type="date" value={insuranceForm.insurance_expiry} onChange={(e) => setInsuranceForm(prev => ({ ...prev, insurance_expiry: e.target.value }))} className="rounded-xl font-mono text-xs font-bold h-9" />
               </div>
-
-              <div className="space-y-1">
-                <Label className="font-bold">رقم التأمينات (GOSI):</Label>
-                <Input value={insuranceForm.gosi_number} onChange={(e) => setInsuranceForm(prev => ({ ...prev, gosi_number: e.target.value }))} className="rounded-xl font-mono text-xs font-bold h-9" />
-              </div>
             </div>
+
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 mt-2">
             <Button variant="outline" onClick={() => setEditInsuranceModal(false)} className="rounded-xl font-bold text-xs">إلغاء</Button>
-            <Button onClick={handleSaveInsurance} className="bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-xs shadow-md gap-1">
+            <Button onClick={handleSaveInsurance} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md gap-1">
               <CheckCircle2 className="w-4 h-4" />
-              <span>حفظ التحديثات السحابية</span>
+              <span>حفظ وتحديث بيانات الموظف سحابياً</span>
             </Button>
           </DialogFooter>
         </DialogContent>
