@@ -53,6 +53,16 @@ export default function UsersManagement() {
   };
 
   const updateRole = (id, newRole) => {
+    // If updating current logged-in user, refresh session role too
+    try {
+      const session = JSON.parse(localStorage.getItem('zenith_auth_user') || 'null');
+      const target = users.find(u => u.id === id);
+      if (session && target && session.email === target.email) {
+        const roleMap = { system_admin: 'system_admin', owner: 'owner', accountant: 'accountant', hr: 'hr', employee: 'employee' };
+        session.role = roleMap[newRole] || 'employee';
+        localStorage.setItem('zenith_auth_user', JSON.stringify(session));
+      }
+    } catch(e) {}
     const updated = users.map(u => u.id === id ? { ...u, role: newRole } : u);
     setUsers(updated);
     localStorage.setItem('hr_flow_users_list', JSON.stringify(updated));

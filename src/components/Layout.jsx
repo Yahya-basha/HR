@@ -1,5 +1,5 @@
 import SessionGuardian from '@/components/SessionGuardian';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
@@ -13,8 +13,7 @@ export default function Layout() {
   const { user } = useAuth();
   const { t } = useI18n();
   const location = useLocation();
-  const isAdmin = user?.role === 'admin' || true;
-  const items = getNavItems(isAdmin, t);
+  const items = useMemo(() => getNavItems(user), [user]);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(true);
@@ -25,9 +24,6 @@ export default function Layout() {
     return location.pathname.startsWith(base);
   };
 
-  // Explicit physical RIGHT padding on desktop:
-  // When submenu is open: 68px + 200px = 268px -> lg:pr-[268px]
-  // When submenu is closed: 68px -> lg:pr-[68px]
   const desktopRightPadding = isSubMenuOpen ? 'lg:pr-[268px]' : 'lg:pr-[68px]';
 
   return (
@@ -35,14 +31,20 @@ export default function Layout() {
       <SessionGuardian />
       
       {/* 1. Desktop Persistent Dual-Sidebar (Fixed on the RIGHT) */}
-      <div className="no-print print:hidden"><Sidebar isAdmin={isAdmin} isSubMenuOpen={isSubMenuOpen} setIsSubMenuOpen={setIsSubMenuOpen} /></div>
+      <div className="no-print print:hidden">
+        <Sidebar isSubMenuOpen={isSubMenuOpen} setIsSubMenuOpen={setIsSubMenuOpen} />
+      </div>
 
       {/* 2. Mobile Slide-out Drawer */}
-      <div className="no-print print:hidden"><MobileSidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} isAdmin={isAdmin} /></div>
+      <div className="no-print print:hidden">
+        <MobileSidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+      </div>
 
       {/* 3. Main Content Area with EXPLICIT right padding */}
       <div className={`${desktopRightPadding} flex flex-col min-h-screen transition-all duration-200`}>
-        <div className="no-print print:hidden"><Header onOpenMobileMenu={() => setMobileMenuOpen(true)} /></div>
+        <div className="no-print print:hidden">
+          <Header onOpenMobileMenu={() => setMobileMenuOpen(true)} />
+        </div>
         
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-5 lg:py-6 pb-28 lg:pb-12 max-w-[1650px] w-full mx-auto">
           <Outlet />
@@ -57,7 +59,7 @@ export default function Layout() {
         <div className="flex items-center justify-between px-2 py-1.5">
           
           <div className="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth touch-pan-x pe-2">
-            {items.map((item, idx) => {
+            {items.slice(0, 5).map((item, idx) => {
               const active = isActive(item.to);
               const ItemIcon = item.icon;
               return (

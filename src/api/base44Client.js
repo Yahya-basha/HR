@@ -843,6 +843,134 @@ function toDbRecord(entityName, item) {
     };
   }
 
+  if (entityName === 'Loan') {
+    return {
+      id: item.id || ('loan_' + Date.now()),
+      employee_id: item.employee_id || '',
+      amount: Number(item.amount) || 0,
+      reason: item.reason || '',
+      installments: Number(item.installments) || 1,
+      monthly_deduction: Number(item.monthly_deduction) || 0,
+      status: item.status || 'pending',
+      workflow_stage: item.workflow_stage || 'hr_review',
+      requested_at: item.requested_at || new Date().toISOString(),
+      hr_approved_at: item.hr_approved_at || null,
+      hr_approved_by: item.hr_approved_by || null,
+      accountant_approved_at: item.accountant_approved_at || null,
+      accountant_approved_by: item.accountant_approved_by || null,
+      owner_approved_at: item.owner_approved_at || null,
+      owner_approved_by: item.owner_approved_by || null,
+      disbursed_at: item.disbursed_at || null,
+      paid_installments: Number(item.paid_installments) || 0,
+      remaining_balance: Number(item.remaining_balance) || Number(item.amount) || 0,
+      notes: item.notes || '',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'EmployeeDocument') {
+    return {
+      id: item.id || ('doc_' + Date.now()),
+      employee_id: item.employee_id || '',
+      doc_type: item.doc_type || 'other',
+      doc_number: item.doc_number || '',
+      issue_date: item.issue_date || null,
+      expiry_date: item.expiry_date || null,
+      status: item.status || 'valid',
+      file_url: item.file_url || null,
+      notes: item.notes || '',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'Request') {
+    return {
+      id: item.id || ('req_' + Date.now()),
+      employee_id: item.employee_id || '',
+      request_type: item.request_type || 'other',
+      status: item.status || 'pending',
+      workflow_stage: item.workflow_stage || 'hr_review',
+      details: typeof item.details === 'object' ? JSON.stringify(item.details) : (item.details || '{}'),
+      notes: item.notes || '',
+      submitted_at: item.submitted_at || new Date().toISOString(),
+      hr_reviewed_at: item.hr_reviewed_at || null,
+      hr_reviewed_by: item.hr_reviewed_by || null,
+      accountant_reviewed_at: item.accountant_reviewed_at || null,
+      accountant_reviewed_by: item.accountant_reviewed_by || null,
+      owner_approved_at: item.owner_approved_at || null,
+      owner_approved_by: item.owner_approved_by || null,
+      rejection_reason: item.rejection_reason || null,
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'Notification') {
+    return {
+      id: item.id || ('notif_' + Date.now()),
+      recipient_id: item.recipient_id || null,
+      recipient_role: item.recipient_role || null,
+      type: item.type || 'info',
+      title: item.title || '',
+      message: item.message || '',
+      is_read: Boolean(item.is_read),
+      link: item.link || null,
+      priority: item.priority || 'normal',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'AuditLog') {
+    return {
+      id: item.id || ('audit_' + Date.now()),
+      user_id: item.user_id || '',
+      user_name: item.user_name || '',
+      user_role: item.user_role || '',
+      action: item.action || '',
+      entity_type: item.entity_type || null,
+      entity_id: item.entity_id || null,
+      old_value: typeof item.old_value === 'object' ? JSON.stringify(item.old_value) : (item.old_value || null),
+      new_value: typeof item.new_value === 'object' ? JSON.stringify(item.new_value) : (item.new_value || null),
+      reason: item.reason || null,
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'PayrollRun') {
+    return {
+      id: item.id || ('pr_' + Date.now()),
+      month: Number(item.month) || new Date().getMonth() + 1,
+      year: Number(item.year) || new Date().getFullYear(),
+      branch_id: item.branch_id || null,
+      status: item.status || 'draft',
+      created_by: item.created_by || '',
+      approved_by: item.approved_by || null,
+      approved_at: item.approved_at || null,
+      paid_at: item.paid_at || null,
+      closed_at: item.closed_at || null,
+      total_basic: Number(item.total_basic) || 0,
+      total_additions: Number(item.total_additions) || 0,
+      total_deductions: Number(item.total_deductions) || 0,
+      total_net: Number(item.total_net) || 0,
+      snapshot: typeof item.snapshot === 'object' ? JSON.stringify(item.snapshot) : (item.snapshot || '{}'),
+      notes: item.notes || '',
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
+  if (entityName === 'UserAccount') {
+    return {
+      id: item.id || ('ua_' + Date.now()),
+      employee_id: item.employee_id || null,
+      email: item.email || '',
+      username: item.username || null,
+      role: item.role || 'employee',
+      custom_permissions: Array.isArray(item.custom_permissions) ? JSON.stringify(item.custom_permissions) : (item.custom_permissions || '[]'),
+      is_active: item.is_active !== false,
+      last_login: item.last_login || null,
+      created_at: item.created_at || new Date().toISOString()
+    };
+  }
+
   return item;
 }
 

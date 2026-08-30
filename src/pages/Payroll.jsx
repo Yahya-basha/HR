@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import {
   Wallet, Download, Printer, CheckCircle2, Clock, AlertTriangle,
@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/AuthContext';
+import { hasPermission } from '@/lib/rbac';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   computeEmployeePayroll,
@@ -58,9 +59,128 @@ const fmtNum = (n, decimals = 2) => {
   });
 };
 
+
+// ─── Payroll Run Lifecycle Banner ───────────────────────────────────────────
+const PAYROLL_RUN_STATUS = {
+  draft:        { label: 'مسودة',          icon: '📝', color: 'bg-slate-100 text-slate-700 border-slate-200', btnLabel: 'إرسال للمراجعة',  btnColor: 'bg-sky-600 hover:bg-sky-700 text-white',    nextStatus: 'under_review',  permission: 'payroll.create' },
+  under_review: { label: 'تحت المراجعة',   icon: '🔍', color: 'bg-sky-100 text-sky-700 border-sky-200',     btnLabel: 'اعتماد المسير',   btnColor: 'bg-amber-600 hover:bg-amber-700 text-white', nextStatus: 'approved',      permission: 'payroll.approve' },
+  approved:     { label: 'معتمد',           icon: '✅', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', btnLabel: 'تسجيل الدفع',  btnColor: 'bg-purple-600 hover:bg-purple-700 text-white', nextStatus: 'paid',       permission: 'payroll.approve' },
+  paid:         { label: 'تم الصرف',        icon: '💰', color: 'bg-purple-100 text-purple-700 border-purple-200', btnLabel: 'إغلاق المسير',  btnColor: 'bg-rose-600 hover:bg-rose-700 text-white',   nextStatus: 'closed',       permission: 'payroll.close' },
+  closed:       { label: 'مغلق',            icon: '🔒', color: 'bg-rose-100 text-rose-700 border-rose-200',  btnLabel: null,              btnColor: '',                                             nextStatus: null,            permission: null },
+};
+
+function PayrollRunBanner({ month, year, user }) {
+  const STORAGE_KEY = 'payroll_runs_v1';
+  const runId = 'pr_' + year + '_' + month;
+
+  const [run, setRun] = React.useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      return saved[runId] || { id: runId, status: 'draft', created_by: user?.full_name, history: [] };
+    } catch(e) {
+      return { id: runId, status: 'draft', created_by: user?.full_name, history: [] };
+    }
+  });
+
+  const [showHistory, setShowHistory] = React.useState(false);
+
+  const saveRun = (newRun) => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      saved[runId] = newRun;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+      setRun(newRun);
+    } catch(e) {}
+  };
+
+  const advance = () => {
+    const cfg = PAYROLL_RUN_STATUS[run.status];
+    if (!cfg || !cfg.nextStatus) return;
+    if (!hasPermission(user, cfg.permission)) {
+      alert('ليس لديك صلاحية لهذه العملية');
+      return;
+    }
+    const now = new Date().toISOString();
+    const entry = { from: run.status, to: cfg.nextStatus, by: user?.full_name, at: now };
+    const updated = { ...run, status: cfg.nextStatus, history: [...(run.history || []), entry], last_updated_at: now, last_updated_by: user?.full_name };
+    if (cfg.nextStatus === 'approved') updated.approved_by = user?.full_name;
+    if (cfg.nextStatus === 'paid') updated.paid_at = now;
+    if (cfg.nextStatus === 'closed') updated.closed_at = now;
+    saveRun(updated);
+  };
+
+  const cfg = PAYROLL_RUN_STATUS[run.status] || PAYROLL_RUN_STATUS.draft;
+  const statusSteps = ['draft', 'under_review', 'approved', 'paid', 'closed'];
+  const currentIdx = statusSteps.indexOf(run.status);
+
+  return (
+    <div className={"rounded-2xl border p-3 mb-4 " + cfg.color}>
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Status Steps */}
+        <div className="flex items-center gap-1 flex-1 flex-wrap">
+          {statusSteps.map((s, i) => {
+            const sCfg = PAYROLL_RUN_STATUS[s];
+            const isDone = i < currentIdx;
+            const isCurrent = i === currentIdx;
+            return (
+              <React.Fragment key={s}>
+                <div className={[
+                  "flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-bold border",
+                  isDone ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                  isCurrent ? cfg.color : 'bg-slate-50 text-slate-400 border-slate-200'
+                ].join(' ')}>
+                  <span>{isDone ? '✓' : sCfg.icon}</span>
+                  <span>{sCfg.label}</span>
+                </div>
+                {i < statusSteps.length - 1 && (
+                  <div className={"w-4 h-0.5 rounded " + (isDone ? 'bg-emerald-400' : 'bg-slate-200')} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          {run.history && run.history.length > 0 && (
+            <button onClick={() => setShowHistory(!showHistory)} className="text-xs underline text-muted-foreground hover:text-foreground">
+              سجل المراحل ({run.history.length})
+            </button>
+          )}
+          {cfg.btnLabel && hasPermission(user, cfg.permission) && (
+            <button onClick={advance} className={"px-3 py-1.5 rounded-xl text-xs font-bold transition-all " + cfg.btnColor}>
+              {cfg.btnLabel}
+            </button>
+          )}
+          {run.status === 'closed' && (
+            <span className="text-xs text-muted-foreground font-mono">أُغلق: {run.closed_at ? new Date(run.closed_at).toLocaleDateString('ar-SA') : '—'}</span>
+          )}
+        </div>
+      </div>
+
+      {/* History dropdown */}
+      {showHistory && run.history && run.history.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-current/20 space-y-1.5">
+          <div className="text-xs font-black mb-2">سجل مراحل المسير:</div>
+          {run.history.map((h, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs">
+              <span className="font-mono text-muted-foreground">{new Date(h.at).toLocaleString('ar-SA')}</span>
+              <span className="font-bold">{h.by}</span>
+              <span className="text-muted-foreground">نقل من {PAYROLL_RUN_STATUS[h.from]?.label} إلى {PAYROLL_RUN_STATUS[h.to]?.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Payroll() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const canApprovePayroll = hasPermission(user, 'payroll.approve');
+  const canCreatePayroll  = hasPermission(user, 'payroll.create');
+  const canClosePayroll   = hasPermission(user, 'payroll.close');
   const isAdmin = user?.role === 'admin' || user?.email?.includes('admin') || true;
 
   // Main Mode: 'wizard' (4 stages) vs 'archive' (past locked months)
@@ -587,6 +707,7 @@ export default function Payroll() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-24" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
+      <PayrollRunBanner month={selectedMonth} year={selectedYear} user={user} />
       
       {/* ─── DEDICATED ADVANCES & LOANS MANAGEMENT HUB (?tab=advances) ──────── */}
       {tabParam === 'advances' ? (

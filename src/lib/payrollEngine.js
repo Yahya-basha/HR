@@ -907,3 +907,93 @@ export function unlockMonthlyPayroll(monthPrefix, reason = 'تعديل طارئ'
     approvedBy: unlockedBy,
   });
 }
+
+
+// ─── Audit Log Helpers ────────────────────────────────────────────────────────
+export function saveAuditEntry(user, action, entityType, entityId, oldValue, newValue, reason) {
+  try {
+    const entry = {
+      id: 'audit_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      user_id: user?.id || user?.employee_number || 'unknown',
+      user_name: user?.full_name || 'مستخدم',
+      user_role: user?.role || 'unknown',
+      action,
+      entity_type: entityType || null,
+      entity_id: entityId || null,
+      old_value: oldValue ? JSON.stringify(oldValue) : null,
+      new_value: newValue ? JSON.stringify(newValue) : null,
+      reason: reason || null,
+      created_at: new Date().toISOString(),
+    };
+    const existing = JSON.parse(localStorage.getItem('hr_audit_logs') || '[]');
+    localStorage.setItem('hr_audit_logs', JSON.stringify([entry, ...existing].slice(0, 500)));
+    return entry;
+  } catch(e) {
+    return null;
+  }
+}
+
+export function getAuditEntries(filters) {
+  try {
+    const all = JSON.parse(localStorage.getItem('hr_audit_logs') || '[]');
+    if (!filters) return all;
+    return all.filter(e => {
+      if (filters.entity_type && e.entity_type !== filters.entity_type) return false;
+      if (filters.entity_id && e.entity_id !== filters.entity_id) return false;
+      if (filters.user_id && e.user_id !== filters.user_id) return false;
+      if (filters.action && !e.action.includes(filters.action)) return false;
+      return true;
+    });
+  } catch(e) {
+    return [];
+  }
+}
+
+// ─── Notifications Helpers ────────────────────────────────────────────────────
+export function createNotification({ recipientId, recipientRole, type, title, message, link, priority }) {
+  try {
+    const notif = {
+      id: 'notif_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      recipient_id: recipientId || null,
+      recipient_role: recipientRole || null,
+      type: type || 'info',
+      title: title || '',
+      message: message || '',
+      is_read: false,
+      link: link || null,
+      priority: priority || 'normal',
+      created_at: new Date().toISOString(),
+    };
+    const existing = JSON.parse(localStorage.getItem('hr_notifications_v2') || '[]');
+    localStorage.setItem('hr_notifications_v2', JSON.stringify([notif, ...existing].slice(0, 200)));
+    return notif;
+  } catch(e) {
+    return null;
+  }
+}
+
+export function getNotifications(userId, role) {
+  try {
+    const all = JSON.parse(localStorage.getItem('hr_notifications_v2') || '[]');
+    return all.filter(n => {
+      if (n.recipient_id && n.recipient_id === userId) return true;
+      if (n.recipient_role && n.recipient_role === role) return true;
+      if (!n.recipient_id && !n.recipient_role) return true;
+      return false;
+    });
+  } catch(e) {
+    return [];
+  }
+}
+
+export function markNotificationRead(id) {
+  try {
+    const all = JSON.parse(localStorage.getItem('hr_notifications_v2') || '[]');
+    const updated = all.map(n => n.id === id ? {...n, is_read: true} : n);
+    localStorage.setItem('hr_notifications_v2', JSON.stringify(updated));
+  } catch(e) {}
+}
+
+export function getUnreadNotificationCount(userId, role) {
+  return getNotifications(userId, role).filter(n => !n.is_read).length;
+}

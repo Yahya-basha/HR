@@ -1,19 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { getRoleMeta } from '@/lib/rbac';
 import { useAuth } from '@/lib/AuthContext';
-import { EKTEFA_MODULES } from '@/lib/nav';
-import { 
-  Search, 
-  ChevronLeft, 
-  ChevronRight, 
-  Check 
+import { EKTEFA_MODULES, getVisibleModules } from '@/lib/nav';
+import { hasPermission, getRoleMeta } from '@/lib/rbac';
+import {
+  Search,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  SlidersHorizontal,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 
 const ROUTE_MODULE_MAP = {
   '/': 'dashboard',
-  '/portal': 'dashboard',
+  '/my-requests': 'dashboard',
+  '/approvals': 'dashboard',
+  '/alerts': 'dashboard',
   '/employee-profile': 'dashboard',
+  '/portal': 'dashboard',
   '/documents-print': 'dashboard',
   '/announcements': 'communication',
   '/attendance': 'attendance',
@@ -23,6 +29,7 @@ const ROUTE_MODULE_MAP = {
   '/branches': 'employees',
   '/departments': 'employees',
   '/contracts': 'employees',
+  '/allowances': 'employees',
   '/shifts': 'employees',
   '/leave': 'services',
   '/leave-policies': 'services',
@@ -36,22 +43,23 @@ const ROUTE_MODULE_MAP = {
   '/evaluations': 'settings',
 };
 
-export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
+export default function Sidebar({ isSubMenuOpen, setIsSubMenuOpen }) {
   const { user } = useAuth();
+  const roleMeta = getRoleMeta(user);
   const location = useLocation();
   const navigate = useNavigate();
 
+  const visibleModules = useMemo(() => getVisibleModules(user), [user]);
+
   // Find active module based on current pathname with deterministic route mapping
   const findModuleForPath = (pathname) => {
-    // 1. Direct match in ROUTE_MODULE_MAP
     for (const [route, modId] of Object.entries(ROUTE_MODULE_MAP)) {
       if (route === '/' && pathname === '/') return modId;
       if (route !== '/' && (pathname === route || pathname.startsWith(route + '/') || pathname.startsWith(route + '?'))) {
         return modId;
       }
     }
-    // 2. Fallback: check module items
-    for (const mod of EKTEFA_MODULES) {
+    for (const mod of visibleModules) {
       for (const item of mod.items) {
         const itemBase = item.to.split('?')[0];
         if (itemBase === '/' && pathname === '/') return mod.id;
@@ -60,7 +68,7 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
         }
       }
     }
-    return 'dashboard';
+    return visibleModules[0]?.id || 'dashboard';
   };
 
   const [activeModuleId, setActiveModuleId] = useState(() => findModuleForPath(location.pathname));
@@ -70,12 +78,12 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
   useEffect(() => {
     const modId = findModuleForPath(location.pathname);
     if (modId) setActiveModuleId(modId);
-  }, [location.pathname]);
+  }, [location.pathname, visibleModules]);
 
-  const activeModule = EKTEFA_MODULES.find(m => m.id === activeModuleId) || EKTEFA_MODULES[0];
+  const activeModule = visibleModules.find(m => m.id === activeModuleId) || visibleModules[0];
 
   const filteredItems = (activeModule?.items || []).filter(it => {
-    const permMatch = !it.admin || isAdmin;
+    const permMatch = !it.permission || hasPermission(user, it.permission);
     const searchMatch = !searchQuery || (it.label || '').toLowerCase().includes(searchQuery.toLowerCase());
     return permMatch && searchMatch;
   });
@@ -115,7 +123,7 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
 
         {/* Primary Module Icons List */}
         <div className="flex-1 flex flex-col items-center gap-1.5 overflow-y-auto no-scrollbar w-full px-1.5 py-1">
-          {EKTEFA_MODULES.map((mod) => {
+          {visibleModules.map((mod) => {
             const isCurrent = activeModuleId === mod.id;
             const Icon = mod.icon;
 
@@ -166,6 +174,17 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
           })}
         </div>
 
+        {/* User Role Mini Indicator */}
+        <div className="mt-1 flex flex-col items-center shrink-0">
+          <span 
+            className="w-7 h-7 rounded-xl flex items-center justify-center text-xs shadow-sm"
+            style={{ backgroundColor: roleMeta.color + '22', color: roleMeta.color }}
+            title={roleMeta.label}
+          >
+            {roleMeta.icon}
+          </span>
+        </div>
+
         {/* Bottom Collapse Toggle Arrow */}
         <button
           type="button"
@@ -196,7 +215,7 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
               </h3>
             </div>
 
-            {/* Cyan Search Input (Ektefa Exact Style) */}
+            {/* Cyan Search Input */}
             <div className="relative">
               <input
                 type="text"
@@ -240,7 +259,7 @@ export default function Sidebar({ isAdmin, isSubMenuOpen, setIsSubMenuOpen }) {
           {/* Footer Info */}
           <div className="pt-3 border-t border-border/60 text-[10px] text-muted-foreground flex items-center justify-between px-1 shrink-0">
             <span className="font-mono">Green Arrow HR</span>
-            <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-bold font-mono">v2.4</span>
+            <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-bold font-mono">v2.5</span>
           </div>
         </aside>
       )}

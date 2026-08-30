@@ -86,6 +86,7 @@ const daysUntil = (dateStr) => {
 };
 
 import OwnerDashboard from './OwnerDashboard';
+import AdminDashboard from './AdminDashboard';
 import HRDashboard from './HRDashboard';
 import AccountantDashboard from './AccountantDashboard';
 import EmployeeDashboard from './EmployeeDashboard';
@@ -98,8 +99,8 @@ function DashboardRouter() {
   if (role === 'accountant') return <AccountantDashboard />;
   if (role === 'hr') return <HRDashboard />;
   if (role === 'employee') return <EmployeeDashboard />;
-  // system_admin → full dashboard below
-  return <Dashboard_Internal />;
+  if (role === 'system_admin') return <AdminDashboard />;
+  return <AdminDashboard />;
 }
 export default DashboardRouter;
 function Dashboard_Internal() {

@@ -2,6 +2,7 @@ import { useTheme } from '@/lib/theme';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import { getRoleMeta } from '@/lib/rbac';
 import { useI18n } from '@/lib/i18n';
 import { 
   Bell, 
@@ -28,12 +29,35 @@ import {
 
 export default function Header({ onOpenMobileMenu }) {
   const { user, logout } = useAuth();
+  const roleMeta = getRoleMeta(user);
   const { lang, toggleLanguage } = useI18n();
   const navigate = useNavigate();
 
   const { isDark, toggleDarkMode } = useTheme();
 
     // ─── DYNAMIC REAL UNREAD MESSAGES COUNT TAILORED TO LOGGED-IN USER ─────
+  // RBAC-aware notification count
+  const [rbacNotifCount, setRbacNotifCount] = useState(0);
+  useEffect(() => {
+    const check = () => {
+      try {
+        const all = JSON.parse(localStorage.getItem('hr_notifications_v2') || '[]');
+        const uid = user?.employee_number || user?.id;
+        const role = user?.role;
+        const unread = all.filter(n => {
+          if (n.is_read) return false;
+          if (n.recipient_id && n.recipient_id !== uid) return false;
+          if (n.recipient_role && n.recipient_role !== role) return false;
+          return true;
+        }).length;
+        setRbacNotifCount(unread);
+      } catch(e) {}
+    };
+    check();
+    const interval = setInterval(check, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const getRealUnreadCount = useCallback(() => {
     try {
       const userEmpNum = String(user?.employee_number || user?.id || '').replace('emp_', '');
@@ -202,6 +226,9 @@ export default function Header({ onOpenMobileMenu }) {
             <DropdownMenuLabel className="font-bold text-xs">
               <div className="font-black text-foreground">{userName}</div>
               <div className="text-[11px] text-muted-foreground font-normal">{user?.email || 'admin@greenarrow.com'}</div>
+              <div style={{background: roleMeta.color + '22', color: roleMeta.color}} className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full mt-1.5">
+                {roleMeta.icon} {roleMeta.label}
+              </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             
