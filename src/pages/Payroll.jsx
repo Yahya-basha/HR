@@ -7,7 +7,7 @@ import {
   CreditCard, PlusCircle, Trash2, ChevronRight, ChevronLeft,
   FileText, CheckSquare, Sparkles, Building2, UserCheck, LayoutGrid,
   SlidersHorizontal, Lock, Unlock, Archive, ArrowRight, ArrowLeft,
-  Briefcase, DollarSign, ArrowUpRight, ArrowDownRight, Award
+  Briefcase, DollarSign, ArrowUpRight, ArrowDownRight, Award, Fingerprint
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
