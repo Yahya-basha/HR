@@ -50,34 +50,33 @@ function useRequests() {
   const [corrections, setCorrections] = useState(() => loadLocal('hr_correction_requests'));
   const [syncing,     setSyncing]     = useState(false);
 
-  const refreshFromCloud = useCallback(async () => {
-    setSyncing(true);
+  const silentSync = useCallback(async (isManual = false) => {
+    if (isManual) setSyncing(true);
     try {
-      await initFullCloudSync();
       const [advData, lvData, crData] = await Promise.all([
         cloudLoad('hr_advances_list', []),
         cloudLoad('hr_leave_requests', []),
         cloudLoad('hr_correction_requests', [])
       ]);
-      setAdvances(Array.isArray(advData) ? advData : []);
-      setLeaves(Array.isArray(lvData) ? lvData : []);
-      setCorrections(Array.isArray(crData) ? crData : []);
+      if (Array.isArray(advData)) setAdvances(advData);
+      if (Array.isArray(lvData)) setLeaves(lvData);
+      if (Array.isArray(crData)) setCorrections(crData);
     } catch (e) {
-      console.warn('Refresh from cloud failed:', e);
+      console.warn('Sync failed:', e);
     } finally {
-      setSyncing(false);
+      if (isManual) setSyncing(false);
     }
   }, []);
 
   useEffect(() => {
-    refreshFromCloud();
-    const interval = setInterval(refreshFromCloud, 10000);
-    window.addEventListener('cloud_data_synced', refreshFromCloud);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('cloud_data_synced', refreshFromCloud);
-    };
-  }, [refreshFromCloud]);
+    silentSync(false);
+    const interval = setInterval(() => silentSync(false), 15000);
+    return () => clearInterval(interval);
+  }, [silentSync]);
+
+  const manualRefresh = async () => {
+    await silentSync(true);
+  };
 
   const updateAdvance = async (id, fields) => {
     const updated = advances.map(a => a.id === id ? { ...a, ...fields } : a);
@@ -97,7 +96,7 @@ function useRequests() {
     await save('hr_correction_requests', updated);
   };
 
-  return { advances, leaves, corrections, refresh: refreshFromCloud, syncing, updateAdvance, updateLeave, updateCorrection };
+  return { advances, leaves, corrections, refresh: manualRefresh, syncing, updateAdvance, updateLeave, updateCorrection };
 }
 
 export default function ApprovalsCenter() {
