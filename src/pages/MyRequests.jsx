@@ -76,17 +76,21 @@ export default function MyRequests() {
 
   const submitAdvance = async () => {
     if (!advForm.amount || isNaN(Number(advForm.amount))) { toast({ title: 'الرجاء إدخال مبلغ صحيح', variant: 'destructive' }); return; }
+    const installmentsCount = Number(advForm.installments) || 1;
+    const amountVal = Number(advForm.amount);
     const req = {
       id: 'adv_' + Date.now(),
       employee_id: empData?.id || user?.id,
-      employee_number: user?.employee_number,
-      employee_name: user?.full_name,
-      amount: Number(advForm.amount),
-      installments: Number(advForm.installments)||1,
-      reason: advForm.reason,
+      employee_number: user?.employee_number || empData?.employee_number,
+      employee_name: user?.full_name || empData?.full_name || 'موظف',
+      amount: amountVal,
+      installments: installmentsCount,
+      monthly_deduction: Math.round(amountVal / installmentsCount),
+      reason: advForm.reason || 'سلفة شخصية',
       status: 'pending',
       date: new Date().toISOString(),
-      repayment_type: Number(advForm.installments)>1 ? 'installments' : 'lump_sum',
+      created_at: new Date().toISOString(),
+      repayment_type: installmentsCount > 1 ? 'installments' : 'lump_sum',
     };
     const existing = JSON.parse(localStorage.getItem('hr_advances_list')||'[]');
     const nextAdv = [req, ...existing]; localStorage.setItem('hr_advances_list', JSON.stringify(nextAdv)); localStorage.setItem('hr_flow_employee_advances', JSON.stringify(nextAdv)); await cloudSave('hr_advances_list', nextAdv);
@@ -110,7 +114,7 @@ export default function MyRequests() {
       created_at: new Date().toISOString(),
     };
     const existing = JSON.parse(localStorage.getItem('hr_leave_requests')||'[]');
-    const nextLv = [req, ...existing]; localStorage.setItem('hr_leave_requests', JSON.stringify(nextLv)); cloudSave('hr_leave_requests', nextLv);
+    const nextLv = [req, ...existing]; localStorage.setItem('hr_leave_requests', JSON.stringify(nextLv)); await cloudSave('hr_leave_requests', nextLv);
     setLeaveModal(false); setLeaveForm(defaultLeaveForm);
     setMyRequests(loadMyRequests());
     toast({ title: '✅ تم إرسال طلب الإجازة بنجاح' });
@@ -131,7 +135,7 @@ export default function MyRequests() {
       created_at: new Date().toISOString(),
     };
     const existing = JSON.parse(localStorage.getItem('hr_correction_requests')||'[]');
-    const nextCr = [req, ...existing]; localStorage.setItem('hr_correction_requests', JSON.stringify(nextCr)); cloudSave('hr_correction_requests', nextCr);
+    const nextCr = [req, ...existing]; localStorage.setItem('hr_correction_requests', JSON.stringify(nextCr)); await cloudSave('hr_correction_requests', nextCr);
     setCorrModal(false); setCorrForm(defaultCorrForm);
     setMyRequests(loadMyRequests());
     toast({ title: '✅ تم إرسال طلب تعديل البصمة' });
