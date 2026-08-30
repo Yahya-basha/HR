@@ -6,6 +6,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { getRoleMeta } from '@/lib/rbac';
 import { useI18n } from '@/lib/i18n';
 import { 
+  Cloud,
+  Download,
   Bell, 
   Mail, 
   Sun, 
