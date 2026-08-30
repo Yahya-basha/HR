@@ -100,6 +100,8 @@ export default function EmployeeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const userRole = user?.role || 'employee';
+  const canEdit = userRole === 'owner' || userRole === 'system_admin' || userRole === 'hr' || userRole === 'accountant';
   const { toast } = useToast();
 
   const [employee, setEmployee] = useState(null);
@@ -1063,10 +1065,12 @@ export default function EmployeeDetail() {
                   </h3>
                   <p className="text-xs text-muted-foreground">بيانات الزوجة والأبناء المعتمدة في ملف الموظف</p>
                 </div>
-                <Button size="sm" onClick={() => setAddDependentModal(true)} className="bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold h-8 gap-1">
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ إضافة تابع</span>
-                </Button>
+                {canEdit && (
+                  <Button size="sm" onClick={() => setAddDependentModal(true)} className="bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold h-8 gap-1">
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ إضافة تابع</span>
+                  </Button>
+                )}
               </div>
 
               {dependentsList.length === 0 ? (
@@ -1109,10 +1113,12 @@ export default function EmployeeDetail() {
                   </h3>
                   <p className="text-xs text-muted-foreground">التطوير المهني والبرامج التدريبية المعتمدة</p>
                 </div>
-                <Button size="sm" onClick={() => setAddTrainingModal(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold h-8 gap-1">
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ إضافة دورة</span>
-                </Button>
+                {canEdit && (
+                  <Button size="sm" onClick={() => setAddTrainingModal(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold h-8 gap-1">
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ إضافة دورة</span>
+                  </Button>
+                )}
               </div>
 
               {trainingsList.length === 0 ? (

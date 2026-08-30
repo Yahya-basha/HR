@@ -51,44 +51,79 @@ export default function Layout() {
         </main>
       </div>
 
-      {/* 4. Mobile Bottom Touch-Bar */}
+      {/* 4. Native Absher / Tawakkalna Style Mobile Bottom Navigation Dock */}
       <div 
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-slate-900/95 border-t border-border/80 shadow-2xl backdrop-blur-xl"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] pb-safe"
         dir="rtl"
       >
-        <div className="flex items-center justify-between px-2 py-1.5">
+        <div className="grid grid-cols-5 items-center px-2 py-2 max-w-md mx-auto">
           
-          <div className="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth touch-pan-x pe-2">
-            {items.slice(0, 5).map((item, idx) => {
-              const active = isActive(item.to);
-              const ItemIcon = item.icon;
-              return (
-                <Link
-                  key={idx}
-                  to={item.to}
-                  className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl shrink-0 transition-all text-center min-w-[58px] ${
-                    active
-                      ? 'bg-sky-500 text-white shadow-md'
-                      : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <ItemIcon className="w-4 h-4" />
-                  <span className="text-[10px] font-bold leading-tight truncate max-w-[56px]">
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+          {/* Home */}
+          <Link
+            to="/"
+            className={`flex flex-col items-center justify-center gap-1 py-1 rounded-2xl transition-all ${
+              location.pathname === '/'
+                ? 'text-emerald-600 dark:text-emerald-400 scale-105 font-black'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${location.pathname === '/' ? 'bg-emerald-500/15' : ''}`}>
+              <Grid className="w-5 h-5" />
+            </div>
+            <span className="text-[10.5px] font-bold tracking-tight">الرئيسية</span>
+          </Link>
 
+          {/* Requests */}
+          <Link
+            to="/my-requests"
+            className={`flex flex-col items-center justify-center gap-1 py-1 rounded-2xl transition-all ${
+              location.pathname.startsWith('/my-requests') || location.pathname.startsWith('/requests')
+                ? 'text-emerald-600 dark:text-emerald-400 scale-105 font-black'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${location.pathname.startsWith('/my-requests') ? 'bg-emerald-500/15' : ''}`}>
+              <FileSignature className="w-5 h-5" />
+            </div>
+            <span className="text-[10.5px] font-bold tracking-tight">طلباتي</span>
+          </Link>
+
+          {/* Attendance Center Button */}
+          <Link
+            to="/attendance"
+            className="flex flex-col items-center justify-center -mt-5 group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 ring-4 ring-white dark:ring-slate-900 group-active:scale-95 transition-all">
+              <Clock className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 mt-1">دوامي</span>
+          </Link>
+
+          {/* 360 Profile */}
+          <Link
+            to={user?.role === 'employee' ? `/employees/${user.employee_number || user.id}` : '/employees'}
+            className={`flex flex-col items-center justify-center gap-1 py-1 rounded-2xl transition-all ${
+              location.pathname.startsWith('/employees') || location.pathname.startsWith('/profile')
+                ? 'text-emerald-600 dark:text-emerald-400 scale-105 font-black'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${location.pathname.startsWith('/employees') ? 'bg-emerald-500/15' : ''}`}>
+              <User className="w-5 h-5" />
+            </div>
+            <span className="text-[10.5px] font-bold tracking-tight">ملفي 360°</span>
+          </Link>
+
+          {/* Mobile All Menus Sheet */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl shrink-0 bg-slate-900 text-white font-bold transition-all shadow-md ms-1"
-            title="فتح كافة القوائم"
+            className="flex flex-col items-center justify-center gap-1 py-1 rounded-2xl text-slate-500 dark:text-slate-400 hover:text-slate-900 active:scale-95 transition-all"
           >
-            <Grid className="w-4 h-4 text-sky-400" />
-            <span className="text-[10px] font-extrabold text-sky-300">القائمة</span>
+            <div className="p-1 rounded-xl">
+              <Menu className="w-5 h-5" />
+            </div>
+            <span className="text-[10.5px] font-bold tracking-tight">المزيد</span>
           </button>
 
         </div>
