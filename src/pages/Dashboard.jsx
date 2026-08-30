@@ -428,13 +428,31 @@ export default function Dashboard() {
     const empCount = targetEmps.length || 1;
     const targetEmpIds = new Set(targetEmps.map(e => String(e.employee_number || e.id)));
 
-    // 2. Build 5 weeks covering August 1 to 31
+    // 2. Detect the active month dynamically from recentLogs (use latest log date's month)
+    let activeYear = new Date().getFullYear();
+    let activeMonth = new Date().getMonth() + 1; // 1-12
+    
+    // Find the most recent log date to determine which month to show
+    const logDates = (recentLogs || []).map(l => l.log_date).filter(Boolean).sort().reverse();
+    if (logDates.length > 0) {
+      const latestDate = logDates[0]; // e.g. '2026-08-31' or '2026-02-22'
+      const parts = latestDate.split('-');
+      if (parts.length >= 2) {
+        activeYear = parseInt(parts[0], 10);
+        activeMonth = parseInt(parts[1], 10);
+      }
+    }
+    
+    const daysInMonth = new Date(activeYear, activeMonth, 0).getDate();
+    const monthPrefix = String(activeYear) + '-' + String(activeMonth).padStart(2, '0');
+    
+    // 3. Build 5 weeks covering the active month
     const weeks = [
       { label: 'الأسبوع 1', startDay: 1, endDay: 7 },
       { label: 'الأسبوع 2', startDay: 8, endDay: 14 },
       { label: 'الأسبوع 3', startDay: 15, endDay: 21 },
       { label: 'الأسبوع 4', startDay: 22, endDay: 28 },
-      { label: 'الأسبوع 5', startDay: 29, endDay: 31 },
+      { label: 'الأسبوع 5', startDay: 29, endDay: daysInMonth },
     ];
 
     return weeks.map(wk => {
@@ -445,7 +463,7 @@ export default function Dashboard() {
           continue;
         }
 
-        const dateStr = `2026-08-${String(dayNum).padStart(2, '0')}`;
+        const dateStr = monthPrefix + '-' + String(dayNum).padStart(2, '0');
         const dayOfWeek = new Date(dateStr).getDay(); // 5 = Friday
         const isFriday = dayOfWeek === 5;
         const isFuture = dateStr > today;
@@ -471,24 +489,28 @@ export default function Dashboard() {
         }
 
         // Real logs query for this exact day
+        // Attendance logs use employee_id (e.g. 'emp_1001'), employees use id (e.g. 'emp_1001')
         const logsForDay = (recentLogs || []).filter(l => {
           const lDate = l.log_date || '';
           const matchDate = lDate === dateStr;
-          const matchEmp = targetEmpIds.has(String(l.employee_number || l.employee_id));
-          return matchDate && matchEmp;
+          // Match by employee_id (primary) or by employee_number from notes
+          const logEmpId = String(l.employee_id || '');
+          const logEmpNum = l.employee_number ? String(l.employee_number) : null;
+          const matchById = targetEmps.some(e => String(e.id || '') === logEmpId);
+          const matchByNum = logEmpNum && targetEmps.some(e => String(e.employee_number || '') === logEmpNum);
+          return matchDate && (matchById || matchByNum);
         });
 
         // Count unique present employees for this day
-        const attendedEmpNumbers = new Set();
+        const attendedEmpIds = new Set();
         logsForDay.forEach(l => {
-          const hasPunch = (l.punches && l.punches.length > 0) || l.check_in || (l.actual_minutes && l.actual_minutes > 0);
-          const isPresentStatus = l.status === 'present' || l.status === 'late';
-          if (hasPunch || isPresentStatus) {
-            attendedEmpNumbers.add(String(l.employee_number || l.employee_id));
+          const hasPunch = l.check_in || l.status === 'present' || l.status === 'late';
+          if (hasPunch) {
+            attendedEmpIds.add(String(l.employee_id || ''));
           }
         });
 
-        const attendedStaffList = targetEmps.filter(e => attendedEmpNumbers.has(String(e.employee_number || e.id)));
+        const attendedStaffList = targetEmps.filter(e => attendedEmpIds.has(String(e.id || '')));
         const presentCount = attendedStaffList.length;
 
         // Exact percentage calculation based on branch staff count
