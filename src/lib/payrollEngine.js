@@ -1,3 +1,24 @@
+export async function deleteAdvance(advanceId) {
+  try {
+    const cleanId = String(advanceId);
+    const list1 = JSON.parse(localStorage.getItem('hr_flow_employee_advances') || '[]');
+    const list2 = JSON.parse(localStorage.getItem('hr_advances_list') || '[]');
+    
+    const filtered1 = list1.filter(a => String(a.id) !== cleanId);
+    const filtered2 = list2.filter(a => String(a.id) !== cleanId);
+    
+    localStorage.setItem('hr_flow_employee_advances', JSON.stringify(filtered1));
+    localStorage.setItem('hr_advances_list', JSON.stringify(filtered2));
+    
+    await cloudSave('hr_flow_employee_advances', filtered1);
+    await cloudSave('hr_advances_list', filtered2);
+    return true;
+  } catch (e) {
+    console.error('Failed to delete advance:', e);
+    return false;
+  }
+}
+
 export function normalizeAdvance(adv) {
   if (!adv) return null;
   const amt = Number(adv.total_amount || adv.amount) || 0;

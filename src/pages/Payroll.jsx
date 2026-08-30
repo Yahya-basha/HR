@@ -34,6 +34,7 @@ import {
   formatMinutes,
   formatHours,
   normalizeAdvance,
+  deleteAdvance,
   getAdvances,
   saveAdvance,
   recordAdvanceInstallmentPayment,
@@ -2775,25 +2776,19 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
     });
   }, [normalizedList, search, statusFilter]);
 
-  const handleDelete = (adv) => {
-    if ((Number(adv.paid_amount) || 0) > 0) {
-      toast({
-        title: 'لا يمكن حذف هذه السلفة',
-        description: 'تم البدء في استقطاع أقساط هذه السلفة بالفعل ومسجلة في القيود المالية.',
-        variant: 'destructive'
-      });
+  const handleDelete = async (adv) => {
+    if (!adv || !adv.id) return;
+    if (!window.confirm(`هل أنت متأكد من حذف وإلغاء سلفة الموظف: ${adv.employee_name || ''} بمبلغ ${fmtNum(adv.total_amount)} ر.س نهائياً؟`)) {
       return;
     }
 
-    if (!confirm(`هل أنت متأكد من إلغاء سلفة الموظف: ${adv.employee_name} بمبلغ ${fmtNum(adv.total_amount)} ر.س؟`)) return;
-
-    const all = getAdvances().filter(a => a.id !== adv.id);
-    localStorage.setItem('hr_flow_employee_advances', JSON.stringify(all));
-    localStorage.setItem('hr_advances_list', JSON.stringify(all));
-    cloudSave('hr_flow_employee_advances', all);
-    cloudSave('hr_advances_list', all);
-    toast({ title: '✓ تم إلغاء وحذف السلفة بنجاح' });
-    onRefresh();
+    try {
+      await deleteAdvance(adv.id);
+      toast({ title: '✓ تم حذف وإلغاء السلفة بنجاح من النظام والسحابة' });
+      onRefresh();
+    } catch (err) {
+      toast({ title: 'خطأ في حذف السلفة', description: err.message, variant: 'destructive' });
+    }
   };
 
   return (
@@ -3055,18 +3050,15 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
                             <span>سند السلفة A4</span>
                           </Button>
 
-                          {/* Delete if not paid */}
-                          {paid === 0 && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleDelete(adv)}
-                              className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-xl"
-                              title="إلغاء السلفة"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDelete(adv)}
+                            className="h-8 w-8 text-rose-500 hover:bg-rose-50 hover:text-rose-700 rounded-xl"
+                            title="حذف وإلغاء السلفة"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </td>
 
