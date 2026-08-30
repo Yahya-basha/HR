@@ -344,6 +344,71 @@ export default function Payroll() {
     }
   };
 
+  // Fast 1-Click Cancel Friday Attendance (Sets to normal weekly holiday with zero punches)
+  const handleCancelFridayAttendance = async (day) => {
+    if (!currentSelectedEmp) return;
+    const emp = currentSelectedEmp;
+    const empId = emp.id || ('emp_' + emp.employee_number);
+    const empNum = String(emp.employee_number || '').replace('emp_', '');
+    const empName = emp.full_name || 'موظف';
+
+    const updatedItem = {
+      ...day,
+      id: day.id || `att_${empNum}_${day.log_date}`.replace(/[^a-zA-Z0-9_]/g, '_'),
+      employee_id: empId,
+      user_id: empId,
+      employee_number: empNum,
+      employee_name: empName,
+      log_date: day.log_date,
+      check_in: null,
+      check_out: null,
+      status: 'weekend',
+      timestamp_raw: '',
+      total_hours: 0,
+      period_1_in: '',
+      period_1_out: '',
+      period_2_in: '',
+      period_2_out: '',
+      notes: JSON.stringify({
+        employee_number: empNum,
+        user_id: empId,
+        total_hours: 0,
+        timestamp_raw: '',
+        period_1_in: '',
+        period_1_out: '',
+        period_2_in: '',
+        period_2_out: '',
+        leave_type: 'weekend',
+        note: 'عطلة أسبوعية رسمية بدون دوام',
+        manual_edit_by: user?.full_name || 'مدير الموارد البشرية',
+        manual_edit_at: new Date().toISOString()
+      })
+    };
+
+    try {
+      if (day.id) {
+        await base44.entities.AttendanceLog.update(day.id, updatedItem);
+      } else {
+        await base44.entities.AttendanceLog.create(updatedItem);
+      }
+
+      setAttendanceLogs(prev => {
+        const copy = [...prev];
+        const idx = copy.findIndex(l => (l.id && l.id === day.id) || (String(l.employee_number || l.employee_id) === empNum && l.log_date === day.log_date));
+        if (idx !== -1) copy[idx] = { ...copy[idx], ...updatedItem };
+        else copy.unshift(updatedItem);
+        return copy;
+      });
+
+      toast({
+        title: '🏖️ تم إلغاء دوام الجمعة بنجاح',
+        description: `يوم ${day.log_date}: تم تعيين اليوم كعطلة أسبوعية رسمية وتصفير كافة البصمات والساعات.`
+      });
+    } catch (e) {
+      toast({ title: 'خطأ أثناء إلغاء دوام الجمعة', description: e.message, variant: 'destructive' });
+    }
+  };
+
   // Stage 1: Edit Biometric Log (Admin Only)
   const handleSavePunchEdit = async () => {
     if (!editPunchModal) return;
@@ -353,7 +418,19 @@ export default function Payroll() {
       const empId = emp ? emp.id : (log.employee_id || log.user_id);
       const empNum = emp ? String(emp.employee_number) : (log.employee_number || '1000');
       const empName = emp ? emp.full_name : (log.employee_name || 'موظف');
-      const isLeave = newStatus === 'annual_leave' || newStatus === 'sick_leave' || newStatus === 'emergency_leave' || newStatus === 'unpaid_leave' || newStatus === 'unexcused_absence' || newStatus === 'exempt' || newStatus === 'absent';
+      const isLeave = newStatus === 'annual_leave' || newStatus === 'sick_leave' || newStatus === 'emergency_leave' || newStatus === 'unpaid_leave' || newStatus === 'unexcused_absence' || newStatus === 'exempt' || newStatus === 'absent' || newStatus === 'weekend';
+
+      let cleanP1In = isSplitShift ? p1In : newCheckIn;
+      let cleanP1Out = isSplitShift ? p1Out : newCheckOut;
+      let cleanP2In = isSplitShift ? p2In : '';
+      let cleanP2Out = isSplitShift ? p2Out : '';
+
+      if (isLeave) {
+        cleanP1In = '';
+        cleanP1Out = '';
+        cleanP2In = '';
+        cleanP2Out = '';
+      }
 
       const parseM = (t) => {
         if (!t) return null;
@@ -412,19 +489,19 @@ export default function Payroll() {
         status: newStatus || log.status || 'present',
         timestamp_raw: rawPunches,
         total_hours: totalHrs,
-        period_1_in: isSplitShift ? p1In : newCheckIn,
-        period_1_out: isSplitShift ? p1Out : newCheckOut,
-        period_2_in: isSplitShift ? p2In : '',
-        period_2_out: isSplitShift ? p2Out : '',
+        period_1_in: cleanP1In,
+        period_1_out: cleanP1Out,
+        period_2_in: cleanP2In,
+        period_2_out: cleanP2Out,
         notes: JSON.stringify({
           employee_number: empNum,
           user_id: empId,
           total_hours: totalHrs,
           timestamp_raw: rawPunches,
-          period_1_in: isSplitShift ? p1In : newCheckIn,
-          period_1_out: isSplitShift ? p1Out : newCheckOut,
-          period_2_in: isSplitShift ? p2In : '',
-          period_2_out: isSplitShift ? p2Out : '',
+          period_1_in: cleanP1In,
+          period_1_out: cleanP1Out,
+          period_2_in: cleanP2In,
+          period_2_out: cleanP2Out,
           leave_type: isLeave ? newStatus : null,
           deduction_from_annual_balance: newStatus === 'annual_leave',
           manual_edit_by: user?.full_name || 'مدير الموارد البشرية',
@@ -901,8 +978,33 @@ export default function Payroll() {
                               <td className="py-2.5 px-4 text-center">
                                 {isAdmin && !isLocked && (
                                   <div className="flex items-center justify-center gap-1.5">
-                                    {/* 1-Click Fast Standard Attendance Approval */}
-                                    {!d.isFriday && (
+                                    {/* Fast Friday Buttons */}
+                                    {d.isFriday ? (
+                                      d.hasAttendance ? (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleCancelFridayAttendance(d)}
+                                          title="إلغاء دوام الجمعة وتصفير البصمات وجعله عطلة أسبوعية رسمية"
+                                          className="h-7 text-[10px] font-bold rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900 px-2.5 gap-1 border border-rose-200/60"
+                                        >
+                                          <X className="w-3 h-3" />
+                                          <span>إلغاء دوام الجمعة 🚫</span>
+                                        </Button>
+                                      ) : (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleQuickStandardPunch(d)}
+                                          title="توثيق دوام جمعة إضافي مستحق للبدل بمواعيد الشفت"
+                                          className="h-7 text-[10px] font-bold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 px-2.5 gap-1 border border-indigo-200/60"
+                                        >
+                                          <Sparkles className="w-3 h-3 text-indigo-600" />
+                                          <span>دوام جمعة إضافي ⚡</span>
+                                        </Button>
+                                      )
+                                    ) : (
+                                      /* 1-Click Fast Standard Attendance for regular working days */
                                       <Button
                                         size="sm"
                                         variant="ghost"
@@ -938,17 +1040,18 @@ export default function Payroll() {
                                         let singleIn = p1In || (d.check_in ? String(d.check_in).slice(11, 16) : '16:00');
                                         let singleOut = p2Out || p1Out || (d.check_out ? String(d.check_out).slice(11, 16) : '21:00');
 
+                                        const isFriNoAtt = d.isFriday && !d.hasAttendance;
                                         setEditPunchModal({
                                           log: d,
                                           emp: currentSelectedEmp,
                                           isSplitShift: isSplit,
-                                          p1In: p1In || (empShift.includes('8 ساعات') ? '08:00' : '09:00'),
-                                          p1Out: p1Out || (empShift.includes('8 ساعات') ? '12:00' : '13:00'),
-                                          p2In: p2In || '16:00',
-                                          p2Out: p2Out || (empShift.includes('8 ساعات') ? '20:00' : '21:00'),
-                                          newCheckIn: singleIn,
-                                          newCheckOut: singleOut,
-                                          newStatus: d.isFriday ? 'exempt' : (d.hasAttendance ? (d.status || 'present') : 'absent')
+                                          p1In: isFriNoAtt ? '' : (p1In || (empShift.includes('8 ساعات') ? '08:00' : '09:00')),
+                                          p1Out: isFriNoAtt ? '' : (p1Out || (empShift.includes('8 ساعات') ? '12:00' : '13:00')),
+                                          p2In: isFriNoAtt ? '' : (p2In || '16:00'),
+                                          p2Out: isFriNoAtt ? '' : (p2Out || (empShift.includes('8 ساعات') ? '20:00' : '21:00')),
+                                          newCheckIn: isFriNoAtt ? '' : singleIn,
+                                          newCheckOut: isFriNoAtt ? '' : singleOut,
+                                          newStatus: d.isFriday ? (d.hasAttendance ? 'present' : 'weekend') : (d.hasAttendance ? (d.status || 'present') : 'absent')
                                         });
                                       }}
                                       className="h-7 text-[11px] font-bold rounded-xl text-sky-700 hover:bg-sky-50 dark:text-sky-300 dark:hover:bg-sky-950/60 px-2 gap-1 border border-sky-200/60 dark:border-sky-800"
@@ -1754,6 +1857,7 @@ export default function Payroll() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl max-h-72">
+                      <SelectItem value="weekend" className="font-bold text-indigo-700 py-2">🏖️ عطلة جمعة رسمية (بدون دوام / إلغاء البصمات)</SelectItem>
                       <SelectItem value="present" className="font-bold text-emerald-700 py-2">✓ حاضر (دوام منضبط مكتمل)</SelectItem>
                       <SelectItem value="late" className="font-bold text-amber-700 py-2">⏰ متأخر (مع احتساب التأخير)</SelectItem>
                       <SelectItem value="annual_leave" className="font-bold text-teal-700 py-2">🏖️ إجازة سنوية (تخصم من رصيد الإجازات - مدفوعة)</SelectItem>
