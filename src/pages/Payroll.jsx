@@ -807,9 +807,9 @@ export default function Payroll() {
                     </div>
 
                     <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 p-3 rounded-2xl">
-                      <div className="text-xs font-bold text-blue-800 dark:text-blue-300">جمعات الدوام المعتمدة</div>
+                      <div className="text-xs font-bold text-blue-800 dark:text-blue-300">جمعات دوام فعلي (إضافي)</div>
                       <div className="text-xl font-black font-mono text-blue-700 dark:text-blue-400 mt-1">
-                        {currentSelectedPayroll.fridayDays} <span className="text-xs font-sans font-normal">جمعة</span>
+                        {currentSelectedPayroll.fridayWorkedDays || 0} <span className="text-xs font-sans font-normal">جمعة</span>
                       </div>
                     </div>
 
@@ -1260,13 +1260,13 @@ export default function Payroll() {
                       <h3 className="font-heading font-black text-sm text-foreground">1. بدل حضور الجمعة</h3>
                     </div>
                     <Badge className="bg-emerald-100 text-emerald-800 text-xs font-mono font-bold border-0">
-                      {currentSelectedPayroll.fridayDays} جمعات
+                      {currentSelectedPayroll.fridayWorkedDays || 0} جمعات دوام فعلي
                     </Badge>
                   </div>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">المعادلة:</span>
-                      <span className="font-mono font-bold">{currentSelectedPayroll.fridayDays} يوم × {currentSelectedPayroll.fridayDailyRate} ر.س</span>
+                      <span className="font-mono font-bold">{currentSelectedPayroll.fridayWorkedDays || 0} يوم × {currentSelectedPayroll.fridayDailyRate} ر.س</span>
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="font-bold text-emerald-800">المبلغ المستحق:</span>

@@ -464,7 +464,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
 
   let totalRequiredMinutes = 0, totalActualMinutes = 0;
   let totalDelayMinutes = 0, totalExtraMinutes = 0;
-  let presentDays = 0, absentDays = 0, leaveDays = 0, unpaidLeaveDays = 0, fridayDays = 0, overtimeDays = 0;
+  let presentDays = 0, absentDays = 0, leaveDays = 0, unpaidLeaveDays = 0, fridayDays = 0, fridayWorkedDays = 0, overtimeDays = 0;
 
   const isExecutive = (emp.job_title || '').includes('المدير العام') || String(emp.employee_number || '') === '1001' || (emp.shift || '').includes('المدير العام') || (emp.shift || '').includes('إدارة عامة');
 
@@ -490,6 +490,8 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
       shortfallMins = 0;
       fridayDays++;
       if (hasAtt) {
+        // Punched on Friday -> Attendance on Weekend / Overtime Allowance credited!
+        fridayWorkedDays++;
         presentDays++;
         actualMins = actualMins || (shiftHours * 60);
       } else {
@@ -614,8 +616,9 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const proposedAbsenceDeduction = Math.round(absentDays * dailySalaryRate * 100) / 100;
   const proposedUnpaidLeaveDeduction = Math.round(unpaidLeaveDays * dailySalaryRate * 100) / 100;
 
-  const fridayAllowance = fridayDays * fridayDailyRate;
-  const fridayNote = fridayDays > 0 ? `${fridayDays} أيام جمعة × ${fridayDailyRate} = ${fridayAllowance} ريال` : null;
+  // Friday allowance ONLY for days with real biometric attendance on Friday
+  const fridayAllowance = fridayWorkedDays * fridayDailyRate;
+  const fridayNote = fridayWorkedDays > 0 ? `${fridayWorkedDays} جمعات دوام فعلي × ${fridayDailyRate} = ${fridayAllowance} ريال` : null;
   const dailyOvertimeAllowance = overtimeDays * overtimeDailyRate;
   const dailyOvertimeNote = overtimeDays > 0 ? `${overtimeDays} يوم × ${overtimeDailyRate} = ${dailyOvertimeAllowance} ريال` : null;
 
@@ -680,6 +683,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     leaveDays,
     unpaidLeaveDays,
     fridayDays,
+    fridayWorkedDays,
     overtimeDays,
     totalRequiredMinutes,
     totalActualMinutes,
