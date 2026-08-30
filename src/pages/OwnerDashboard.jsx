@@ -1,3 +1,4 @@
+import { initFullCloudSync } from '@/lib/cloudSyncEngine';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
@@ -19,6 +20,7 @@ export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    initFullCloudSync();
     base44.entities.Employee.list().then(d => {
       setEmployees(d || []);
       setLoading(false);

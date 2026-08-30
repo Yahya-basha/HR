@@ -1,4 +1,4 @@
-import { cloudSave } from '@/lib/cloudSyncEngine';
+import { cloudSave, initFullCloudSync } from '@/lib/cloudSyncEngine';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -74,7 +74,7 @@ export default function MyRequests() {
   const [myRequests, setMyRequests] = useState([]);
   useEffect(() => { setMyRequests(loadMyRequests()); }, [loadMyRequests]);
 
-  const submitAdvance = () => {
+  const submitAdvance = async () => {
     if (!advForm.amount || isNaN(Number(advForm.amount))) { toast({ title: 'الرجاء إدخال مبلغ صحيح', variant: 'destructive' }); return; }
     const req = {
       id: 'adv_' + Date.now(),
@@ -89,13 +89,13 @@ export default function MyRequests() {
       repayment_type: Number(advForm.installments)>1 ? 'installments' : 'lump_sum',
     };
     const existing = JSON.parse(localStorage.getItem('hr_advances_list')||'[]');
-    const nextAdv = [req, ...existing]; localStorage.setItem('hr_advances_list', JSON.stringify(nextAdv)); cloudSave('hr_advances_list', nextAdv);
+    const nextAdv = [req, ...existing]; localStorage.setItem('hr_advances_list', JSON.stringify(nextAdv)); localStorage.setItem('hr_flow_employee_advances', JSON.stringify(nextAdv)); await cloudSave('hr_advances_list', nextAdv);
     setAdvModal(false); setAdvForm(defaultAdvForm);
     setMyRequests(loadMyRequests());
     toast({ title: '✅ تم إرسال طلب السلفة بنجاح' });
   };
 
-  const submitLeave = () => {
+  const submitLeave = async () => {
     if (!leaveForm.start_date || !leaveForm.end_date) { toast({ title: 'الرجاء تحديد التاريخ', variant: 'destructive' }); return; }
     const req = {
       id: 'lv_' + Date.now(),
@@ -116,7 +116,7 @@ export default function MyRequests() {
     toast({ title: '✅ تم إرسال طلب الإجازة بنجاح' });
   };
 
-  const submitCorrection = () => {
+  const submitCorrection = async () => {
     if (!corrForm.log_date) { toast({ title: 'الرجاء تحديد تاريخ البصمة', variant: 'destructive' }); return; }
     const req = {
       id: 'cr_' + Date.now(),

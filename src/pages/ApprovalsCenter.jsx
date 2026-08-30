@@ -1,4 +1,4 @@
-import { cloudSave } from '@/lib/cloudSyncEngine';
+import { cloudSave, cloudLoad, initFullCloudSync } from '@/lib/cloudSyncEngine';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { hasPermission } from '@/lib/rbac';
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import {
   CheckCircle2, XCircle, Clock, Search, CreditCard, Calendar,
-  ClipboardList, DollarSign, FileText, AlertCircle, Eye
+  ClipboardList, DollarSign, FileText, AlertCircle, Eye, RefreshCw
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -25,36 +25,79 @@ const STATUS_CONFIG = {
 };
 
 function useRequests() {
-  const load = (key) => { try { return JSON.parse(localStorage.getItem(key)||'[]'); } catch(e) { return []; } };
-  const save = (key, data) => { localStorage.setItem(key, JSON.stringify(data)); cloudSave(key, data); };
+  const loadLocal = (key) => { 
+    try { 
+      const d = JSON.parse(localStorage.getItem(key) || '[]'); 
+      if (key === 'hr_advances_list' && (!d || d.length === 0)) {
+        return JSON.parse(localStorage.getItem('hr_flow_employee_advances') || '[]');
+      }
+      return Array.isArray(d) ? d : []; 
+    } catch(e) { 
+      return []; 
+    } 
+  };
 
-  const [advances,   setAdvances]   = useState(load('hr_advances_list'));
-  const [leaves,     setLeaves]     = useState(load('hr_leave_requests'));
-  const [corrections,setCorrections]= useState(load('hr_correction_requests'));
+  const save = async (key, data) => { 
+    localStorage.setItem(key, JSON.stringify(data)); 
+    if (key === 'hr_advances_list') {
+      localStorage.setItem('hr_flow_employee_advances', JSON.stringify(data));
+    }
+    await cloudSave(key, data); 
+  };
 
-  const refresh = useCallback(() => {
-    setAdvances(load('hr_advances_list'));
-    setLeaves(load('hr_leave_requests'));
-    setCorrections(load('hr_correction_requests'));
+  const [advances,    setAdvances]    = useState(() => loadLocal('hr_advances_list'));
+  const [leaves,      setLeaves]      = useState(() => loadLocal('hr_leave_requests'));
+  const [corrections, setCorrections] = useState(() => loadLocal('hr_correction_requests'));
+  const [syncing,     setSyncing]     = useState(false);
+
+  const refreshFromCloud = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await initFullCloudSync();
+      const [advData, lvData, crData] = await Promise.all([
+        cloudLoad('hr_advances_list', []),
+        cloudLoad('hr_leave_requests', []),
+        cloudLoad('hr_correction_requests', [])
+      ]);
+      setAdvances(Array.isArray(advData) ? advData : []);
+      setLeaves(Array.isArray(lvData) ? lvData : []);
+      setCorrections(Array.isArray(crData) ? crData : []);
+    } catch (e) {
+      console.warn('Refresh from cloud failed:', e);
+    } finally {
+      setSyncing(false);
+    }
   }, []);
 
-  const updateAdvance = (id, fields) => {
-    const updated = advances.map(a => a.id===id ? {...a,...fields} : a);
-    save('hr_advances_list', updated);
+  useEffect(() => {
+    refreshFromCloud();
+    const interval = setInterval(refreshFromCloud, 10000);
+    window.addEventListener('cloud_data_synced', refreshFromCloud);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('cloud_data_synced', refreshFromCloud);
+    };
+  }, [refreshFromCloud]);
+
+  const updateAdvance = async (id, fields) => {
+    const updated = advances.map(a => a.id === id ? { ...a, ...fields } : a);
     setAdvances(updated);
-  };
-  const updateLeave = (id, fields) => {
-    const updated = leaves.map(a => a.id===id ? {...a,...fields} : a);
-    save('hr_leave_requests', updated);
-    setLeaves(updated);
-  };
-  const updateCorrection = (id, fields) => {
-    const updated = corrections.map(a => a.id===id ? {...a,...fields} : a);
-    save('hr_correction_requests', updated);
-    setCorrections(updated);
+    await save('hr_advances_list', updated);
   };
 
-  return { advances, leaves, corrections, refresh, updateAdvance, updateLeave, updateCorrection };
+  const updateLeave = async (id, fields) => {
+    const updated = leaves.map(a => a.id === id ? { ...a, ...fields } : a);
+    setLeaves(updated);
+    await save('hr_leave_requests', updated);
+  };
+
+  const updateCorrection = async (id, fields) => {
+    const updated = corrections.map(a => a.id === id ? { ...a, ...fields } : a);
+    setCorrections(updated);
+    await save('hr_correction_requests', updated);
+  };
+
+  return { advances, leaves, corrections, refresh: refreshFromCloud, syncing, updateAdvance, updateLeave, updateCorrection };
 }
 
 export default function ApprovalsCenter() {
@@ -64,31 +107,30 @@ export default function ApprovalsCenter() {
   const [activeTab, setActiveTab] = useState('advances');
   const [viewModal, setViewModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
-  const { advances, leaves, corrections, refresh, updateAdvance, updateLeave, updateCorrection } = useRequests();
+  const { advances, leaves, corrections, refresh, syncing, updateAdvance, updateLeave, updateCorrection } = useRequests();
 
   const isOwner      = user?.role === 'owner';
   const isAccountant = user?.role === 'accountant';
   const isHR         = user?.role === 'hr';
   const isAdmin      = user?.role === 'system_admin';
 
-  const handleAdvanceAction = (adv, action) => {
+  const handleAdvanceAction = async (adv, action) => {
     const now = new Date().toISOString();
-    const stamp = { by: user.full_name, at: now };
 
     if (action === 'hr_approve' && (isHR || isAdmin)) {
-      updateAdvance(adv.id, { status: 'hr_approved', hr_approved_at: now, hr_approved_by: user.full_name });
+      await updateAdvance(adv.id, { status: 'hr_approved', hr_approved_at: now, hr_approved_by: user.full_name });
       toast({ title: '✅ تم اعتماد السلفة من قبل HR' });
     } else if (action === 'accountant_approve' && (isAccountant || isAdmin)) {
-      updateAdvance(adv.id, { status: 'accountant_approved', accountant_approved_at: now, accountant_approved_by: user.full_name });
+      await updateAdvance(adv.id, { status: 'accountant_approved', accountant_approved_at: now, accountant_approved_by: user.full_name });
       toast({ title: '✅ تم الاعتماد المالي للسلفة' });
     } else if (action === 'owner_approve' && (isOwner || isAdmin)) {
-      updateAdvance(adv.id, { status: 'approved', owner_approved_at: now, owner_approved_by: user.full_name });
+      await updateAdvance(adv.id, { status: 'approved', owner_approved_at: now, owner_approved_by: user.full_name });
       toast({ title: '✅ تم اعتماد السلفة نهائياً من المدير العام' });
     } else if (action === 'disburse' && (isAccountant || isAdmin)) {
-      updateAdvance(adv.id, { status: 'disbursed', disbursed_at: now, disbursed_by: user.full_name });
+      await updateAdvance(adv.id, { status: 'disbursed', disbursed_at: now, disbursed_by: user.full_name });
       toast({ title: '💰 تم تسجيل صرف السلفة' });
     } else if (action === 'reject') {
-      updateAdvance(adv.id, { status: 'rejected', rejected_at: now, rejected_by: user.full_name, rejection_reason: rejectReason });
+      await updateAdvance(adv.id, { status: 'rejected', rejected_at: now, rejected_by: user.full_name, rejection_reason: rejectReason });
       setViewModal(null);
       setRejectReason('');
       toast({ title: '❌ تم رفض السلفة', variant: 'destructive' });
@@ -96,39 +138,39 @@ export default function ApprovalsCenter() {
     setViewModal(null);
   };
 
-  const handleLeaveAction = (lv, action) => {
+  const handleLeaveAction = async (lv, action) => {
     const now = new Date().toISOString();
     if (action === 'approve' && (isHR || isOwner || isAdmin)) {
-      updateLeave(lv.id, { status: 'approved', approved_at: now, approved_by: user.full_name });
+      await updateLeave(lv.id, { status: 'approved', approved_at: now, approved_by: user.full_name });
       toast({ title: '✅ تم اعتماد الإجازة' });
     } else if (action === 'reject') {
-      updateLeave(lv.id, { status: 'rejected', rejected_at: now, rejected_by: user.full_name, rejection_reason: rejectReason });
+      await updateLeave(lv.id, { status: 'rejected', rejected_at: now, rejected_by: user.full_name, rejection_reason: rejectReason });
       setViewModal(null); setRejectReason('');
       toast({ title: '❌ تم رفض الإجازة', variant: 'destructive' });
     }
     setViewModal(null);
   };
 
-  const handleCorrectionAction = (cr, action) => {
+  const handleCorrectionAction = async (cr, action) => {
     const now = new Date().toISOString();
     if (action === 'approve' && (isHR || isAdmin)) {
-      updateCorrection(cr.id, { status: 'approved', approved_at: now, approved_by: user.full_name });
+      await updateCorrection(cr.id, { status: 'approved', approved_at: now, approved_by: user.full_name });
       toast({ title: '✅ تم اعتماد تعديل البصمة' });
     } else if (action === 'reject') {
-      updateCorrection(cr.id, { status: 'rejected', rejected_at: now, rejected_by: user.full_name, rejection_reason: rejectReason });
+      await updateCorrection(cr.id, { status: 'rejected', rejected_at: now, rejected_by: user.full_name, rejection_reason: rejectReason });
       setViewModal(null); setRejectReason('');
       toast({ title: '❌ تم رفض تعديل البصمة', variant: 'destructive' });
     }
     setViewModal(null);
   };
 
-  const filterList = (list) => list.filter(item => {
+  const filterList = (list) => (list || []).filter(item => {
     if (!search) return true;
     const s = search.toLowerCase();
-    return (item.employee_name||'').toLowerCase().includes(s) || (item.reason||'').toLowerCase().includes(s);
+    return (item.employee_name || '').toLowerCase().includes(s) || (item.reason || '').toLowerCase().includes(s);
   });
 
-  const pendingAdvances    = advances.filter(a => ['pending','hr_approved','accountant_approved'].includes(a.status));
+  const pendingAdvances    = advances.filter(a => ['pending', 'hr_approved', 'accountant_approved'].includes(a.status));
   const pendingLeaves      = leaves.filter(l => l.status === 'pending');
   const pendingCorrections = corrections.filter(c => c.status === 'pending');
   const totalPending       = pendingAdvances.length + pendingLeaves.length + pendingCorrections.length;
@@ -140,14 +182,26 @@ export default function ApprovalsCenter() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16" dir="rtl">
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-200 flex items-center justify-center">
-          <CheckCircle2 className="w-6 h-6" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-200 flex items-center justify-center">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-heading font-black text-foreground">مركز الاعتمادات</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{totalPending} طلب بانتظار المراجعة</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-heading font-black text-foreground">مركز الاعتمادات</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{totalPending} طلب بانتظار المراجعة</p>
-        </div>
+
+        <Button
+          onClick={refresh}
+          disabled={syncing}
+          variant="outline"
+          className="rounded-2xl text-xs font-bold gap-1.5 h-10 px-4"
+        >
+          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-sky-600' : ''}`} />
+          <span>{syncing ? 'جاري المزامنة...' : 'مزامنة وتحديث'}</span>
+        </Button>
       </div>
 
       <div className="relative">
@@ -178,44 +232,47 @@ export default function ApprovalsCenter() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-black text-foreground text-sm">{adv.employee_name}</span>
-                    <span className="text-xs font-mono text-muted-foreground">#{adv.employee_number}</span>
+                    <Badge variant="outline" className="font-mono text-[10px]">#{adv.employee_number}</Badge>
                     <StatusBadge status={adv.status} />
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    مبلغ: <span className="font-bold text-foreground">{Number(adv.amount||0).toLocaleString()} ر.س</span>
-                    {adv.installments > 1 && <> • {adv.installments} أقساط ({Math.ceil(adv.amount/adv.installments).toLocaleString()} ر.س/شهر)</>}
-                    {adv.reason && <> • السبب: {adv.reason}</>}
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3 flex-wrap">
+                    <span className="font-black text-foreground">{Number(adv.amount || 0).toLocaleString('en-US')} ر.س</span>
+                    <span>•</span>
+                    <span>{adv.installments || 1} شهر ({(adv.monthly_deduction || Math.round(adv.amount / (adv.installments || 1))).toLocaleString('en-US')} ر.س/شهر)</span>
+                    {adv.reason && <><span>•</span><span className="text-foreground">{adv.reason}</span></>}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    تاريخ الطلب: {new Date(adv.date||adv.created_at||Date.now()).toLocaleDateString('ar-SA')}
-                    {adv.hr_approved_by && <> • HR: {adv.hr_approved_by}</>}
-                    {adv.accountant_approved_by && <> • محاسب: {adv.accountant_approved_by}</>}
-                  </div>
+                  {adv.rejection_reason && (
+                    <div className="text-xs text-red-600 bg-red-50 dark:bg-red-950/40 p-2 rounded-xl mt-2">
+                      سبب الرفض: {adv.rejection_reason}
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Action Buttons based on role */}
                   {adv.status === 'pending' && (isHR || isAdmin) && (
-                    <Button size="sm" className="h-7 text-xs rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" onClick={()=>handleAdvanceAction(adv,'hr_approve')}>
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> اعتماد HR
+                    <Button size="sm" onClick={() => handleAdvanceAction(adv, 'hr_approve')} className="bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold">
+                      اعتماد HR ✓
                     </Button>
                   )}
                   {adv.status === 'hr_approved' && (isAccountant || isAdmin) && (
-                    <Button size="sm" className="h-7 text-xs rounded-xl bg-sky-600 hover:bg-sky-700 text-white" onClick={()=>handleAdvanceAction(adv,'accountant_approve')}>
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> اعتماد مالي
+                    <Button size="sm" onClick={() => handleAdvanceAction(adv, 'accountant_approve')} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold">
+                      اعتماد مالي ✓
                     </Button>
                   )}
-                  {adv.status === 'accountant_approved' && (isOwner || isAdmin) && (
-                    <Button size="sm" className="h-7 text-xs rounded-xl bg-amber-600 hover:bg-amber-700 text-white" onClick={()=>handleAdvanceAction(adv,'owner_approve')}>
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> اعتماد نهائي 👑
+                  {(adv.status === 'accountant_approved' || adv.status === 'pending' || adv.status === 'hr_approved') && (isOwner || isAdmin) && (
+                    <Button size="sm" onClick={() => handleAdvanceAction(adv, 'owner_approve')} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold">
+                      اعتماد المدير العام 👑
                     </Button>
                   )}
                   {adv.status === 'approved' && (isAccountant || isAdmin) && (
-                    <Button size="sm" className="h-7 text-xs rounded-xl bg-purple-600 hover:bg-purple-700 text-white" onClick={()=>handleAdvanceAction(adv,'disburse')}>
-                      💰 تسجيل الصرف
+                    <Button size="sm" onClick={() => handleAdvanceAction(adv, 'disburse')} className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold">
+                      تسجيل الصرف 💰
                     </Button>
                   )}
-                  {['pending','hr_approved','accountant_approved'].includes(adv.status) && (
-                    <Button size="sm" variant="destructive" className="h-7 text-xs rounded-xl" onClick={()=>{setViewModal({type:'advance',item:adv,action:'reject'});setRejectReason('');}}>
-                      <XCircle className="w-3 h-3 mr-1" /> رفض
+                  {!['approved', 'rejected', 'disbursed'].includes(adv.status) && (
+                    <Button size="sm" variant="outline" onClick={() => setViewModal(adv)} className="text-red-600 border-red-200 hover:bg-red-50 rounded-xl text-xs font-bold">
+                      رفض ✕
                     </Button>
                   )}
                 </div>
@@ -234,26 +291,26 @@ export default function ApprovalsCenter() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-black text-foreground text-sm">{lv.employee_name}</span>
+                    <Badge variant="outline" className="font-mono text-[10px]">#{lv.employee_number}</Badge>
                     <StatusBadge status={lv.status} />
-                    <Badge variant="outline" className="text-xs">{lv.leave_type}</Badge>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    من: <span className="font-bold">{lv.start_date}</span> إلى: <span className="font-bold">{lv.end_date}</span>
-                    {lv.reason && <> • {lv.reason}</>}
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3 flex-wrap">
+                    <span className="font-bold text-foreground">{lv.leave_type}</span>
+                    <span>•</span>
+                    <span>من {lv.start_date} إلى {lv.end_date}</span>
+                    {lv.reason && <><span>•</span><span>{lv.reason}</span></>}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  {lv.status === 'pending' && (isHR || isOwner || isAdmin) && (
-                    <Button size="sm" className="h-7 text-xs rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" onClick={()=>handleLeaveAction(lv,'approve')}>
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> اعتماد
+                {lv.status === 'pending' && (
+                  <div className="flex items-center gap-1.5">
+                    <Button size="sm" onClick={() => handleLeaveAction(lv, 'approve')} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold">
+                      موافقة ✓
                     </Button>
-                  )}
-                  {lv.status === 'pending' && (
-                    <Button size="sm" variant="destructive" className="h-7 text-xs rounded-xl" onClick={()=>{setViewModal({type:'leave',item:lv,action:'reject'});setRejectReason('');}}>
-                      <XCircle className="w-3 h-3 mr-1" /> رفض
+                    <Button size="sm" variant="outline" onClick={() => { setViewModal({ ...lv, _type: 'leave' }); }} className="text-red-600 border-red-200 hover:bg-red-50 rounded-xl text-xs font-bold">
+                      رفض ✕
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
@@ -269,46 +326,60 @@ export default function ApprovalsCenter() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-black text-foreground text-sm">{cr.employee_name}</span>
+                    <Badge variant="outline" className="font-mono text-[10px]">#{cr.employee_number}</Badge>
                     <StatusBadge status={cr.status} />
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    يوم: <span className="font-bold">{cr.log_date}</span>
-                    {cr.check_in && <> • دخول: <span className="font-mono">{cr.check_in}</span></>}
-                    {cr.check_out && <> • خروج: <span className="font-mono">{cr.check_out}</span></>}
-                    {cr.reason && <> • {cr.reason}</>}
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3 flex-wrap">
+                    <span>تاريخ: {cr.log_date}</span>
+                    <span>•</span>
+                    <span>دخول: {cr.check_in || '—'} | خروج: {cr.check_out || '—'}</span>
+                    {cr.reason && <><span>•</span><span>السبب: {cr.reason}</span></>}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  {cr.status === 'pending' && (isHR || isAdmin) && (
-                    <Button size="sm" className="h-7 text-xs rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" onClick={()=>handleCorrectionAction(cr,'approve')}>
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> اعتماد
+                {cr.status === 'pending' && (
+                  <div className="flex items-center gap-1.5">
+                    <Button size="sm" onClick={() => handleCorrectionAction(cr, 'approve')} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold">
+                      موافقة ✓
                     </Button>
-                  )}
-                  {cr.status === 'pending' && (
-                    <Button size="sm" variant="destructive" className="h-7 text-xs rounded-xl" onClick={()=>{setViewModal({type:'correction',item:cr,action:'reject'});setRejectReason('');}}>
-                      <XCircle className="w-3 h-3 mr-1" /> رفض
+                    <Button size="sm" variant="outline" onClick={() => { setViewModal({ ...cr, _type: 'correction' }); }} className="text-red-600 border-red-200 hover:bg-red-50 rounded-xl text-xs font-bold">
+                      رفض ✕
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
         </TabsContent>
       </Tabs>
 
-      {/* Rejection Dialog */}
-      <Dialog open={!!viewModal} onOpenChange={()=>setViewModal(null)}>
-        <DialogContent className="rounded-3xl max-w-md" dir="rtl">
-          <DialogHeader><DialogTitle className="font-black">سبب الرفض</DialogTitle></DialogHeader>
-          <Textarea placeholder="اكتب سبب الرفض (اختياري)..." value={rejectReason} onChange={e=>setRejectReason(e.target.value)} className="rounded-xl min-h-[80px]" />
+      {/* Reject Modal */}
+      <Dialog open={!!viewModal} onOpenChange={open => { if (!open) { setViewModal(null); setRejectReason(''); } }}>
+        <DialogContent className="sm:max-w-md rounded-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black">رفض الطلب</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">الرجاء كتابة سبب الرفض ليظهر للموظف:</p>
+            <Textarea
+              placeholder="مثال: الميزانية غير كافية حالياً / يرجى التواصل مع الإدارة..."
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              className="rounded-xl text-xs"
+            />
+          </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" className="rounded-xl" onClick={()=>setViewModal(null)}>إلغاء</Button>
-            <Button variant="destructive" className="rounded-xl font-bold" onClick={()=>{
-              if (viewModal?.type==='advance') handleAdvanceAction(viewModal.item,'reject');
-              else if (viewModal?.type==='leave') handleLeaveAction(viewModal.item,'reject');
-              else if (viewModal?.type==='correction') handleCorrectionAction(viewModal.item,'reject');
-            }}>
-              <XCircle className="w-4 h-4 mr-1" /> تأكيد الرفض
+            <Button variant="outline" onClick={() => { setViewModal(null); setRejectReason(''); }} className="rounded-xl text-xs font-bold">
+              إلغاء
+            </Button>
+            <Button
+              onClick={() => {
+                if (viewModal?._type === 'leave') handleLeaveAction(viewModal, 'reject');
+                else if (viewModal?._type === 'correction') handleCorrectionAction(viewModal, 'reject');
+                else handleAdvanceAction(viewModal, 'reject');
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold"
+            >
+              تأكيد الرفض
             </Button>
           </DialogFooter>
         </DialogContent>

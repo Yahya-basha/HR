@@ -14,12 +14,17 @@ export const SYNC_KEYS = {
   LOCKED_PAYROLLS_LIST: 'hr_flow_locked_payrolls_list',
   AUDIT_LOGS: 'hr_audit_logs',
   REQUESTS: 'hr_flow_requests_all',
+  LEAVES: 'hr_leave_requests',
+  CORRECTIONS: 'hr_correction_requests',
   PAYROLL_RUNS: 'payroll_runs_v1',
 };
 
 // Map each sync category to a Supabase sync ID
 const SUPABASE_SYNC_MAP = {
   [SYNC_KEYS.ADVANCES]: 'sync_advances_v2',
+  [SYNC_KEYS.ADVANCES_ALIAS]: 'sync_advances_v2',
+  [SYNC_KEYS.LEAVES]: 'sync_leaves_v2',
+  [SYNC_KEYS.CORRECTIONS]: 'sync_corrections_v2',
   [SYNC_KEYS.APPROVALS]: 'sync_approvals_v2',
   [SYNC_KEYS.ADJUSTMENTS]: 'sync_adjustments_v2',
   [SYNC_KEYS.LOCKED_PAYROLLS_LIST]: 'sync_locked_payrolls_v2',
@@ -33,7 +38,6 @@ const SUPABASE_SYNC_MAP = {
  */
 export async function cloudSave(key, data) {
   try {
-    // 1. Instant local write
     const serialized = JSON.stringify(data);
     localStorage.setItem(key, serialized);
 
@@ -44,7 +48,6 @@ export async function cloudSave(key, data) {
       localStorage.setItem(SYNC_KEYS.ADVANCES, serialized);
     }
 
-    // 2. Cloud write to Supabase
     const syncId = SUPABASE_SYNC_MAP[key] || (key.startsWith('hr_flow_approval_') ? ('sync_appr_' + key.replace('hr_flow_approval_', '')) : null);
     
     if (syncId && base44.supabase) {
@@ -69,19 +72,18 @@ export async function cloudSave(key, data) {
 /**
  * Load data from LocalStorage, and if empty/stale, pull from Supabase Cloud
  */
-export async function cloudLoad(key, defaultValue = null) {
+export async function cloudLoad(key, defaultValue = []) {
   try {
+    // 1. Check local storage first
+    let localData = null;
     const local = localStorage.getItem(key);
     if (local !== null) {
       try {
-        const parsed = JSON.parse(local);
-        if (parsed && (Array.isArray(parsed) ? parsed.length > 0 : Object.keys(parsed).length > 0)) {
-          return parsed;
-        }
+        localData = JSON.parse(local);
       } catch (e) {}
     }
 
-    // Fetch from Supabase Cloud
+    // 2. Fetch from Supabase Cloud
     const syncId = SUPABASE_SYNC_MAP[key] || (key.startsWith('hr_flow_approval_') ? ('sync_appr_' + key.replace('hr_flow_approval_', '')) : null);
     
     if (syncId && base44.supabase) {
@@ -96,12 +98,14 @@ export async function cloudLoad(key, defaultValue = null) {
         localStorage.setItem(key, data.content);
         if (key === SYNC_KEYS.ADVANCES) {
           localStorage.setItem(SYNC_KEYS.ADVANCES_ALIAS, data.content);
+        } else if (key === SYNC_KEYS.ADVANCES_ALIAS) {
+          localStorage.setItem(SYNC_KEYS.ADVANCES, data.content);
         }
         return cloudData;
       }
     }
 
-    return defaultValue !== null ? defaultValue : (local ? JSON.parse(local) : null);
+    return localData !== null ? localData : defaultValue;
   } catch (e) {
     console.warn('CloudLoad warning for key ' + key + ':', e);
     return defaultValue;
@@ -125,15 +129,17 @@ export async function initFullCloudSync() {
       data.forEach(row => {
         if (row.title && row.content) {
           try {
-            // Write to localStorage
             localStorage.setItem(row.title, row.content);
             if (row.title === SYNC_KEYS.ADVANCES) {
               localStorage.setItem(SYNC_KEYS.ADVANCES_ALIAS, row.content);
+            } else if (row.title === SYNC_KEYS.ADVANCES_ALIAS) {
+              localStorage.setItem(SYNC_KEYS.ADVANCES, row.content);
             }
           } catch (e) {}
         }
       });
       console.log('✓ Green Arrow Cloud Sync: Synced ' + data.length + ' persistent datasets from Supabase Cloud');
+      window.dispatchEvent(new Event('cloud_data_synced'));
     }
   } catch (e) {
     console.warn('Initial Cloud Sync Error:', e);
