@@ -219,6 +219,19 @@ export default function Reports() {
     return Array.from(set);
   }, [employees]);
 
+  // Filter Catalog Cards
+  const filteredCatalog = useMemo(() => {
+    return REPORT_DEFINITIONS.filter(r => {
+      const matchCat = catalogCategory === 'all' || r.category === catalogCategory;
+      const q = catalogSearch.toLowerCase();
+      const matchSearch = !catalogSearch ||
+        r.title.toLowerCase().includes(q) ||
+        r.description.toLowerCase().includes(q) ||
+        r.categoryLabel.toLowerCase().includes(q);
+      return matchCat && matchSearch;
+    });
+  }, [catalogCategory, catalogSearch]);
+
   // Master Generation Function
   const generateCurrentReport = (repId) => {
     setIsGenerating(true);
