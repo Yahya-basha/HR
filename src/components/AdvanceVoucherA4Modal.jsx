@@ -215,28 +215,36 @@ export default function AdvanceVoucherA4Modal({
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.from({ length: Math.min(installmentsCount, 12) }).map((_, idx) => {
-                    const instNum = idx + 1;
-                    const remAfter = Math.max(0, totalAmount - (monthlyInstallment * instNum));
-                    
-                    const parts = startMonth.split('-');
-                    let yr = parseInt(parts[0] || '2026', 10);
-                    let mo = parseInt(parts[1] || '9', 10) + idx;
-                    while (mo > 12) { mo -= 12; yr += 1; }
-                    const mStr = `${yr}-${String(mo).padStart(2, '0')}`;
+                  {(() => {
+                    let runningBalance = totalAmount;
+                    const rows = [];
+                    for (let idx = 0; idx < Math.min(installmentsCount, 24); idx++) {
+                      if (runningBalance <= 0) break;
+                      const instNum = idx + 1;
+                      // Accurate remainder calculation for the last installment
+                      const instAmount = Math.min(monthlyInstallment, runningBalance);
+                      runningBalance = Math.max(0, runningBalance - instAmount);
 
-                    return (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="border border-slate-300 py-1.5 font-mono font-bold">القسط ({instNum}/{installmentsCount})</td>
-                        <td className="border border-slate-300 py-1.5 font-mono font-bold text-slate-800">{mStr}</td>
-                        <td className="border border-slate-300 py-1.5 font-mono font-black text-rose-600">-{monthlyInstallment.toLocaleString('en-US')} ر.س</td>
-                        <td className="border border-slate-300 py-1.5 font-mono font-bold text-slate-600">{remAfter.toLocaleString('en-US')} ر.س</td>
-                        <td className="border border-slate-300 py-1.5 font-bold text-[10px] text-amber-700">
-                          مجدول بمسير الراتب
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      const parts = startMonth.split('-');
+                      let yr = parseInt(parts[0] || '2026', 10);
+                      let mo = parseInt(parts[1] || '8', 10) + idx;
+                      while (mo > 12) { mo -= 12; yr += 1; }
+                      const mStr = `${yr}-${String(mo).padStart(2, '0')}`;
+
+                      rows.push(
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="border border-slate-300 py-1.5 font-mono font-bold">القسط ({instNum}/{installmentsCount})</td>
+                          <td className="border border-slate-300 py-1.5 font-mono font-bold text-slate-800">{mStr}</td>
+                          <td className="border border-slate-300 py-1.5 font-mono font-black text-rose-600">-{instAmount.toLocaleString('en-US')} ر.س</td>
+                          <td className="border border-slate-300 py-1.5 font-mono font-bold text-slate-600">{runningBalance.toLocaleString('en-US')} ر.س</td>
+                          <td className="border border-slate-300 py-1.5 font-bold text-[10px] text-amber-700">
+                            {idx === 0 && advance.paid_amount >= instAmount ? 'تم الاستقطاع ✓' : 'مجدول بمسير الراتب'}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return rows;
+                  })()}
                 </tbody>
               </table>
             </div>
