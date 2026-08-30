@@ -1,3 +1,4 @@
+import { PrivacyMaskToggle } from '@/lib/FinancialPrivacyContext';
 import NotificationsDropdown from '@/components/NotificationsDropdown';
 import { initFullCloudSync, exportSystemBackupJSON } from '@/lib/cloudSyncEngine';
 import { useTheme } from '@/lib/theme';
@@ -170,6 +171,7 @@ export default function Header({ onOpenMobileMenu }) {
           <span className="font-sans text-[11px]">{lang === 'ar' ? 'English' : 'عربي'}</span>
         </Button>
 
+        <PrivacyMaskToggle />
         <NotificationsDropdown />
 
         {/* Mail / Announcements with Dynamic Counter */}

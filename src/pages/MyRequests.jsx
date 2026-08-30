@@ -1,3 +1,4 @@
+import { MaskedSalary, PrivacyMaskToggle } from '@/lib/FinancialPrivacyContext';
 import { cloudSave, initFullCloudSync } from '@/lib/cloudSyncEngine';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';

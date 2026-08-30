@@ -1,3 +1,4 @@
+import { FinancialPrivacyProvider } from '@/lib/FinancialPrivacyContext';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -111,6 +112,7 @@ const AuthenticatedApp = () => {
 function App() {
   return (
     <AuthProvider>
+      <FinancialPrivacyProvider>
       <I18nProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
@@ -120,6 +122,7 @@ function App() {
           </Router>
         </QueryClientProvider>
       </I18nProvider>
+    </FinancialPrivacyProvider>
     </AuthProvider>
   )
 }

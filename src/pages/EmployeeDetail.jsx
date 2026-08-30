@@ -1,3 +1,4 @@
+import { MaskedSalary, PrivacyMaskToggle } from '@/lib/FinancialPrivacyContext';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -552,7 +553,7 @@ export default function EmployeeDetail() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-5 border-t border-border/80 text-xs">
           <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border">
             <div className="text-muted-foreground text-[10px] font-bold">الراتب الأساسي:</div>
-            <div className="font-mono font-black text-sm text-foreground mt-0.5">{Number(employee.salary || 0).toLocaleString('en-US')} ر.س</div>
+            <div className="font-mono font-black text-sm text-foreground mt-0.5"><MaskedSalary value={employee.salary} /></div>
           </div>
           <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border">
             <div className="text-muted-foreground text-[10px] font-bold">رصيد الإجازات السنوية:</div>
@@ -1259,10 +1260,10 @@ export default function EmployeeDetail() {
                   <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 font-bold text-[10px]">معتمد للصرف ✓</Badge>
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center text-[11px]">
-                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">الأساسي: <strong className="font-mono">{Number(employee.salary || 0).toLocaleString('en-US')} ر.س</strong></div>
-                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">بدل السكن: <strong className="font-mono">{Number(employee.housing_allowance || 0).toLocaleString('en-US')} ر.س</strong></div>
-                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">بدل النقل: <strong className="font-mono">{Number(employee.transport_allowance || 0).toLocaleString('en-US')} ر.س</strong></div>
-                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300">الصافي: <strong className="font-mono text-emerald-700 font-black">{Number(employee.salary || 0).toLocaleString('en-US')} ر.س</strong></div>
+                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">الأساسي: <strong className="font-mono"><MaskedSalary value={employee.salary} /></strong></div>
+                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">بدل السكن: <strong className="font-mono"><MaskedSalary value={employee.housing_allowance} /></strong></div>
+                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">بدل النقل: <strong className="font-mono"><MaskedSalary value={employee.transport_allowance} /></strong></div>
+                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300">الصافي: <strong className="font-mono text-emerald-700 font-black"><MaskedSalary value={employee.salary} /></strong></div>
                 </div>
               </div>
             </Card>
