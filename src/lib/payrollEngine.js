@@ -430,7 +430,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   ) || null;
   const shiftHours = getShiftRequiredHours(shift);
 
-    const empNum = String(emp.employee_number || '').trim();
+  const empNum = String(emp.employee_number || '').trim();
   const empId = String(emp.id || '').trim();
   const empName = (emp.full_name || '').trim();
 
@@ -462,18 +462,21 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   });
   const uniqueLogs = Object.values(dateMap).sort((a, b) => (a.log_date || '').localeCompare(b.log_date || ''));
 
-  let totalRequiredMinutes = 0, totalActualMinutes = 0, totalShortfallMinutes = 0;
-  let presentDays = 0, absentDays = 0, leaveDays = 0, fridayDays = 0, overtimeDays = 0;
+  let totalRequiredMinutes = 0, totalActualMinutes = 0;
+  let totalDelayMinutes = 0, totalExtraMinutes = 0;
+  let presentDays = 0, absentDays = 0, leaveDays = 0, unpaidLeaveDays = 0, fridayDays = 0, overtimeDays = 0;
 
-    const isExecutive = (emp.job_title || '').includes('المدير العام') || String(emp.employee_number || '') === '1001' || (emp.shift || '').includes('المدير العام') || (emp.shift || '').includes('إدارة عامة');
+  const isExecutive = (emp.job_title || '').includes('المدير العام') || String(emp.employee_number || '') === '1001' || (emp.shift || '').includes('المدير العام') || (emp.shift || '').includes('إدارة عامة');
 
   const dailyDetails = uniqueLogs.map(log => {
     const isFri = isFriday(log);
     const exempt = isDayExempt(log) || (isExecutive && !isFri);
     const hasAtt = hasRealBiometricPunches(log) || (isExecutive && !!log.check_in);
     const status = (log.status || 'present').toLowerCase();
-    let actualMins = calcActualMinutes(log);
+    const isUnpaidLeave = status === 'unpaid_leave' || status === 'إجازة بدون راتب' || status === 'اجازة بدون راتب';
     
+    let actualMins = calcActualMinutes(log);
+
     // For Executive Manager with check-in, full hours credited
     if (isExecutive && (log.check_in || hasAtt)) {
       actualMins = shiftHours * 60;
@@ -482,47 +485,64 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     let requiredMins = 0, shortfallMins = 0;
 
     if (isFri) {
-      // IT IS FRIDAY (Weekly Official Holiday - Never marked as Absent!)
+      // 1. IT IS FRIDAY (Weekly Official Holiday - Never marked as Absent!)
       requiredMins = 0;
       shortfallMins = 0;
       fridayDays++;
       if (hasAtt) {
-        // Punched on Friday -> Attendance on Weekend / Overtime credited
         presentDays++;
         actualMins = actualMins || (shiftHours * 60);
       } else {
         actualMins = 0;
       }
+    } else if (isUnpaidLeave) {
+      // 2. UNPAID LEAVE (0 required, 0 shortfall minutes, deducted as a day deduction in Stage 2)
+      unpaidLeaveDays++;
+      requiredMins = 0;
+      actualMins = 0;
+      shortfallMins = 0;
     } else if (exempt) {
-      // EXEMPT / PAID LEAVE DAY (0 required, 0 shortfall)
+      // 3. EXEMPT / PAID LEAVE DAY (Annual, Sick, Emergency, or Admin Exemption)
       requiredMins = 0;
       shortfallMins = 0;
       actualMins = actualMins || 0;
       if (status.includes('إجازة') || status === 'on_leave' || status === 'leave') leaveDays++;
       else if (isExecutive) presentDays++;
     } else if (hasAtt) {
-      // REGULAR WORKING DAY WITH ATTENDANCE
+      // 4. REGULAR WORKING DAY WITH ATTENDANCE
+      presentDays++;
       requiredMins = shiftHours * 60;
       totalRequiredMinutes += requiredMins;
       const actual = actualMins || 0;
       totalActualMinutes += actual;
-      shortfallMins = Math.max(0, requiredMins - actual);
-      totalShortfallMinutes += shortfallMins;
-      presentDays++;
+
+      if (actual < requiredMins) {
+        // Late / Delay on attended work day
+        const delay = requiredMins - actual;
+        shortfallMins = delay;
+        totalDelayMinutes += delay;
+      } else if (actual > requiredMins) {
+        // Extra time / Overtime on attended work day
+        const extra = actual - requiredMins;
+        shortfallMins = 0;
+        totalExtraMinutes += extra;
+      } else {
+        shortfallMins = 0;
+      }
     } else if (isExecutive && (log.check_in || hasAtt)) {
-      // EXECUTIVE
+      // 5. EXECUTIVE
       requiredMins = shiftHours * 60;
       totalRequiredMinutes += requiredMins;
       totalActualMinutes += requiredMins;
       shortfallMins = 0;
       presentDays++;
     } else {
-      // ABSENCE DAY (Regular working day, not Friday, not exempt, no attendance)
+      // 6. ABSENCE DAY (Regular working day, not Friday, not exempt, no punches)
+      // Counted under absentDays, NOT added to delay shortfall minutes!
       absentDays++;
       requiredMins = shiftHours * 60;
       totalRequiredMinutes += requiredMins;
-      shortfallMins = requiredMins;
-      totalShortfallMinutes += shortfallMins;
+      shortfallMins = 0; // NOT added to shortfall delay hours!
       actualMins = 0;
     }
 
@@ -540,12 +560,16 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     let rowStatus = 'present';
     if (isFri) {
       rowStatus = 'weekend';
+    } else if (isUnpaidLeave) {
+      rowStatus = 'unpaid_leave';
     } else if (exempt) {
       rowStatus = 'exempt';
     } else if (!hasAtt) {
       rowStatus = 'absent';
+    } else if (shortfallMins > 0) {
+      rowStatus = 'late';
     } else {
-      rowStatus = log.status || 'present';
+      rowStatus = 'present';
     }
 
     return {
@@ -561,6 +585,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
       period_2_out: displayP2Out,
       timestamp_raw: hasAtt ? (log.timestamp_raw || '') : '',
       isFriday: isFri,
+      isUnpaidLeave,
       isExempt: exempt,
       hasAttendance: hasAtt,
       requiredMinutes: requiredMins,
@@ -570,12 +595,25 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     };
   });
 
+  // ─── SALARY, RATES, AND OFFSETTING (المقاصة التلقائية بين الإضافي والتأخير) ────
   const basicSalary = Number(emp.salary) || 0;
   const housing = Number(emp.housing_allowance) || 0;
   const transport = Number(emp.transport_allowance) || 0;
   const hourlyRate = calcHourlyRate(basicSalary, shiftHours, daysPerMonth);
+  const dailySalaryRate = Math.round((basicSalary / daysPerMonth) * 100) / 100;
+
+  // AUTOMATIC NETTING: Deduct extra overtime minutes from delay shortfall minutes
+  const netShortfallMinutes = Math.max(0, totalDelayMinutes - totalExtraMinutes);
+  const netExtraMinutes = Math.max(0, totalExtraMinutes - totalDelayMinutes);
+  const totalShortfallMinutes = netShortfallMinutes;
+
   const shortfallHours = totalShortfallMinutes / 60;
   const proposedShortfallDeduction = Math.round(shortfallHours * hourlyRate * 100) / 100;
+
+  // ABSENCE AND UNPAID LEAVE DEDUCTIONS
+  const proposedAbsenceDeduction = Math.round(absentDays * dailySalaryRate * 100) / 100;
+  const proposedUnpaidLeaveDeduction = Math.round(unpaidLeaveDays * dailySalaryRate * 100) / 100;
+
   const fridayAllowance = fridayDays * fridayDailyRate;
   const fridayNote = fridayDays > 0 ? `${fridayDays} أيام جمعة × ${fridayDailyRate} = ${fridayAllowance} ريال` : null;
   const dailyOvertimeAllowance = overtimeDays * overtimeDailyRate;
@@ -597,8 +635,13 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
         approvedShortfallDeduction = Number(ap.finalDeduction) || 0;
       }
       shortfallApprovalNote = ap.note || '';
+    } else {
+      // Default to proposed delay deduction
+      approvedShortfallDeduction = proposedShortfallDeduction;
     }
-  } catch {}
+  } catch {
+    approvedShortfallDeduction = proposedShortfallDeduction;
+  }
 
   // 1. CUSTOM APPROVED BONUSES & INCENTIVES
   const empAdjustments = getEmployeeAdjustments(emp.employee_number || emp.id, monthPrefix);
@@ -623,7 +666,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
 
   // TOTALS CALCULATION
   const totalAdditions = housing + transport + fridayAllowance + dailyOvertimeAllowance + customBonusesTotal;
-  const totalDeductions = approvedShortfallDeduction + customPenaltiesTotal + advanceInstallment;
+  const totalDeductions = approvedShortfallDeduction + proposedAbsenceDeduction + proposedUnpaidLeaveDeduction + customPenaltiesTotal + advanceInstallment;
   const netSalary = Math.max(0, basicSalary + totalAdditions - totalDeductions);
 
   return {
@@ -635,13 +678,18 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     presentDays,
     absentDays,
     leaveDays,
+    unpaidLeaveDays,
     fridayDays,
     overtimeDays,
     totalRequiredMinutes,
     totalActualMinutes,
+    totalDelayMinutes,
+    totalExtraMinutes,
+    netExtraMinutes,
     totalShortfallMinutes,
     shortfallHours: Math.round(shortfallHours * 100) / 100,
     hourlyRate: Math.round(hourlyRate * 100) / 100,
+    dailySalaryRate,
     basicSalary,
     housing,
     transport,
@@ -655,6 +703,8 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     gosiDeduction,
     proposedShortfallDeduction,
     approvedShortfallDeduction,
+    proposedAbsenceDeduction,
+    proposedUnpaidLeaveDeduction,
     shortfallApprovalStatus,
     shortfallApprovalNote,
     // Bonuses, Penalties, Advances

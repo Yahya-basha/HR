@@ -5,7 +5,7 @@ import {
   Eye, FileSpreadsheet, ShieldCheck, Users, CalendarCheck, History,
   Filter, Search, X, Edit3, Check, XCircle, Gift, AlertOctagon,
   CreditCard, PlusCircle, Trash2, ChevronRight, ChevronLeft,
-  FileText, CheckSquare, Sparkles, Building2, UserCheck, LayoutGrid,
+  FileText, CheckSquare, Sparkles, Building2, UserCheck, UserX, LayoutGrid,
   SlidersHorizontal, Lock, Unlock, Archive, ArrowRight, ArrowLeft,
   Briefcase, DollarSign, ArrowUpRight, ArrowDownRight, Award, Fingerprint, Sun, Coffee, Moon
 } from 'lucide-react';
@@ -353,7 +353,7 @@ export default function Payroll() {
       const empId = emp ? emp.id : (log.employee_id || log.user_id);
       const empNum = emp ? String(emp.employee_number) : (log.employee_number || '1000');
       const empName = emp ? emp.full_name : (log.employee_name || 'موظف');
-      const isLeave = newStatus === 'annual_leave' || newStatus === 'sick_leave' || newStatus === 'emergency_leave' || newStatus === 'unpaid_leave';
+      const isLeave = newStatus === 'annual_leave' || newStatus === 'sick_leave' || newStatus === 'emergency_leave' || newStatus === 'unpaid_leave' || newStatus === 'unexcused_absence' || newStatus === 'exempt' || newStatus === 'absent';
 
       const parseM = (t) => {
         if (!t) return null;
@@ -797,8 +797,8 @@ export default function Payroll() {
                     </div>
                   </div>
 
-                  {/* Attendance Stats Cards */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-5 border-b bg-slate-50/50 dark:bg-slate-900/30 text-center">
+                  {/* Attendance Stats Cards (5 Precise Metrics) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-5 border-b bg-slate-50/50 dark:bg-slate-900/30 text-center">
                     <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 p-3 rounded-2xl">
                       <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">أيام الحضور الفعلي</div>
                       <div className="text-xl font-black font-mono text-emerald-700 dark:text-emerald-400 mt-1">
@@ -820,11 +820,19 @@ export default function Payroll() {
                       </div>
                     </div>
 
-                    <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 p-3 rounded-2xl">
-                      <div className="text-xs font-bold text-amber-800 dark:text-amber-300">إجمالي عجز الساعات</div>
-                      <div className="text-xl font-black font-mono text-amber-700 dark:text-amber-400 mt-1">
-                        {formatHours(currentSelectedPayroll.shortfallHours)} <span className="text-xs font-sans font-normal">ساعة</span>
+                    <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 p-3 rounded-2xl">
+                      <div className="text-xs font-bold text-purple-800 dark:text-purple-300">إجازة بدون راتب</div>
+                      <div className="text-xl font-black font-mono text-purple-700 dark:text-purple-400 mt-1">
+                        {currentSelectedPayroll.unpaidLeaveDays || 0} <span className="text-xs font-sans font-normal">أيام</span>
                       </div>
+                    </div>
+
+                    <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 p-3 rounded-2xl">
+                      <div className="text-xs font-bold text-amber-800 dark:text-amber-300">صافي عجز التأخير ⚖️</div>
+                      <div className="text-xl font-black font-mono text-amber-700 dark:text-amber-400 mt-1">
+                        {formatMinutes(currentSelectedPayroll.totalShortfallMinutes)}
+                      </div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">بعد مقاصة الإضافي</div>
                     </div>
                   </div>
 
@@ -846,8 +854,29 @@ export default function Payroll() {
                       </thead>
                       <tbody className="divide-y divide-border/60">
                         {currentSelectedPayroll.dailyDetails?.map((d, di) => {
-                          const statusLabel = d.isFriday ? 'عطلة جمعة' : d.isExempt ? 'معفى' : !d.hasAttendance ? 'غائب' : d.shortfallMinutes > 0 ? 'عجز دوام' : 'حاضر ✓';
-                          const statusBadgeColor = d.isFriday ? 'bg-indigo-100 text-indigo-800' : d.isExempt ? 'bg-slate-100 text-slate-700' : !d.hasAttendance ? 'bg-rose-100 text-rose-800' : d.shortfallMinutes > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
+                          const statusLabel = d.isFriday 
+                            ? 'عطلة جمعة' 
+                            : d.isUnpaidLeave 
+                            ? 'إجازة بدون راتب' 
+                            : d.isExempt 
+                            ? 'معفى / إجازة' 
+                            : !d.hasAttendance 
+                            ? 'غائب' 
+                            : d.shortfallMinutes > 0 
+                            ? `عجز دوام (${formatMinutes(d.shortfallMinutes)})` 
+                            : 'حاضر ✓';
+
+                          const statusBadgeColor = d.isFriday 
+                            ? 'bg-indigo-100 text-indigo-800' 
+                            : d.isUnpaidLeave 
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' 
+                            : d.isExempt 
+                            ? 'bg-slate-100 text-slate-700' 
+                            : !d.hasAttendance 
+                            ? 'bg-rose-100 text-rose-800' 
+                            : d.shortfallMinutes > 0 
+                            ? 'bg-amber-100 text-amber-800' 
+                            : 'bg-emerald-100 text-emerald-800';
 
                           return (
                             <tr key={di} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/30">
@@ -1740,7 +1769,7 @@ export default function Payroll() {
               </div>
 
               {/* Dynamic Punches based on Shift */}
-              {editPunchModal.newStatus !== 'annual_leave' && editPunchModal.newStatus !== 'sick_leave' && editPunchModal.newStatus !== 'exempt' && editPunchModal.newStatus !== 'absent' && (
+              {!['annual_leave', 'sick_leave', 'emergency_leave', 'unpaid_leave', 'unexcused_absence', 'exempt', 'absent', 'weekend'].includes(editPunchModal.newStatus) ? (
                 <>
                   {editPunchModal.isSplitShift ? (
                     /* ─── 4 PUNCHES FOR DUAL SHIFT ────────────────────────── */
@@ -1840,7 +1869,25 @@ export default function Payroll() {
                       </div>
                     </div>
                   )}
+                
                 </>
+              ) : (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-border text-xs space-y-2">
+                  <div className="font-bold flex items-center gap-2">
+                    {editPunchModal.newStatus === 'unpaid_leave' && <span className="text-purple-600 font-black">⏳ إجازة بدون راتب:</span>}
+                    {editPunchModal.newStatus === 'annual_leave' && <span className="text-teal-600 font-black">🏖️ إجازة سنوية:</span>}
+                    {editPunchModal.newStatus === 'sick_leave' && <span className="text-purple-600 font-black">🏥 إجازة مرضية:</span>}
+                    {editPunchModal.newStatus === 'exempt' && <span className="text-slate-600 font-black">✨ معفى / عطلة رسمية:</span>}
+                    {(editPunchModal.newStatus === 'absent' || editPunchModal.newStatus === 'unexcused_absence') && <span className="text-rose-600 font-black">🚫 غياب غير مبرر:</span>}
+                  </div>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed">
+                    {editPunchModal.newStatus === 'unpaid_leave' && 'يوم إجازة بدون راتب: لن يتم تسجيل بصمات دخول أو خروج، وسيتم خصم قيمة اليوم كاملاً تلقائياً في مرحلة الاستقطاعات (الخطوة 2) دون احتساب عجز ساعات تأخير.'}
+                    {editPunchModal.newStatus === 'annual_leave' && 'يوم إجازة سنوية مدفوعة: معفى من بصمات الحضور ويخصم يوم واحد من رصيد الإجازات السنوية المعتمدة للموظف.'}
+                    {editPunchModal.newStatus === 'sick_leave' && 'يوم إجازة مرضية مدفوعة: معفى من بصمات الحضور بموجب تقرير طبي نظامي معتمد.'}
+                    {editPunchModal.newStatus === 'exempt' && 'يوم معفى إدارياً أو عطلة رسمية: معفى من الحضور ولا يترتب عليه أي خصم أو عجز ساعات.'}
+                    {(editPunchModal.newStatus === 'absent' || editPunchModal.newStatus === 'unexcused_absence') && 'يوم غياب غير مبرر: يتم احتساب اليوم كغياب ويخصم أجر اليوم كاملاً في الاستقطاعات دون احتسابه في عجز ساعات التأخير.'}
+                  </p>
+                </div>
               )}
 
             </div>
