@@ -303,6 +303,9 @@ export default function Payroll() {
 
   useEffect(() => {
     loadData();
+    const handleEmpUpdate = () => loadData();
+    window.addEventListener('hr_employee_updated', handleEmpUpdate);
+    return () => window.removeEventListener('hr_employee_updated', handleEmpUpdate);
   }, [loadData]);
 
   // Check lock status when monthPrefix changes

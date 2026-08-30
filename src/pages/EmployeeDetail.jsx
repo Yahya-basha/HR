@@ -260,8 +260,13 @@ export default function EmployeeDetail() {
           insurance_category: found.insurance_category || 'VIP - الفئة الذهبية الشاملة',
           insurance_policy_number: found.insurance_policy_number || 'POL-2026-GA-9941',
           insurance_expiry: found.insurance_expiry || '2027-08-31',
-          gosi_number: found.gosi_number || ('GSI-' + found.employee_number),
-          is_insured: found.is_insured !== false
+          gosi_number: found.gosi_number || ('GSI-' + (found.employee_number || '1001')),
+          insured_salary: Number(found.insured_salary || found.salary) || 0,
+          is_insured: found.is_insured !== false && found.is_insured !== 'false',
+          payout_method: found.payout_method || (found.iban ? 'bank_full' : 'cash_full'),
+          bank_transfer_amount: Number(found.bank_transfer_amount) || 0,
+          bank_name: found.bank_name || 'مصرف الراجحي',
+          iban: found.iban || ''
         });
 
         // Load custom lists from local storage if exists
@@ -294,38 +299,46 @@ export default function EmployeeDetail() {
   const handleSaveInsurance = async () => {
     if (!employee) return;
     try {
+      const isInsured = insuranceForm.is_insured === true || insuranceForm.is_insured === 'true';
       const updated = {
         ...employee,
+        is_insured: isInsured,
+        gosi_number: isInsured ? (insuranceForm.gosi_number || ('GSI-' + (employee.employee_number || '1001'))) : '',
+        insured_salary: Number(insuranceForm.insured_salary) || Number(employee.salary) || 0,
+        payout_method: insuranceForm.payout_method || (insuranceForm.iban ? 'bank_full' : 'cash_full'),
+        bank_transfer_amount: Number(insuranceForm.bank_transfer_amount) || 0,
+        bank_name: insuranceForm.bank_name || 'مصرف الراجحي',
+        iban: insuranceForm.iban || '',
         insurance_company: insuranceForm.insurance_company,
         insurance_category: insuranceForm.insurance_category,
         insurance_policy_number: insuranceForm.insurance_policy_number,
-        insurance_expiry: insuranceForm.insurance_expiry,
-        gosi_number: insuranceForm.is_insured ? (insuranceForm.gosi_number || ('GSI-' + (employee.employee_number || '1001'))) : '',
-        insured_salary: Number(insuranceForm.insured_salary) || Number(employee.salary) || 0,
-        is_insured: insuranceForm.is_insured,
-        payout_method: insuranceForm.payout_method,
-        bank_transfer_amount: Number(insuranceForm.bank_transfer_amount) || 0,
-        bank_name: insuranceForm.bank_name || 'مصرف الراجحي',
-        iban: insuranceForm.iban || ''
+        insurance_expiry: insuranceForm.insurance_expiry
       };
       
+      // 1. Update in Base44 entity store
       await base44.entities.Employee.update(employee.id, updated);
       setEmployee(updated);
 
-      // Also ensure local storage cache is updated
-      try {
-        const localList = JSON.parse(localStorage.getItem('hr_flow_employees') || localStorage.getItem('green_arrow_hr_employees') || '[]');
-        const idx = localList.findIndex(e => String(e.id) === String(employee.id) || String(e.employee_number) === String(employee.employee_number));
-        if (idx !== -1) {
-          localList[idx] = { ...localList[idx], ...updated };
-          localStorage.setItem('hr_flow_employees', JSON.stringify(localList));
-          localStorage.setItem('green_arrow_hr_employees', JSON.stringify(localList));
-        }
-      } catch (err) {}
+      // 2. Direct guarantee update in local storage caches
+      const storageKeys = ['green_arrow_hr_Employee', 'green_arrow_hr_employees', 'hr_flow_employees'];
+      storageKeys.forEach(k => {
+        try {
+          const list = JSON.parse(localStorage.getItem(k) || '[]');
+          if (Array.isArray(list)) {
+            const idx = list.findIndex(e => String(e.id) === String(employee.id) || String(e.employee_number) === String(employee.employee_number));
+            if (idx !== -1) {
+              list[idx] = { ...list[idx], ...updated };
+              localStorage.setItem(k, JSON.stringify(list));
+            }
+          }
+        } catch (e) {}
+      });
+
+      // 3. Dispatch global custom event for other open pages/tabs
+      window.dispatchEvent(new CustomEvent('hr_employee_updated', { detail: updated }));
 
       setEditInsuranceModal(false);
-      toast({ title: '✓ تم تحديث بيانات التأمين وطريقة الصرف المالي بنجاح في السحابة' });
-      await loadData();
+      toast({ title: '✓ تم حفظ وتحديث بيانات التأمين وطريقة الصرف المالي بنجاح' });
     } catch (e) {
       toast({ title: 'خطأ أثناء الحفظ', description: e.message, variant: 'destructive' });
     }
@@ -740,7 +753,24 @@ export default function EmployeeDetail() {
                   </h3>
                   <p className="text-xs text-muted-foreground">التغطية الطبية والاشتراك الرسمي بالتأمينات الاجتماعية</p>
                 </div>
-                <Button size="sm" onClick={() => setEditInsuranceModal(true)} className="bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold h-8 gap-1">
+                <Button size="sm" onClick={() => {
+                  if (employee) {
+                    setInsuranceForm({
+                      insurance_company: employee.insurance_company || 'شركة بوبا العربية للتأمين التعاوني (Bupa)',
+                      insurance_category: employee.insurance_category || 'VIP - الفئة الذهبية الشاملة',
+                      insurance_policy_number: employee.insurance_policy_number || 'POL-2026-GA-9941',
+                      insurance_expiry: employee.insurance_expiry || '2027-08-31',
+                      gosi_number: employee.gosi_number || ('GSI-' + (employee.employee_number || '1001')),
+                      insured_salary: Number(employee.insured_salary || employee.salary) || 0,
+                      is_insured: employee.is_insured !== false && employee.is_insured !== 'false',
+                      payout_method: employee.payout_method || (employee.iban ? 'bank_full' : 'cash_full'),
+                      bank_transfer_amount: Number(employee.bank_transfer_amount) || 0,
+                      bank_name: employee.bank_name || 'مصرف الراجحي',
+                      iban: employee.iban || ''
+                    });
+                  }
+                  setEditInsuranceModal(true);
+                }} className="bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold h-8 gap-1">
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>تعديل التأمين</span>
                 </Button>
