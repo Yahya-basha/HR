@@ -39,6 +39,9 @@ import DocumentsPrint from '@/pages/DocumentsPrint';
 import Evaluations from '@/pages/Evaluations';
 import PrintTemplates from '@/pages/PrintTemplates';
 import ImportData from '@/pages/ImportData';
+import ApprovalsCenter from '@/pages/ApprovalsCenter';
+import AlertsCenter from '@/pages/AlertsCenter';
+import MyRequests from '@/pages/MyRequests';
 
 const AuthenticatedApp = () => {
   const { user, isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
