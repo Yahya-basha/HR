@@ -1,7 +1,6 @@
 /**
- * Green Arrow HR — Cloud Sync Engine
- * Permanent Cloud Persistence for Approvals, Advances, Adjustments & Locked Payrolls
- * Ensures zero data loss across devices, browsers, and domain changes.
+ * Green Arrow HR — Resilient Bidirectional Cloud Sync Engine
+ * Non-destructive merging: Local data is NEVER erased by empty cloud queries.
  */
 
 import { base44 } from '@/api/base44Client';
@@ -19,7 +18,6 @@ export const SYNC_KEYS = {
   PAYROLL_RUNS: 'payroll_runs_v1',
 };
 
-// Map each sync category to a Supabase sync ID
 const SUPABASE_SYNC_MAP = {
   [SYNC_KEYS.ADVANCES]: 'sync_advances_v2',
   [SYNC_KEYS.ADVANCES_ALIAS]: 'sync_advances_v2',
@@ -34,14 +32,43 @@ const SUPABASE_SYNC_MAP = {
 };
 
 /**
+ * Smart Merge: Merges two arrays of records by their unique .id
+ */
+export function mergeRecords(primary = [], secondary = []) {
+  const pList = Array.isArray(primary) ? primary : [];
+  const sList = Array.isArray(secondary) ? secondary : [];
+  const map = new Map();
+
+  // 1. Add secondary items first
+  sList.forEach(item => {
+    if (item && item.id) map.set(String(item.id), item);
+  });
+
+  // 2. Add or override with primary items
+  pList.forEach(item => {
+    if (item && item.id) {
+      const existing = map.get(String(item.id));
+      if (!existing) {
+        map.set(String(item.id), item);
+      } else {
+        // Keep the one with newer action/timestamp or merged fields
+        map.set(String(item.id), { ...existing, ...item });
+      }
+    }
+  });
+
+  return Array.from(map.values());
+}
+
+/**
  * Save data locally AND push to Supabase Cloud
  */
 export async function cloudSave(key, data) {
   try {
+    if (!data) return;
     const serialized = JSON.stringify(data);
     localStorage.setItem(key, serialized);
 
-    // Sync aliases
     if (key === SYNC_KEYS.ADVANCES) {
       localStorage.setItem(SYNC_KEYS.ADVANCES_ALIAS, serialized);
     } else if (key === SYNC_KEYS.ADVANCES_ALIAS) {
@@ -70,22 +97,35 @@ export async function cloudSave(key, data) {
 }
 
 /**
- * Load data from LocalStorage, and if empty/stale, pull from Supabase Cloud
+ * Load data with Non-Destructive Bidirectional Merge
  */
 export async function cloudLoad(key, defaultValue = []) {
   try {
-    // 1. Check local storage first
-    let localData = null;
+    // 1. Get current local data
+    let localData = [];
     const local = localStorage.getItem(key);
     if (local !== null) {
       try {
-        localData = JSON.parse(local);
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed)) localData = parsed;
+      } catch (e) {}
+    }
+
+    // Also check alias if advances
+    if (key === SYNC_KEYS.ADVANCES || key === SYNC_KEYS.ADVANCES_ALIAS) {
+      try {
+        const altKey = key === SYNC_KEYS.ADVANCES ? SYNC_KEYS.ADVANCES_ALIAS : SYNC_KEYS.ADVANCES;
+        const alt = JSON.parse(localStorage.getItem(altKey) || '[]');
+        if (Array.isArray(alt) && alt.length > 0) {
+          localData = mergeRecords(localData, alt);
+        }
       } catch (e) {}
     }
 
     // 2. Fetch from Supabase Cloud
     const syncId = SUPABASE_SYNC_MAP[key] || (key.startsWith('hr_flow_approval_') ? ('sync_appr_' + key.replace('hr_flow_approval_', '')) : null);
-    
+    let cloudData = [];
+
     if (syncId && base44.supabase) {
       const { data, error } = await base44.supabase
         .from('announcements')
@@ -94,27 +134,42 @@ export async function cloudLoad(key, defaultValue = []) {
         .single();
 
       if (!error && data && data.content) {
-        const cloudData = JSON.parse(data.content);
-        localStorage.setItem(key, data.content);
-        if (key === SYNC_KEYS.ADVANCES) {
-          localStorage.setItem(SYNC_KEYS.ADVANCES_ALIAS, data.content);
-        } else if (key === SYNC_KEYS.ADVANCES_ALIAS) {
-          localStorage.setItem(SYNC_KEYS.ADVANCES, data.content);
-        }
-        return cloudData;
+        try {
+          const parsed = JSON.parse(data.content);
+          if (Array.isArray(parsed)) cloudData = parsed;
+        } catch (e) {}
       }
     }
 
-    return localData !== null ? localData : defaultValue;
+    // 3. Smart Merge: NEVER erase local with empty cloud
+    const merged = mergeRecords(cloudData, localData);
+
+    // If local had items not in cloud, push merged back to cloud!
+    if (merged.length > 0) {
+      const serialized = JSON.stringify(merged);
+      localStorage.setItem(key, serialized);
+      if (key === SYNC_KEYS.ADVANCES) localStorage.setItem(SYNC_KEYS.ADVANCES_ALIAS, serialized);
+      else if (key === SYNC_KEYS.ADVANCES_ALIAS) localStorage.setItem(SYNC_KEYS.ADVANCES, serialized);
+
+      if (cloudData.length < merged.length && syncId && base44.supabase) {
+        cloudSave(key, merged);
+      }
+    }
+
+    return merged.length > 0 ? merged : (Array.isArray(defaultValue) ? defaultValue : []);
   } catch (e) {
     console.warn('CloudLoad warning for key ' + key + ':', e);
-    return defaultValue;
+    try {
+      const fallback = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(fallback) ? fallback : defaultValue;
+    } catch(err) {
+      return defaultValue;
+    }
   }
 }
 
 /**
- * Initial Full Cloud Sync on App Startup
- * Pulls all cloud records from Supabase into LocalStorage seamlessly
+ * Initial Full Cloud Sync on App Startup with Non-Destructive Merging
  */
 export async function initFullCloudSync() {
   if (!base44.supabase) return;
@@ -129,16 +184,24 @@ export async function initFullCloudSync() {
       data.forEach(row => {
         if (row.title && row.content) {
           try {
-            localStorage.setItem(row.title, row.content);
-            if (row.title === SYNC_KEYS.ADVANCES) {
-              localStorage.setItem(SYNC_KEYS.ADVANCES_ALIAS, row.content);
-            } else if (row.title === SYNC_KEYS.ADVANCES_ALIAS) {
-              localStorage.setItem(SYNC_KEYS.ADVANCES, row.content);
+            const cloudArr = JSON.parse(row.content);
+            if (Array.isArray(cloudArr)) {
+              let localArr = [];
+              try { localArr = JSON.parse(localStorage.getItem(row.title) || '[]'); } catch(e) {}
+              const merged = mergeRecords(cloudArr, localArr);
+              localStorage.setItem(row.title, JSON.stringify(merged));
+              if (row.title === SYNC_KEYS.ADVANCES) {
+                localStorage.setItem(SYNC_KEYS.ADVANCES_ALIAS, JSON.stringify(merged));
+              } else if (row.title === SYNC_KEYS.ADVANCES_ALIAS) {
+                localStorage.setItem(SYNC_KEYS.ADVANCES, JSON.stringify(merged));
+              }
+            } else {
+              localStorage.setItem(row.title, row.content);
             }
           } catch (e) {}
         }
       });
-      console.log('✓ Green Arrow Cloud Sync: Synced ' + data.length + ' persistent datasets from Supabase Cloud');
+      console.log('✓ Green Arrow Cloud Sync: Merged ' + data.length + ' datasets from Supabase Cloud');
       window.dispatchEvent(new Event('cloud_data_synced'));
     }
   } catch (e) {
