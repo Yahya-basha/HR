@@ -138,8 +138,10 @@ export function hasRealBiometricPunches(log) {
   if (!log) return false;
   const raw = (log.timestamp_raw || log.punches_raw || '').trim();
   if (raw && extractTimes(raw).length > 0) return true;
-  if (log.check_in && log.check_in !== '—' && log.check_in !== '') return true;
-  if (log.check_out && log.check_out !== '—' && log.check_out !== '') return true;
+  // A real punch must have check_out, or actual total_hours > 0, or raw punches
+  if (log.check_in && log.check_out && log.check_in !== '—' && log.check_out !== '—') return true;
+  if (log.total_hours && Number(log.total_hours) > 0) return true;
+  if (log.actual_minutes && log.actual_minutes > 0) return true;
   return false;
 }
 
@@ -427,18 +429,30 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     const hasOT = !isFriday && !!(shift && shift.has_overtime) && hasAtt && !exempt;
     if (hasOT) overtimeDays++;
 
+    const displayCheckIn = (hasAtt || isExecutive) ? (log.check_in || '') : '';
+    const displayCheckOut = (hasAtt || isExecutive) ? (log.check_out || (isExecutive ? '16:00' : '')) : '';
+    const displayP1In = (hasAtt || isExecutive) ? (log.period_1_in || '') : '';
+    const displayP1Out = (hasAtt || isExecutive) ? (log.period_1_out || '') : '';
+    const displayP2In = (hasAtt || isExecutive) ? (log.period_2_in || '') : '';
+    const displayP2Out = (hasAtt || isExecutive) ? (log.period_2_out || '') : '';
+
     return {
+      ...log,
       log_date: log.log_date,
       day_name: log.day_name || '',
-      status: (isExecutive && (log.check_in || hasAtt)) ? 'present' : (log.status || 'present'),
-      check_in: log.check_in || '',
-      check_out: log.check_out || (isExecutive ? '16:00' : ''),
-      timestamp_raw: log.timestamp_raw || '',
+      status: isFriday ? 'weekend' : (isExecutive && (log.check_in || hasAtt)) ? 'present' : (hasAtt ? (log.status || 'present') : 'absent'),
+      check_in: displayCheckIn,
+      check_out: displayCheckOut,
+      period_1_in: displayP1In,
+      period_1_out: displayP1Out,
+      period_2_in: displayP2In,
+      period_2_out: displayP2Out,
+      timestamp_raw: hasAtt ? (log.timestamp_raw || '') : '',
       isFriday,
       isExempt: exempt,
       hasAttendance: hasAtt,
       requiredMinutes: requiredMins,
-      actualMinutes: actualMins || 0,
+      actualMinutes: hasAtt ? (actualMins || 0) : 0,
       shortfallMinutes: shortfallMins,
       overtimeDay: hasOT,
     };

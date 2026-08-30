@@ -773,10 +773,10 @@ export default function Payroll() {
                               <td className="py-2.5 px-4 font-mono font-bold">{d.log_date}</td>
                               <td className="py-2.5 px-3 font-semibold">{d.day_name}</td>
                               <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
-                                {d.period_1_in || (d.check_in ? (d.check_in.includes('T') ? d.check_in.slice(11, 16) : d.check_in.slice(0, 5)) : '—')}
+                                {d.hasAttendance || d.isExempt ? (d.period_1_in || (d.check_in ? (d.check_in.includes('T') ? d.check_in.slice(11, 16) : d.check_in.slice(0, 5)) : '—')) : '—'}
                               </td>
                               <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
-                                {d.period_2_out || d.period_1_out || (d.check_out ? (d.check_out.includes('T') ? d.check_out.slice(11, 16) : d.check_out.slice(0, 5)) : '—')}
+                                {d.hasAttendance || d.isExempt ? (d.period_2_out || d.period_1_out || (d.check_out ? (d.check_out.includes('T') ? d.check_out.slice(11, 16) : d.check_out.slice(0, 5)) : '—')) : '—'}
                               </td>
                               <td className="py-2.5 px-3 font-mono">{d.requiredMinutes ? formatMinutes(d.requiredMinutes) : '—'}</td>
                               <td className="py-2.5 px-3 font-mono">{d.actualMinutes ? formatMinutes(d.actualMinutes) : '—'}</td>
