@@ -121,9 +121,18 @@ export function normalizeAdvance(adv) {
   const rem = Number(adv.remaining_balance) !== undefined ? Number(adv.remaining_balance) : Math.max(0, amt - paid);
   const startMonth = adv.start_month || (adv.date ? adv.date.slice(0, 7) : '2026-09');
   
+  const isEmployeeRequest = adv.source === 'employee_request' || adv.is_employee_request;
   let st = adv.status;
-  if (st === 'disbursed' || (st === 'approved' && rem > 0) || (st === 'active' && rem > 0)) {
+
+  // Management registered advances or opening balances are inherently active/approved
+  if (!isEmployeeRequest) {
     st = rem <= 0 ? 'completed' : 'active';
+  } else {
+    if (st === 'disbursed' || (st === 'approved' && rem > 0) || (st === 'active' && rem > 0)) {
+      st = rem <= 0 ? 'completed' : 'active';
+    } else if (rem <= 0 && st !== 'rejected') {
+      st = 'completed';
+    }
   }
 
   return {
@@ -141,8 +150,10 @@ export function normalizeAdvance(adv) {
     remaining_balance: rem,
     start_month: startMonth,
     disbursement_date: adv.disbursement_date || (adv.date ? adv.date.slice(0, 10) : new Date().toISOString().slice(0, 10)),
-    reason: adv.reason || 'سلفة شخصية طارئة',
+    reason: adv.reason || 'سلفة شخصية',
     status: st,
+    is_admin_direct: !isEmployeeRequest,
+    source: isEmployeeRequest ? 'employee_request' : 'management',
     approved_by: adv.approved_by || 'فهد ناصر محمد الجوعي (المدير العام)',
     disbursed_by: adv.disbursed_by || 'هشام ابوالفضل زغلول (المحاسب)',
     created_at: adv.created_at || (adv.date ? adv.date : new Date().toISOString()),

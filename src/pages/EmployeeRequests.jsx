@@ -40,6 +40,7 @@ export default function EmployeeRequests() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('advances');
+  const [advancesSubTab, setAdvancesSubTab] = useState('active'); // 'active' | 'archived'
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
   
@@ -566,7 +567,7 @@ export default function EmployeeRequests() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60 font-medium">
-                    {advancesList.map((adv) => {
+                    {advancesList.filter(a => advancesSubTab === 'active' ? ((Number(a.remaining_balance) || 0) > 0 && a.status !== 'completed') : ((Number(a.remaining_balance) || 0) <= 0 || a.status === 'completed')).map((adv) => {
                       const emp = empMap[adv.employee_id] || empMap[adv.employee_number] || {};
                       
                       return (

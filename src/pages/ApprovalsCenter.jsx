@@ -199,7 +199,13 @@ export default function ApprovalsCenter() {
     return (item.employee_name || '').toLowerCase().includes(s) || (item.reason || '').toLowerCase().includes(s);
   });
 
-  const pendingAdvances    = advances.filter(a => ['pending', 'hr_approved', 'accountant_approved'].includes(a.status));
+  const pendingAdvances    = advances.filter(a => 
+    (a.source === 'employee_request' || a.is_employee_request) &&
+    ['pending', 'hr_approved', 'accountant_approved', 'pending_gm_approval'].includes(a.status) &&
+    !a.is_opening_balance &&
+    !a.is_admin_direct &&
+    a.source !== 'management'
+  );
   const pendingLeaves      = leaves.filter(l => l.status === 'pending');
   const pendingCorrections = corrections.filter(c => c.status === 'pending');
   const totalPending       = pendingAdvances.length + pendingLeaves.length + pendingCorrections.length;
@@ -253,9 +259,9 @@ export default function ApprovalsCenter() {
 
         {/* Advances Tab */}
         <TabsContent value="advances" className="mt-4 space-y-2">
-          {filterList(advances).length === 0 ? (
+          {filterList(pendingAdvances).length === 0 ? (
             <Card className="p-10 rounded-2xl text-center text-muted-foreground text-sm">لا توجد طلبات سلفة</Card>
-          ) : filterList(advances).map(adv => (
+          ) : filterList(pendingAdvances).map(adv => (
             <Card key={adv.id} className="p-4 rounded-2xl border hover:shadow-sm transition-all">
               <div className="flex items-start gap-3">
                 <div className="flex-1">
