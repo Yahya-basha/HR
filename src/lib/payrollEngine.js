@@ -479,10 +479,21 @@ export function saveAdvance(advanceData) {
   return newAdvance;
 }
 
-export function getEmployeeActiveAdvance(employeeNumber) {
-  const advances = getAdvances();
+export function getActiveAdvanceForEmployee(employeeNumber, monthPrefix = '') {
   const cleanNum = String(employeeNumber || '').trim();
-  return advances.find(a => a.employee_number === cleanNum && a.status === 'active' && a.remaining_balance > 0) || null;
+  if (!cleanNum) return null;
+  const advances = getAdvances();
+  return advances.find(a => {
+    const matchEmp = String(a.employee_number || '').trim() === cleanNum;
+    const isActiveStatus = a.status === 'active' || a.status === 'disbursed' || a.status === 'approved';
+    const hasRemaining = (Number(a.remaining_balance) || 0) > 0;
+    const isStarted = !monthPrefix || !a.start_month || a.start_month <= monthPrefix;
+    return matchEmp && isActiveStatus && hasRemaining && isStarted;
+  }) || null;
+}
+
+export function getEmployeeActiveAdvance(employeeNumber, monthPrefix = '') {
+  return getActiveAdvanceForEmployee(employeeNumber, monthPrefix);
 }
 
 export function recordAdvanceInstallmentPayment(advanceId, monthPrefix, paidAmount) {

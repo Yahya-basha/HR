@@ -45,6 +45,7 @@ import {
   saveAdjustment,
   deleteAdjustment,
   getEmployeeActiveAdvance,
+  getActiveAdvanceForEmployee,
   getLockedMonthlyPayrolls,
   getLockedMonthlyPayroll,
   saveLockedMonthlyPayroll,
