@@ -161,17 +161,20 @@ export default function ImportData() {
 
   // Helper: Parse rows from Excel
   const parseRowsToAttendance = (rows, sourceFileName) => {
+    if (!rows || rows.length < 2) return [];
+
     let bestHeaderRowIndex = 0;
     let maxScore = -1;
 
-    for (let r = 0; r < Math.min(8, rows.length); r++) {
+    for (let r = 0; r < Math.min(10, rows.length); r++) {
       const row = rows[r];
+      if (!row) continue;
       let score = 0;
       row.forEach(cell => {
         const text = (cell || '').toString().toLowerCase();
-        if (text.includes('الرقم الوظيفي') || text.includes('رقم الموظف') || text.includes('ac-no') || text.includes('no.')) score += 5;
+        if (text.includes('الرقم الوظيفي') || text.includes('رقم الموظف') || text.includes('الرقم الوطني') || text.includes('ac-no') || text.includes('no.')) score += 5;
         if (text.includes('اسم الموظف') || text.includes('الاسم') || text.includes('name')) score += 5;
-        if (text.includes('الطابع الزمني') || text.includes('timetable') || text.includes('بصمات')) score += 6;
+        if (text.includes('البصمات خلال اليوم') || text.includes('البصمات') || text.includes('الطابع الزمني') || text.includes('timetable') || text.includes('punches')) score += 6;
         if (text.includes('التاريخ') || text.includes('date') || text.includes('اليوم')) score += 5;
         if (text.includes('دخول') || text.includes('خروج') || text.includes('in') || text.includes('out')) score += 3;
       });
@@ -183,13 +186,14 @@ export default function ImportData() {
 
     const headerRow = rows[bestHeaderRowIndex].map((h, i) => (h ? h.toString().trim() : 'col_' + (i + 1)));
     
-    let idxEmpNum = -1, idxEmpName = -1, idxDate = -1, idxRaw = -1, idxIn = -1, idxOut = -1;
+    let idxEmpNum = -1, idxEmpName = -1, idxDate = -1, idxAllPunches = -1, idxTimetable = -1, idxIn = -1, idxOut = -1;
     headerRow.forEach((col, idx) => {
       const c = col.toLowerCase();
-      if (idxEmpNum === -1 && (c.includes('رقم') || c.includes('وظيفي') || c.includes('ac-no') || c.includes('no.'))) idxEmpNum = idx;
+      if (idxEmpNum === -1 && (c.includes('رقم') || c.includes('وظيفي') || c.includes('وطني') || c.includes('ac-no') || c.includes('no.'))) idxEmpNum = idx;
       if (idxEmpName === -1 && (c.includes('اسم') || c.includes('name') || (c.includes('موظف') && !c.includes('رقم')))) idxEmpName = idx;
       if (idxDate === -1 && (c.includes('تاريخ') || c.includes('date') || c.includes('اليوم'))) idxDate = idx;
-      if (idxRaw === -1 && (c.includes('طابع') || c.includes('بصمات') || c.includes('raw') || c.includes('timetable'))) idxRaw = idx;
+      if (idxAllPunches === -1 && (c.includes('البصمات خلال اليوم') || c.includes('البصمات') || c.includes('حركات البصمة') || c.includes('all punches'))) idxAllPunches = idx;
+      if (idxTimetable === -1 && (c.includes('طابع') || c.includes('timetable') || c.includes('raw'))) idxTimetable = idx;
       if (idxIn === -1 && (c.includes('دخول') || c.includes('حضور') || c.includes('in') || c.includes('on duty'))) idxIn = idx;
       if (idxOut === -1 && (c.includes('خروج') || c.includes('انصراف') || c.includes('out') || c.includes('off duty'))) idxOut = idx;
     });
@@ -203,26 +207,77 @@ export default function ImportData() {
       const rawEmpName = idxEmpName !== -1 ? String(row[idxEmpName] || '').trim() : '';
       const rawDateCell = idxDate !== -1 ? row[idxDate] : null;
       const rawTimeCell = idxIn !== -1 ? row[idxIn] : null;
-      const rawPunches = idxRaw !== -1 ? String(row[idxRaw] || '').trim() : '';
+      
+      const rawDailyPunches = idxAllPunches !== -1 ? String(row[idxAllPunches] || '').trim() : '';
+      const rawTimetable = idxTimetable !== -1 ? String(row[idxTimetable] || '').trim() : '';
 
       if (!rawEmpNum && !rawEmpName) continue;
 
       // Extract accurate date
       const dateInfo = parseDateTimeValue(rawDateCell);
       const timeInfo = parseDateTimeValue(rawTimeCell);
-      const punchesDateInfo = parseDateTimeValue(rawPunches);
-
+      const punchesDateInfo = parseDateTimeValue(rawDailyPunches || rawTimetable);
       const finalDate = dateInfo.date || punchesDateInfo.date || '2026-08-01';
 
-      // Extract times from raw punches or in/out columns
-      const times = (rawPunches.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g) || []);
-      const p1In = times[0] || timeInfo.time || (row[idxIn] ? String(row[idxIn]).slice(0, 5) : '08:00');
-      const p1Out = times[1] || '';
-      const p2In = times[2] || '';
-      const p2Out = times[3] || times[times.length - 1] || (row[idxOut] ? String(row[idxOut]).slice(0, 5) : '');
+      // Combine all punch times from both "البصمات خلال اليوم" and "الطابع الزمني"
+      const combinedPunchesStr = (rawDailyPunches + ' ' + rawTimetable).trim();
+      const rawMatches = (combinedPunchesStr.match(/\b([01]?[0-9]|2[0-3]):[0-5][0-9]\b/g) || []);
+      
+      // Standardize format HH:MM
+      const cleanTimes = rawMatches.map(t => {
+        const p = t.split(':');
+        return p[0].padStart(2, '0') + ':' + p[1].padStart(2, '0');
+      });
+
+      // Deduplicate preserving chronological order
+      const uniqueTimes = Array.from(new Set(cleanTimes)).sort();
+
+      let p1In = '';
+      let p1Out = '';
+      let p2In = '';
+      let p2Out = '';
+      let totalHrs = 0;
+
+      const parseM = (t) => {
+        if (!t) return null;
+        const p = t.split(':');
+        return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+      };
+
+      if (uniqueTimes.length >= 4) {
+        // Dual shift (4 punches)
+        p1In = uniqueTimes[0];
+        p1Out = uniqueTimes[1];
+        p2In = uniqueTimes[2];
+        p2Out = uniqueTimes[3];
+        const m1In = parseM(p1In), m1Out = parseM(p1Out), m2In = parseM(p2In), m2Out = parseM(p2Out);
+        let dur1 = 0, dur2 = 0;
+        if (m1In !== null && m1Out !== null) dur1 = m1Out >= m1In ? m1Out - m1In : (m1Out + 1440) - m1In;
+        if (m2In !== null && m2Out !== null) dur2 = m2Out >= m2In ? m2Out - m2In : (m2Out + 1440) - m2In;
+        totalHrs = Math.round(((dur1 + dur2) / 60) * 100) / 100;
+      } else if (uniqueTimes.length >= 2) {
+        // Flexible or single shift: First punch is In, Last punch is Out
+        p1In = uniqueTimes[0];
+        p1Out = uniqueTimes[uniqueTimes.length - 1];
+        p2Out = p1Out;
+        const inM = parseM(p1In);
+        const outM = parseM(p1Out);
+        if (inM !== null && outM !== null) {
+          const diff = outM >= inM ? outM - inM : (outM + 1440) - inM;
+          totalHrs = Math.round((diff / 60) * 100) / 100;
+        }
+      } else if (uniqueTimes.length === 1) {
+        // Single punch recorded
+        p1In = uniqueTimes[0];
+        p1Out = '';
+        totalHrs = 0;
+      }
 
       const empNum = rawEmpNum.replace(/\D/g, '') || '1000';
       const empName = rawEmpName || 'موظف';
+      const rawPunchesDisplay = uniqueTimes.length >= 2 
+        ? (p2In ? `${p1In}:00 -- ${p1Out}:00 & ${p2In}:00 -- ${p2Out}:00` : `${p1In}:00 -- ${p1Out}:00`)
+        : (p1In ? `${p1In}:00 --` : '');
 
       parsed.push({
         id: ('att_' + empNum + '_' + finalDate).replace(/[^a-zA-Z0-9_]/g, '_'),
@@ -231,13 +286,14 @@ export default function ImportData() {
         employee_name: empName,
         log_date: finalDate,
         check_in: p1In ? (finalDate + 'T' + p1In + ':00') : null,
-        check_out: p2Out ? (finalDate + 'T' + p2Out + ':00') : null,
+        check_out: (p2Out || p1Out) ? (finalDate + 'T' + (p2Out || p1Out) + ':00') : null,
         period_1_in: p1In,
         period_1_out: p1Out,
         period_2_in: p2In,
         period_2_out: p2Out,
-        timestamp_raw: rawPunches || (p1In && p2Out ? (p1In + ' -- ' + p2Out) : ''),
-        status: (p1In || p2Out || rawPunches) ? 'present' : 'absent',
+        total_hours: totalHrs,
+        timestamp_raw: rawPunchesDisplay,
+        status: (p1In && p1Out && totalHrs > 0) ? 'present' : (p1In ? 'late' : 'absent'),
         source_file: sourceFileName
       });
     }
