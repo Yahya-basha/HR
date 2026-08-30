@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { getRoleMeta } from '@/lib/rbac';
 import { useAuth } from '@/lib/AuthContext';
 import { EKTEFA_MODULES } from '@/lib/nav';
 import { 

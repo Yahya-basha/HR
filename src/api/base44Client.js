@@ -1,3 +1,16 @@
+// RBAC helpers (inline to avoid circular imports)
+function _determineRole(emp) {
+  var num = String((emp&&emp.employee_number)||"");
+  var email = ((emp&&emp.email)||"").toLowerCase();
+  var job = ((emp&&emp.job_title)||"").toLowerCase();
+  if (num==="1001"||email==="dortalsiarh@gmail.com") return "owner";
+  if (num==="1005"||email==="hes.ham42@yahoo.com") return "accountant";
+  if (num==="1022"||email==="yahya9031@gmail.com") return "system_admin";
+  if (job.indexOf("محاسب")!==-1||job.indexOf("حسابات")!==-1) return "accountant";
+  if (job.indexOf("موارد بشرية")!==-1) return "hr";
+  return "employee";
+}
+
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL) || 'https://omnvdvmmmarwsobadlsb.supabase.co';
@@ -1088,7 +1101,7 @@ const DEFAULT_ADMIN_USER = {
   id: 'usr_1022',
   email: 'yahya9031@gmail.com',
   full_name: 'يحيي محمد عبدالغفار باشا (مسؤول الموارد البشرية)',
-  role: 'admin',
+  role: 'system_admin',
   department: 'مكتب الإدارة',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
 };
@@ -1132,7 +1145,7 @@ export const base44 = {
           employee_number: '1022',
           full_name: 'يحيى باشا (مدير النظام والموارد البشرية)',
           email: 'yahya9031@gmail.com',
-          role: 'admin',
+          role: 'system_admin',
           department: 'مكتب الإدارة',
           job_title: 'مدير النظام والموارد البشرية',
           national_id: '2554901666',
@@ -1171,22 +1184,15 @@ export const base44 = {
         throw new Error('كلمة المرور غير صحيحة. كلمة المرور الافتراضية هي رقم الهوية/الإقامة.');
       }
 
-      // Determine role:
-      const isAdmin = (
-        found.employee_number === '1001' || 
-        found.employee_number === '1022' || 
-        found.employee_number === '1005' ||
-        found.job_title?.includes('مدير') ||
-        found.job_title?.includes('إدارة') ||
-        found.job_title?.includes('موارد بشرية')
-      );
+      // Determine role using RBAC logic:
+      const userRole = _determineRole(found);
 
       const sessionUser = {
         id: found.id || ('usr_' + found.employee_number),
         employee_number: found.employee_number,
         full_name: found.full_name,
         email: found.email || (found.employee_number + '@doratcars.com'),
-        role: isAdmin ? 'admin' : 'employee',
+        role: userRole,
         job_title: found.job_title,
         department: found.department_name || found.department,
         branch: found.branch_name || found.branch,

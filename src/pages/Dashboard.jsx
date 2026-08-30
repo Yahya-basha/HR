@@ -85,7 +85,24 @@ const daysUntil = (dateStr) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-export default function Dashboard() {
+import OwnerDashboard from './OwnerDashboard';
+import HRDashboard from './HRDashboard';
+import AccountantDashboard from './AccountantDashboard';
+import EmployeeDashboard from './EmployeeDashboard';
+import { useAuth as _useAuthForRoute } from '@/lib/AuthContext';
+
+function DashboardRouter() {
+  const { user } = _useAuthForRoute();
+  const role = user?.role || 'employee';
+  if (role === 'owner') return <OwnerDashboard />;
+  if (role === 'accountant') return <AccountantDashboard />;
+  if (role === 'hr') return <HRDashboard />;
+  if (role === 'employee') return <EmployeeDashboard />;
+  // system_admin → full dashboard below
+  return <Dashboard_Internal />;
+}
+export default DashboardRouter;
+function Dashboard_Internal() {
   const { user } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();

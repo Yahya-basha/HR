@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
+import { getUserPermissions, determineRoleFromEmployee } from '@/lib/rbac';
 
 const AuthContext = createContext();
 
@@ -31,6 +32,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const currentUser = await base44.auth.me();
       if (currentUser && (currentUser.id || currentUser.employee_number)) {
+        // Enrich with RBAC role if not already set
+        if (!currentUser.role || currentUser.role === 'admin' || currentUser.role === 'employee') {
+          currentUser.role = determineRoleFromEmployee(currentUser);
+        }
+        currentUser.permissions = getUserPermissions(currentUser);
         setUser(currentUser);
         setIsAuthenticated(true);
         setAuthError(null);

@@ -173,3 +173,51 @@ export function getNavItems(isAdmin = false) {
   });
   return items;
 }
+
+
+// ─── Role-Based Navigation Filter ───────────────────────────────────────────
+import { hasPermission } from '@/lib/rbac';
+
+export function getNavByRole(user) {
+  const role = user?.role || 'employee';
+
+  // Employee: minimal
+  if (role === 'employee') {
+    return [
+      { label: 'الرئيسية', path: '/', icon: 'LayoutDashboard' },
+      { label: 'طلباتي', path: '/my-requests', icon: 'ClipboardList' },
+    ];
+  }
+
+  // Owner: executive view
+  if (role === 'owner') {
+    return [
+      { label: 'الرئيسية', path: '/', icon: 'LayoutDashboard' },
+      { label: 'الموظفون', path: '/employees', icon: 'Users' },
+      { label: 'الحضور', path: '/attendance', icon: 'Clock' },
+      { label: 'الرواتب', path: '/payroll', icon: 'Wallet' },
+      { label: 'الإجازات', path: '/leave', icon: 'Calendar' },
+      { label: 'الاعتمادات', path: '/approvals', icon: 'CheckCircle2' },
+      { label: 'التنبيهات', path: '/alerts', icon: 'Bell' },
+      { label: 'التقارير', path: '/reports', icon: 'FileText' },
+      { label: 'البدلات', path: '/allowances', icon: 'Coins' },
+    ];
+  }
+
+  // Accountant: financial focused
+  if (role === 'accountant') {
+    return [
+      { label: 'الرئيسية', path: '/', icon: 'LayoutDashboard' },
+      { label: 'الموظفون', path: '/employees', icon: 'Users' },
+      { label: 'الرواتب', path: '/payroll', icon: 'Wallet' },
+      { label: 'السلف والطلبات', path: '/requests', icon: 'CreditCard' },
+      { label: 'الاعتمادات', path: '/approvals', icon: 'CheckCircle2' },
+      { label: 'البدلات', path: '/allowances', icon: 'Coins' },
+      { label: 'التقارير', path: '/reports', icon: 'FileText' },
+      { label: 'نهاية الخدمة', path: '/end-of-service', icon: 'TrendingUp' },
+    ];
+  }
+
+  // HR + System Admin: full access
+  return null; // null = show full nav (existing behavior)
+}

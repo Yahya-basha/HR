@@ -8,6 +8,14 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 
+// Updated user list with 4 roles
+const ROLE_LABELS = {
+  owner: '👑 صاحب العمل',
+  accountant: '🧾 المحاسب',
+  hr: '👥 الموارد البشرية',
+  system_admin: '🛡️ مدير النظام',
+  employee: '👤 موظف',
+};
 const initialUsers = [
   { id: 'usr_1', full_name: 'فهد ناصر محمد الجوعي', title: 'المدير العام', email: 'dortalsiarh@gmail.com', role: 'مدير النظام', date: '8/2/2026' },
   { id: 'usr_2', full_name: 'هشام ابوالفضل زغلول', title: 'مدير الحسابات', email: 'hes.ham42@yahoo.com', role: 'محاسب', date: '8/17/2026' },
@@ -82,9 +90,11 @@ export default function UsersManagement() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="مدير النظام">مدير النظام</SelectItem>
-              <SelectItem value="محاسب">محاسب</SelectItem>
-              <SelectItem value="موظف">موظف</SelectItem>
+              <SelectItem value="system_admin">🛡️ مدير النظام</SelectItem>
+              <SelectItem value="owner">👑 صاحب العمل</SelectItem>
+              <SelectItem value="accountant">🧾 محاسب</SelectItem>
+              <SelectItem value="hr">👥 موارد بشرية</SelectItem>
+              <SelectItem value="employee">👤 موظف</SelectItem>
             </SelectContent>
           </Select>
           <Button type="submit" className="bg-[#C5A869] text-[#1E1035] hover:bg-[#bfa05d] font-bold h-11 rounded-xl px-6">
@@ -129,9 +139,9 @@ export default function UsersManagement() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="مدير النظام">مدير النظام</SelectItem>
-                      <SelectItem value="محاسب">محاسب</SelectItem>
-                      <SelectItem value="موظف">موظف</SelectItem>
+                      <SelectItem value="system_admin">🛡️ مدير النظام</SelectItem>
+                      <SelectItem value="accountant">🧾 محاسب</SelectItem>
+                      <SelectItem value="employee">👤 موظف</SelectItem>
                     </SelectContent>
                   </Select>
                 </TableCell>

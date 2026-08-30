@@ -95,10 +95,13 @@ const AuthenticatedApp = () => {
           <Route path="/evaluations" element={<Evaluations />} />
           <Route path="/print-templates" element={<PrintTemplates />} />
           <Route path="/import-data" element={<ImportData />} />
+          <Route path="/approvals" element={<ApprovalsCenter />} />
+          <Route path="/alerts" element={<AlertsCenter />} />
+          <Route path="/my-requests" element={<MyRequests />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
-    </Routes>
+        </Routes>
   );
 };
 
