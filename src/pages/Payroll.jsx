@@ -2734,9 +2734,11 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
     let completedCount = 0;
 
     advancesList.forEach(adv => {
-      totalGranted += Number(adv.total_amount) || 0;
-      totalRepaid += Number(adv.paid_amount) || 0;
-      const rem = (Number(adv.total_amount) || 0) - (Number(adv.paid_amount) || 0);
+      const amt = Number(adv.total_amount || adv.amount) || 0;
+      const paid = Number(adv.paid_amount) || 0;
+      totalGranted += amt;
+      totalRepaid += paid;
+      const rem = Number(adv.remaining_balance) !== undefined ? Number(adv.remaining_balance) : Math.max(0, amt - paid);
       if (rem <= 0 || adv.status === 'completed') completedCount++;
       else activeCount++;
     });
@@ -2754,7 +2756,9 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
         (adv.employee_number || '').toString().includes(q) ||
         (adv.reason || '').toLowerCase().includes(q);
 
-      const rem = (Number(adv.total_amount) || 0) - (Number(adv.paid_amount) || 0);
+      const amt = Number(adv.total_amount || adv.amount) || 0;
+      const paid = Number(adv.paid_amount) || 0;
+      const rem = Number(adv.remaining_balance) !== undefined ? Number(adv.remaining_balance) : Math.max(0, amt - paid);
       const isComp = rem <= 0 || adv.status === 'completed';
 
       let matchStatus = true;

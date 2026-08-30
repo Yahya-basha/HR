@@ -1,3 +1,5 @@
+import AdvanceVoucherA4Modal from '@/components/AdvanceVoucherA4Modal';
+import { saveAdvance, getAdvances } from '@/lib/payrollEngine';
 import { cloudSave, cloudLoad, initFullCloudSync } from '@/lib/cloudSyncEngine';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
@@ -106,6 +108,8 @@ export default function ApprovalsCenter() {
   const [activeTab, setActiveTab] = useState('advances');
   const [viewModal, setViewModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [voucherModalOpen, setVoucherModalOpen] = useState(false);
+  const [selectedAdvanceForVoucher, setSelectedAdvanceForVoucher] = useState(null);
   const { advances, leaves, corrections, refresh, syncing, updateAdvance, updateLeave, updateCorrection } = useRequests();
 
   const isOwner      = user?.role === 'owner';
@@ -126,8 +130,34 @@ export default function ApprovalsCenter() {
       await updateAdvance(adv.id, { status: 'approved', owner_approved_at: now, owner_approved_by: user.full_name });
       toast({ title: '✅ تم اعتماد السلفة نهائياً من المدير العام' });
     } else if (action === 'disburse' && (isAccountant || isAdmin)) {
-      await updateAdvance(adv.id, { status: 'disbursed', disbursed_at: now, disbursed_by: user.full_name });
-      toast({ title: '💰 تم تسجيل صرف السلفة' });
+      const amt = Number(adv.amount || adv.total_amount) || 0;
+      const instCount = Number(adv.installments || adv.total_installments) || 1;
+      const monthly = Number(adv.monthly_deduction || adv.monthly_installment) || Math.round(amt / instCount);
+      
+      const formattedAdv = {
+        ...adv,
+        total_amount: amt,
+        amount: amt,
+        total_installments: instCount,
+        installments: instCount,
+        monthly_installment: monthly,
+        monthly_deduction: monthly,
+        paid_amount: 0,
+        paid_installments: 0,
+        remaining_balance: amt,
+        status: 'disbursed',
+        disbursed_at: now,
+        disbursed_by: user.full_name,
+        start_month: '2026-09',
+        disbursement_date: now.split('T')[0]
+      };
+
+      await updateAdvance(adv.id, formattedAdv);
+      saveAdvance(formattedAdv);
+      
+      setSelectedAdvanceForVoucher(formattedAdv);
+      setVoucherModalOpen(true);
+      toast({ title: '💰 تم تسجيل صرف السلفة وتفعيل الاستقطاع الشهري الآلي' });
     } else if (action === 'reject') {
       await updateAdvance(adv.id, { status: 'rejected', rejected_at: now, rejected_by: user.full_name, rejection_reason: rejectReason });
       setViewModal(null);
@@ -269,6 +299,12 @@ export default function ApprovalsCenter() {
                       تسجيل الصرف 💰
                     </Button>
                   )}
+                  {adv.status === 'disbursed' && (
+                    <Button size="sm" variant="outline" onClick={() => { setSelectedAdvanceForVoucher(adv); setVoucherModalOpen(true); }} className="text-purple-700 border-purple-300 hover:bg-purple-50 rounded-xl text-xs font-bold gap-1">
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>سند السلفة A4</span>
+                    </Button>
+                  )}
                   {!['approved', 'rejected', 'disbursed'].includes(adv.status) && (
                     <Button size="sm" variant="outline" onClick={() => setViewModal(adv)} className="text-red-600 border-red-200 hover:bg-red-50 rounded-xl text-xs font-bold">
                       رفض ✕
@@ -383,6 +419,17 @@ export default function ApprovalsCenter() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* A4 Advance Disbursement Voucher Modal */}
+      {selectedAdvanceForVoucher && (
+        <AdvanceVoucherA4Modal
+          isOpen={voucherModalOpen}
+          onClose={() => { setVoucherModalOpen(false); setSelectedAdvanceForVoucher(null); }}
+          advance={selectedAdvanceForVoucher}
+          employee={null}
+          companyName="مؤسسة السهم الأخضر للتجارة"
+        />
+      )}
     </div>
   );
 }
