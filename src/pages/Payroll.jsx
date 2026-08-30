@@ -35,6 +35,9 @@ import {
   formatHours,
   normalizeAdvance,
   deleteAdvance,
+  saveMonthlyAdvanceOverride,
+  getMonthlyAdvanceOverride,
+  commitMonthlyAdvanceDeductions,
   getAdvances,
   saveAdvance,
   recordAdvanceInstallmentPayment,
@@ -239,9 +242,11 @@ export default function Payroll() {
   const [advanceForm, setAdvanceForm] = useState({
     employee_number: '',
     total_amount: 3000,
+    paid_amount: 0,
+    monthly_installment: 500,
     total_installments: 6,
     start_month: '2026-08',
-    reason: 'سلفة شخصية طارئة',
+    reason: 'رصيد سلفة قديمة مستحقة',
     approved_by: 'فهد ناصر محمد الجوعي (المدير العام)'
   });
 
@@ -2135,53 +2140,81 @@ export default function Payroll() {
                 <SelectContent>
                   {employees.map(e => (
                     <SelectItem key={e.id} value={String(e.employee_number || e.id)}>
-                      {e.full_name} (#{e.employee_number}) - {e.branch_name || 'الفرع الرئيسي'}
+                      {e.full_name} (#{e.employee_number}) - {e.branch_name || 'فرع كيا'}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Amount and Installments */}
+            {/* Total Amount and Already Paid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="font-bold">إجمالي مبلغ السلفة (ر.س) *:</Label>
+                <Label className="font-bold">إجمالي مبلغ السلفة الأصلية (ر.س) *:</Label>
                 <Input
                   type="number"
                   value={advanceForm.total_amount}
-                  onChange={(e) => setAdvanceForm(prev => ({ ...prev, total_amount: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const tot = Number(e.target.value) || 0;
+                    const monthly = Number(advanceForm.monthly_installment) || 500;
+                    const insts = monthly > 0 ? Math.ceil(tot / monthly) : 6;
+                    setAdvanceForm(prev => ({ ...prev, total_amount: tot, total_installments: insts }));
+                  }}
+                  placeholder="مثال: 6000"
                   className="rounded-xl font-mono font-bold"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="font-bold">عدد الأقساط الشهرية *:</Label>
-                <Select
-                  value={String(advanceForm.total_installments)}
-                  onValueChange={(v) => setAdvanceForm(prev => ({ ...prev, total_installments: Number(v) }))}
-                >
-                  <SelectTrigger className="rounded-xl font-mono font-bold">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 8, 10, 12, 18, 24].map(n => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n} {n === 1 ? 'شهر (دفعة واحدة)' : n <= 10 ? 'أشهر' : 'شهراً'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="font-bold">المسدد سابقاً (إن وُجد):</Label>
+                <Input
+                  type="number"
+                  value={advanceForm.paid_amount}
+                  onChange={(e) => setAdvanceForm(prev => ({ ...prev, paid_amount: Number(e.target.value) || 0 }))}
+                  placeholder="0"
+                  className="rounded-xl font-mono"
+                />
               </div>
             </div>
 
-            {/* Live Monthly Installment Calculation */}
+            {/* Monthly Installment and Installments Count */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="font-bold">القسط الشهري المستقطع (ر.س/شهر) *:</Label>
+                <Input
+                  type="number"
+                  value={advanceForm.monthly_installment}
+                  onChange={(e) => {
+                    const m = Number(e.target.value) || 0;
+                    const rem = (Number(advanceForm.total_amount) || 0) - (Number(advanceForm.paid_amount) || 0);
+                    const insts = m > 0 ? Math.ceil(rem / m) : 1;
+                    setAdvanceForm(prev => ({ ...prev, monthly_installment: m, total_installments: insts }));
+                  }}
+                  placeholder="مثال: 500"
+                  className="rounded-xl font-mono font-bold text-rose-600"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="font-bold">عدد الأشهر المتوقعة:</Label>
+                <Input
+                  type="number"
+                  value={advanceForm.total_installments}
+                  onChange={(e) => setAdvanceForm(prev => ({ ...prev, total_installments: Number(e.target.value) || 1 }))}
+                  className="rounded-xl font-mono font-bold"
+                />
+              </div>
+            </div>
+
+            {/* Live Remaining Balance Calculation */}
             <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 flex items-center justify-between">
               <div>
-                <div className="text-[10px] text-purple-700 dark:text-purple-300 font-bold">القسط الشهري المحسوب تلقائياً:</div>
+                <div className="text-[10px] text-purple-700 dark:text-purple-300 font-bold">الرصيد المتبقي الفعلي قيد الاستقطاع:</div>
                 <div className="font-mono font-black text-base text-purple-900 dark:text-purple-100 mt-0.5">
-                  {fmtNum((Number(advanceForm.total_amount) || 0) / (Number(advanceForm.total_installments) || 1))} ر.س / شهر
+                  {fmtNum(Math.max(0, (Number(advanceForm.total_amount) || 0) - (Number(advanceForm.paid_amount) || 0)))} ر.س
                 </div>
               </div>
-              <Badge className="bg-purple-600 text-white font-bold text-[10px]">استقطاع آلي</Badge>
+              <Badge className="bg-purple-600 text-white font-bold text-[10px]">
+                {advanceForm.monthly_installment} ر.س / شهر
+              </Badge>
             </div>
 
             {/* Start Month */}
@@ -2202,7 +2235,7 @@ export default function Payroll() {
                 rows={2}
                 value={advanceForm.reason}
                 onChange={(e) => setAdvanceForm(prev => ({ ...prev, reason: e.target.value }))}
-                placeholder="سلفة شخصية طارئة، ظروف عائلية..."
+                placeholder="مثال: رصيد سلفة قديمة مستحقة، سلفة سيارة، زواج..."
                 className="rounded-xl text-xs"
               />
             </div>
@@ -2221,15 +2254,23 @@ export default function Payroll() {
                 const emp = employees.find(e => String(e.employee_number || e.id) === String(advanceForm.employee_number));
                 const monthly = Math.round((Number(advanceForm.total_amount) / Number(advanceForm.total_installments)) * 100) / 100;
                 
+                const totAmt = Number(advanceForm.total_amount);
+                const paidAmt = Number(advanceForm.paid_amount) || 0;
+                const monthlyAmt = Number(advanceForm.monthly_installment) || Math.round((totAmt - paidAmt) / (Number(advanceForm.total_installments) || 1));
+                const instCount = Number(advanceForm.total_installments) || (monthlyAmt > 0 ? Math.ceil((totAmt - paidAmt) / monthlyAmt) : 1);
+                
                 const createdAdvance = saveAdvance({
                   employee_id: emp?.id || '',
                   employee_number: emp?.employee_number || advanceForm.employee_number,
                   employee_name: emp?.full_name || '',
-                  total_amount: Number(advanceForm.total_amount),
-                  total_installments: Number(advanceForm.total_installments),
-                  monthly_installment: monthly,
-                  start_month: advanceForm.start_month,
-                  reason: advanceForm.reason || 'سلفة شخصية',
+                  total_amount: totAmt,
+                  paid_amount: paidAmt,
+                  remaining_balance: Math.max(0, totAmt - paidAmt),
+                  total_installments: instCount,
+                  monthly_installment: monthlyAmt,
+                  start_month: advanceForm.start_month || '2026-08',
+                  reason: advanceForm.reason || 'رصيد سلفة قديمة مستحقة',
+                  status: 'active',
                   approved_by: advanceForm.approved_by || 'فهد ناصر محمد الجوعي (المدير العام)'
                 });
 

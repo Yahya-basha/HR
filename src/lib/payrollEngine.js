@@ -1,3 +1,96 @@
+
+/**
+ * Save monthly custom advance deduction override
+ */
+export function saveMonthlyAdvanceOverride(employeeNumber, monthPrefix, overrideData) {
+  try {
+    const cleanNum = String(employeeNumber || '').trim();
+    const key = 'hr_flow_adv_override_' + cleanNum + '_' + (monthPrefix || 'all');
+    const payload = {
+      employeeNumber: cleanNum,
+      monthPrefix,
+      amount: Number(overrideData.amount) || 0,
+      status: overrideData.status || 'modified', // 'confirmed', 'modified', 'skipped'
+      note: overrideData.note || '',
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem(key, JSON.stringify(payload));
+    cloudSave(key, payload);
+    return payload;
+  } catch (e) {
+    console.error('Failed to save monthly advance override:', e);
+    return null;
+  }
+}
+
+/**
+ * Get monthly custom advance deduction override
+ */
+export function getMonthlyAdvanceOverride(employeeNumber, monthPrefix) {
+  try {
+    const cleanNum = String(employeeNumber || '').trim();
+    const key = 'hr_flow_adv_override_' + cleanNum + '_' + (monthPrefix || 'all');
+    const local = localStorage.getItem(key);
+    return local ? JSON.parse(local) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Process and commit all advance installment deductions when locking a monthly payroll
+ */
+export function commitMonthlyAdvanceDeductions(monthPrefix, payrollsList) {
+  try {
+    if (!Array.isArray(payrollsList) || !monthPrefix) return;
+    const advances = getAdvances();
+
+    payrollsList.forEach(p => {
+      const deductedAmount = Number(p.advanceInstallment) || 0;
+      if (deductedAmount > 0 && p.emp) {
+        const empNum = String(p.emp.employee_number || p.emp.id || '').trim();
+        const advIdx = advances.findIndex(a => 
+          String(a.employee_number || '').trim() === empNum &&
+          (a.status === 'active' || a.status === 'disbursed' || a.status === 'approved') &&
+          (Number(a.remaining_balance) || 0) > 0
+        );
+
+        if (advIdx !== -1) {
+          const adv = advances[advIdx];
+          const newPaid = (Number(adv.paid_amount) || 0) + deductedAmount;
+          const newRem = Math.max(0, (Number(adv.total_amount) || 0) - newPaid);
+          const newPaidInst = (Number(adv.paid_installments) || 0) + 1;
+
+          advances[advIdx] = {
+            ...adv,
+            paid_amount: newPaid,
+            remaining_balance: newRem,
+            paid_installments: newPaidInst,
+            status: newRem <= 0 ? 'completed' : 'active',
+            history: [
+              ...(adv.history || []),
+              {
+                month: monthPrefix,
+                deducted_amount: deductedAmount,
+                remaining_after: newRem,
+                date: new Date().toISOString()
+              }
+            ]
+          };
+        }
+      }
+    });
+
+    localStorage.setItem('hr_flow_employee_advances', JSON.stringify(advances));
+    localStorage.setItem('hr_advances_list', JSON.stringify(advances));
+    cloudSave('hr_flow_employee_advances', advances);
+    cloudSave('hr_advances_list', advances);
+    console.log('✓ Committed monthly advance deductions for payroll month ' + monthPrefix);
+  } catch (e) {
+    console.error('Failed to commit monthly advance deductions:', e);
+  }
+}
+
 export async function deleteAdvance(advanceId) {
   try {
     const cleanId = String(advanceId);
@@ -742,15 +835,36 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const customPenaltiesTotal = approvedPenalties.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
 
   // 3. EMPLOYEE ADVANCE / LOAN INSTALLMENT
-  const activeAdvance = getEmployeeActiveAdvance(emp.employee_number || emp.id);
+  const activeAdvance = getActiveAdvanceForEmployee(emp.employee_number || emp.id, monthPrefix);
   let advanceInstallment = 0;
   let advanceRemaining = 0;
   let advanceNote = '';
+  let advanceOverrideStatus = 'auto'; // 'auto' | 'confirmed' | 'modified' | 'skipped'
 
   if (activeAdvance) {
-    advanceInstallment = Math.min(activeAdvance.monthly_installment, activeAdvance.remaining_balance);
-    advanceRemaining = Math.max(0, activeAdvance.remaining_balance - advanceInstallment);
-    advanceNote = `قسط ${(activeAdvance.paid_installments || 0) + 1}/${activeAdvance.total_installments} — متبقي بعد الخصم: ${advanceRemaining.toLocaleString('en-US')} ر.س`;
+    const scheduledInstallment = Math.min(
+      Number(activeAdvance.monthly_installment || activeAdvance.monthly_deduction) || 0,
+      Number(activeAdvance.remaining_balance) || 0
+    );
+
+    // Check if manager/accountant set a custom override for this month
+    const override = getMonthlyAdvanceOverride(emp.employee_number || emp.id, monthPrefix);
+    if (override) {
+      advanceOverrideStatus = override.status;
+      if (override.status === 'skipped') {
+        advanceInstallment = 0;
+        advanceRemaining = Number(activeAdvance.remaining_balance) || 0;
+        advanceNote = 'تم تأجيل قسط هذا الشهر بقرار الإدارة';
+      } else if (override.status === 'modified' || override.status === 'confirmed') {
+        advanceInstallment = Math.min(Number(override.amount) || 0, Number(activeAdvance.remaining_balance) || 0);
+        advanceRemaining = Math.max(0, (Number(activeAdvance.remaining_balance) || 0) - advanceInstallment);
+        advanceNote = override.note || `قسط مخصص (${advanceInstallment} ر.س) — متبقي: ${advanceRemaining.toLocaleString('en-US')} ر.س`;
+      }
+    } else {
+      advanceInstallment = scheduledInstallment;
+      advanceRemaining = Math.max(0, (Number(activeAdvance.remaining_balance) || 0) - advanceInstallment);
+      advanceNote = `قسط ${(activeAdvance.paid_installments || 0) + 1}/${activeAdvance.total_installments} — متبقي بعد الخصم: ${advanceRemaining.toLocaleString('en-US')} ر.س`;
+    }
   }
 
   // TOTALS CALCULATION
@@ -809,6 +923,8 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     advanceInstallment,
     advanceRemaining,
     advanceNote,
+    advanceOverrideStatus,
+    activeAdvance,
     totalAdditions,
     totalDeductions,
     netSalary,
