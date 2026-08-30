@@ -1,3 +1,4 @@
+import { cloudSave } from '@/lib/cloudSyncEngine';
 // ============================================================================
 // PAYROLL ENGINE - FINANCIAL CALCULATIONS & BUSINESS LOGIC
 // Includes: Shortfall hours, Friday overtime, Daily overtime, GOSI,
@@ -299,6 +300,7 @@ export function saveAdvance(advanceData) {
   }
 
   localStorage.setItem('hr_flow_employee_advances', JSON.stringify(advances));
+  cloudSave('hr_flow_employee_advances', advances);
   appendAuditLog({
     action: idx !== -1 ? 'advance_updated' : 'advance_created',
     employeeNumber: newAdvance.employee_number,
@@ -384,6 +386,7 @@ export function saveAdjustment(adjData) {
   }
 
   localStorage.setItem('hr_flow_payroll_adjustments', JSON.stringify(adjustments));
+  cloudSave('hr_flow_payroll_adjustments', adjustments);
   appendAuditLog({
     action: newAdj.type === 'bonus' ? 'bonus_approved' : 'penalty_approved',
     employeeNumber: newAdj.employee_number,
@@ -749,6 +752,7 @@ export function saveShortfallApproval(employeeNumber, monthPrefix, decision) {
   };
   try {
     localStorage.setItem('hr_flow_approval_' + employeeNumber + '_' + monthPrefix, JSON.stringify(record));
+    cloudSave('hr_flow_approval_' + employeeNumber + '_' + monthPrefix, record);
   } catch {}
   appendAuditLog({ action: 'shortfall_' + decision.status, employeeNumber, monthPrefix, ...record });
   return record;
@@ -865,6 +869,7 @@ export function saveLockedMonthlyPayroll(monthPrefix, snapshotData, approvedBy =
 
   // 1. Save specific snapshot
   localStorage.setItem('hr_flow_locked_payroll_' + monthPrefix, JSON.stringify(record));
+  cloudSave('hr_flow_locked_payroll_' + monthPrefix, record);
 
   // 2. Update master locked list
   let list = getLockedMonthlyPayrolls();
@@ -879,6 +884,7 @@ export function saveLockedMonthlyPayroll(monthPrefix, snapshotData, approvedBy =
     locked_by: record.locked_by
   });
   localStorage.setItem('hr_flow_locked_payrolls_list', JSON.stringify(list));
+  cloudSave('hr_flow_locked_payrolls_list', list);
 
   // 3. Audit trail
   appendAuditLog({

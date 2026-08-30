@@ -1,3 +1,4 @@
+import { initFullCloudSync } from '@/lib/cloudSyncEngine';
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { getUserPermissions, determineRoleFromEmployee } from '@/lib/rbac';
@@ -54,6 +55,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    initFullCloudSync();
     checkUserAuth();
   }, [checkUserAuth]);
 

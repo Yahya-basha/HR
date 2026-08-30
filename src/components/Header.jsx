@@ -1,3 +1,4 @@
+import { initFullCloudSync, exportSystemBackupJSON } from '@/lib/cloudSyncEngine';
 import { useTheme } from '@/lib/theme';
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -238,6 +239,28 @@ export default function Header({ onOpenMobileMenu }) {
             >
               <User className="w-4 h-4 text-sky-600" />
               <span>ملفي الشخصي 360°</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem 
+              onClick={async () => {
+                await initFullCloudSync();
+                toast({ title: '☁️ تمت المزامنة السحابية بنجاح', description: 'تم استرجاع ومزامنة كافة الاعتمادات والسلف من السحابة.' });
+              }}
+              className="flex items-center gap-2 text-xs font-bold text-sky-600 dark:text-sky-400 cursor-pointer p-2.5 rounded-xl"
+            >
+              <Cloud className="w-4 h-4" />
+              <span>مزامنة سحابية فورية</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem 
+              onClick={() => {
+                exportSystemBackupJSON();
+                toast({ title: '📥 تم تصدير النسخة الاحتياطية', description: 'تم حفظ ملف النسخة الاحتياطية على جهازك.' });
+              }}
+              className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer p-2.5 rounded-xl"
+            >
+              <Download className="w-4 h-4" />
+              <span>تصدير نسخة احتياطية (JSON)</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem 

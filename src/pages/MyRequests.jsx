@@ -1,3 +1,4 @@
+import { cloudSave } from '@/lib/cloudSyncEngine';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -88,7 +89,7 @@ export default function MyRequests() {
       repayment_type: Number(advForm.installments)>1 ? 'installments' : 'lump_sum',
     };
     const existing = JSON.parse(localStorage.getItem('hr_advances_list')||'[]');
-    localStorage.setItem('hr_advances_list', JSON.stringify([req, ...existing]));
+    const nextAdv = [req, ...existing]; localStorage.setItem('hr_advances_list', JSON.stringify(nextAdv)); cloudSave('hr_advances_list', nextAdv);
     setAdvModal(false); setAdvForm(defaultAdvForm);
     setMyRequests(loadMyRequests());
     toast({ title: '✅ تم إرسال طلب السلفة بنجاح' });
@@ -109,7 +110,7 @@ export default function MyRequests() {
       created_at: new Date().toISOString(),
     };
     const existing = JSON.parse(localStorage.getItem('hr_leave_requests')||'[]');
-    localStorage.setItem('hr_leave_requests', JSON.stringify([req, ...existing]));
+    const nextLv = [req, ...existing]; localStorage.setItem('hr_leave_requests', JSON.stringify(nextLv)); cloudSave('hr_leave_requests', nextLv);
     setLeaveModal(false); setLeaveForm(defaultLeaveForm);
     setMyRequests(loadMyRequests());
     toast({ title: '✅ تم إرسال طلب الإجازة بنجاح' });
@@ -130,7 +131,7 @@ export default function MyRequests() {
       created_at: new Date().toISOString(),
     };
     const existing = JSON.parse(localStorage.getItem('hr_correction_requests')||'[]');
-    localStorage.setItem('hr_correction_requests', JSON.stringify([req, ...existing]));
+    const nextCr = [req, ...existing]; localStorage.setItem('hr_correction_requests', JSON.stringify(nextCr)); cloudSave('hr_correction_requests', nextCr);
     setCorrModal(false); setCorrForm(defaultCorrForm);
     setMyRequests(loadMyRequests());
     toast({ title: '✅ تم إرسال طلب تعديل البصمة' });

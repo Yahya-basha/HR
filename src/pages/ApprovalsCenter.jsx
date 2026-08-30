@@ -1,3 +1,4 @@
+import { cloudSave } from '@/lib/cloudSyncEngine';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { hasPermission } from '@/lib/rbac';
@@ -25,7 +26,7 @@ const STATUS_CONFIG = {
 
 function useRequests() {
   const load = (key) => { try { return JSON.parse(localStorage.getItem(key)||'[]'); } catch(e) { return []; } };
-  const save = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+  const save = (key, data) => { localStorage.setItem(key, JSON.stringify(data)); cloudSave(key, data); };
 
   const [advances,   setAdvances]   = useState(load('hr_advances_list'));
   const [leaves,     setLeaves]     = useState(load('hr_leave_requests'));
