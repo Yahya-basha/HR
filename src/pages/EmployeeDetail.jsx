@@ -308,10 +308,24 @@ export default function EmployeeDetail() {
         bank_name: insuranceForm.bank_name || 'مصرف الراجحي',
         iban: insuranceForm.iban || ''
       };
+      
       await base44.entities.Employee.update(employee.id, updated);
       setEmployee(updated);
+
+      // Also ensure local storage cache is updated
+      try {
+        const localList = JSON.parse(localStorage.getItem('hr_flow_employees') || localStorage.getItem('green_arrow_hr_employees') || '[]');
+        const idx = localList.findIndex(e => String(e.id) === String(employee.id) || String(e.employee_number) === String(employee.employee_number));
+        if (idx !== -1) {
+          localList[idx] = { ...localList[idx], ...updated };
+          localStorage.setItem('hr_flow_employees', JSON.stringify(localList));
+          localStorage.setItem('green_arrow_hr_employees', JSON.stringify(localList));
+        }
+      } catch (err) {}
+
       setEditInsuranceModal(false);
       toast({ title: '✓ تم تحديث بيانات التأمين وطريقة الصرف المالي بنجاح في السحابة' });
+      await loadData();
     } catch (e) {
       toast({ title: 'خطأ أثناء الحفظ', description: e.message, variant: 'destructive' });
     }
