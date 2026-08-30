@@ -393,6 +393,8 @@ export default function Payroll() {
       acc.totalAdditions += (p.totalAdditions || 0);
       acc.totalDeductions += (p.totalDeductions || 0);
       acc.net += (p.netSalary || 0);
+      acc.bankTotal = (acc.bankTotal || 0) + (p.bankTransferAmount !== undefined ? p.bankTransferAmount : p.netSalary || 0);
+      acc.cashTotal = (acc.cashTotal || 0) + (p.cashPayoutAmount || 0);
       return acc;
     }, {
       basic: 0, housing: 0, transport: 0, friday: 0, dailyOT: 0,

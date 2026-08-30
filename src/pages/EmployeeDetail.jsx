@@ -774,7 +774,43 @@ export default function EmployeeDetail() {
                   </div>
                   <div>
                     <span className="text-muted-foreground text-[10px] font-bold">الراتب الخاضع للاشتراك:</span>
-                    <div className="font-mono font-bold text-foreground">{Number(employee.salary || 0).toLocaleString('en-US')} ر.س</div>
+                    <div className="font-mono font-bold text-foreground"><MaskedSalary value={employee.salary} /></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Banking & Payout Split Method Box */}
+              <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-heading font-bold text-xs text-foreground flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-indigo-600" />
+                    <span>طريقة استلام الراتب وتوزيع الصرف (بنك / كاش)</span>
+                  </span>
+                  <Badge className="bg-indigo-600 text-white font-bold text-[10px]">
+                    {employee.payout_method === 'split_bank_cash' ? 'تحويل جزئي + كاش 🔀' : employee.payout_method === 'cash_full' ? 'تسليم نقدي كامل 💵' : 'تحويل بنكي كامل 🏦'}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+                  <div>
+                    <span className="text-muted-foreground text-[10px] font-bold">طريقة الصرف:</span>
+                    <div className="font-bold text-indigo-950 dark:text-indigo-200">
+                      {employee.payout_method === 'split_bank_cash' ? 'بنك + كاش (مدمج)' : employee.payout_method === 'cash_full' ? 'كاش من الخزينة' : 'تحويل بنكي 100%'}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] font-bold">مبلغ التحويل البنكي المعتمد:</span>
+                    <div className="font-mono font-black text-indigo-700 dark:text-indigo-400">
+                      <MaskedSalary value={employee.payout_method === 'split_bank_cash' ? (employee.bank_transfer_amount || employee.salary) : (employee.payout_method === 'cash_full' ? 0 : employee.salary)} />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] font-bold">اسم البنك المعتمد:</span>
+                    <div className="font-bold text-foreground">{employee.bank_name || 'مصرف الراجحي'}</div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-[10px] font-bold">رقم الآيبان (IBAN):</span>
+                    <div className="font-mono font-bold text-foreground text-[10px] truncate">{employee.iban || 'SA4480000000000000000000'}</div>
                   </div>
                 </div>
               </div>

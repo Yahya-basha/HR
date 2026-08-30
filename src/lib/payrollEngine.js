@@ -883,6 +883,23 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const totalDeductions = approvedShortfallDeduction + proposedAbsenceDeduction + proposedUnpaidLeaveDeduction + customPenaltiesTotal + advanceInstallment;
   const netSalary = Math.max(0, basicSalary + totalAdditions - totalDeductions);
 
+  // 4. PAYOUT METHOD & SPLIT DISBURSEMENT (Bank Transfer vs Cash Handout)
+  const payoutMethod = emp.payout_method || (emp.iban ? 'bank_full' : 'cash_full');
+  let bankTransferAmount = 0;
+  let cashPayoutAmount = 0;
+
+  if (payoutMethod === 'bank_full') {
+    bankTransferAmount = netSalary;
+    cashPayoutAmount = 0;
+  } else if (payoutMethod === 'cash_full') {
+    bankTransferAmount = 0;
+    cashPayoutAmount = netSalary;
+  } else if (payoutMethod === 'split_bank_cash') {
+    const fixedBank = Number(emp.bank_transfer_amount || emp.insured_salary || emp.basic_salary) || 0;
+    bankTransferAmount = Math.min(fixedBank, netSalary);
+    cashPayoutAmount = Math.max(0, netSalary - bankTransferAmount);
+  }
+
   return {
     emp,
     shiftName,
