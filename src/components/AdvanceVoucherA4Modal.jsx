@@ -1,71 +1,66 @@
-import { useState } from 'react';
-import { 
-  Printer, 
-  X, 
-  Building2, 
-  Calendar, 
-  User, 
-  DollarSign, 
-  FileText,
-  AlertTriangle,
-  Receipt
-} from 'lucide-react';
+import React, { useRef } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import {
+  Printer,
+  FileCheck,
+  Building2,
+  Calendar,
+  CreditCard,
+  User,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  Receipt,
+  Download
+} from 'lucide-react';
+import { normalizeAdvance } from '@/lib/payrollEngine';
 
-function tafqeetRiyals(amount) {
-  const num = Math.floor(Number(amount) || 0);
-  if (num <= 0) return 'صفر ريال سعودي';
-  
-  if (num === 1000) return 'فقط ألف ريال سعودي لا غير';
-  if (num === 2000) return 'فقط ألفان ريال سعودي لا غير';
-  if (num === 500) return 'فقط خمسمائة ريال سعودي لا غير';
-  if (num === 1500) return 'فقط ألف وخمسمائة ريال سعودي لا غير';
-  if (num === 2500) return 'فقط ألفان وخمسمائة ريال سعودي لا غير';
-  if (num === 3000) return 'فقط ثلاثة آلاف ريال سعودي لا غير';
-  if (num === 4000) return 'فقط أربعة آلاف ريال سعودي لا غير';
-  if (num === 5000) return 'فقط خمسة آلاف ريال سعودي لا غير';
+export default function AdvanceVoucherA4Modal({
+  isOpen,
+  onClose,
+  advance: rawAdvance,
+  employee,
+  companyName = 'مؤسسة السهم الأخضر للتجارة'
+}) {
+  const printRef = useRef(null);
 
-  return `فقط ${num.toLocaleString('ar-SA')} ريال سعودي لا غير`;
-}
+  if (!rawAdvance) return null;
+  const advance = normalizeAdvance(rawAdvance);
 
-export default function AdvanceVoucherA4Modal({ open, onOpenChange, advance, employee }) {
-  if (!advance) return null;
-
-  const voucherNumber = advance.voucher_number || `VCH-ADV-2026-${String(advance.id || '').replace(/[^0-9]/g, '').slice(-3) || '001'}`;
-  const empName = employee?.full_name || advance.employee_name || 'الموظف';
-  const empNum = employee?.employee_number || advance.employee_number || '1000';
-  const empBranch = employee?.branch_name || employee?.branch || advance.branch || 'مكتب الإدارة';
-  const empJob = employee?.job_title || advance.job_title || 'موظف';
-  const empNatId = employee?.national_id || advance.national_id || '—';
-  const empSalary = employee?.salary ? `${Number(employee.salary).toLocaleString('en-US')} ر.س` : '—';
-  
-  const totalAmount = Number(advance.total_amount || advance.amount || 0);
-  const installmentsCount = Number(advance.total_installments || advance.installments || 1);
-  const monthlyInstallment = Number(advance.monthly_installment || Math.round(totalAmount / (installmentsCount || 1)));
-  const startMonth = advance.start_month || '2026-09';
-  const previousBalance = Number(advance.previous_balance || 0);
+  const totalAmount = advance.total_amount;
+  const installmentsCount = advance.total_installments;
+  const monthlyInstallment = advance.monthly_installment;
+  const startMonth = advance.start_month;
+  const voucherNumber = 'GA-ADV-' + (advance.id ? String(advance.id).replace('adv_', '').slice(-6) : '9941');
 
   const handlePrint = () => {
     window.print();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden rounded-3xl bg-slate-100 dark:bg-slate-950 border-border print:border-none print:shadow-none print:max-w-none print:m-0 print:p-0" dir="rtl">
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 rounded-3xl border shadow-2xl bg-slate-100 dark:bg-slate-900" dir="rtl">
         
-        {/* Top Control Bar (Hidden in Print) */}
-        <div className="flex items-center justify-between p-4 bg-slate-900 text-white print:hidden">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold">
-              <Receipt className="w-4 h-4" />
+        {/* Top Control Action Bar (Hidden in Print) */}
+        <div className="p-4 bg-white dark:bg-slate-900 border-b flex items-center justify-between sticky top-0 z-20 shadow-sm print:hidden">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold">
+              <Receipt className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-heading font-black text-sm text-white">
-                معاينة وطباعة سند صرف سلفة مالية معتمد (A4)
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                رقم السند: <span className="font-mono text-emerald-400 font-bold">{voucherNumber}</span>
+              <DialogTitle className="text-base font-black text-foreground">
+                سند وإقرار استلام سلفة مالية (نموذج A4 رسمي)
+              </DialogTitle>
+              <p className="text-[11px] text-muted-foreground font-mono">
+                رقم السند: {voucherNumber} • الموظف: {advance.employee_name} (#{advance.employee_number})
               </p>
             </div>
           </div>
@@ -73,166 +68,147 @@ export default function AdvanceVoucherA4Modal({ open, onOpenChange, advance, emp
           <div className="flex items-center gap-2">
             <Button
               onClick={handlePrint}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold gap-1.5 h-9 px-4 shadow-lg shadow-emerald-600/30"
+              className="bg-purple-700 hover:bg-purple-600 text-white rounded-xl text-xs font-black gap-2 h-9 px-4 shadow-md"
             >
               <Printer className="w-4 h-4" />
-              <span>طباعة السند الرسمي A4</span>
+              <span>طباعة سند A4 🖨️</span>
             </Button>
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="bg-slate-800 border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold h-9"
+              onClick={onClose}
+              className="rounded-xl text-xs font-bold h-9 px-3"
             >
-              <X className="w-4 h-4" />
+              إغلاق
             </Button>
           </div>
         </div>
 
-        {/* ─── A4 PAPER CONTAINER ─────────────────────────────────────────── */}
-        <div className="p-4 sm:p-8 max-h-[82vh] overflow-y-auto print:max-h-none print:overflow-visible print:p-0">
+        {/* ─── A4 PAPER DOCUMENT CONTAINER ─────────────────────────────────── */}
+        <div className="p-4 sm:p-8 flex justify-center">
           
           <div 
-            id="a4-advance-voucher-sheet"
-            className="w-full max-w-[210mm] mx-auto bg-white text-slate-900 p-8 sm:p-12 shadow-2xl rounded-2xl border border-slate-300 font-sans text-xs print:shadow-none print:rounded-none print:border-none print:p-8 print:max-w-none relative"
-            style={{ minHeight: '270mm' }}
+            ref={printRef}
+            id="printable-advance-voucher"
+            className="w-full max-w-[210mm] min-h-[297mm] bg-white text-slate-900 p-8 sm:p-10 rounded-2xl shadow-xl border border-slate-200 text-right print:p-0 print:m-0 print:border-0 print:shadow-none print:w-full print:max-w-none text-xs font-sans"
+            style={{ fontFamily: "'Cairo', 'Segoe UI', Tahoma, sans-serif" }}
           >
-            {/* Watermark in background */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
-              <span className="text-[120px] font-black tracking-widest uppercase">GREEN ARROW</span>
+            
+            {/* 1. OFFICIAL HEADER */}
+            <div className="border-b-2 border-slate-900 pb-5 mb-6">
+              <div className="flex items-center justify-between">
+                
+                {/* Right: Company Info */}
+                <div className="space-y-1">
+                  <h2 className="text-base font-black text-slate-900">مؤسسة السهم الأخضر للتجارة</h2>
+                  <p className="text-[11px] text-slate-600 font-bold">Green Arrow Trading Est.</p>
+                  <p className="text-[10px] text-slate-500 font-mono">س.ت: 1131012345 • بريدة، المملكة العربية السعودية</p>
+                  <Badge className="bg-purple-100 text-purple-900 border border-purple-300 text-[10px] font-bold mt-1">
+                    إدارة الشؤون المالية والموارد البشرية
+                  </Badge>
+                </div>
+
+                {/* Center: Title */}
+                <div className="text-center px-4 py-2 border-2 border-purple-800 bg-purple-50 rounded-2xl">
+                  <h1 className="text-base font-black text-purple-950">سند أمر وإقرار استلام سلفة</h1>
+                  <p className="text-[10px] text-purple-800 font-mono mt-0.5 font-bold">ADVANCE DISBURSEMENT VOUCHER</p>
+                  <span className="text-[9px] text-slate-500 font-mono">{voucherNumber}</span>
+                </div>
+
+                {/* Left: Logo & Date */}
+                <div className="text-left space-y-1">
+                  <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center p-1 font-bold ms-auto">
+                    <img src="/green-arrow-logo.png" alt="logo" className="w-full h-full object-contain" />
+                  </div>
+                  <div className="text-[10px] text-slate-600 font-mono pt-1">
+                    التاريخ: <strong className="text-slate-900">{advance.disbursement_date || new Date().toISOString().slice(0, 10)}</strong>
+                  </div>
+                </div>
+
+              </div>
             </div>
 
-            {/* 1. OFFICIAL CORPORATE HEADER */}
-            <div className="flex items-center justify-between border-b-2 border-slate-900 pb-5 mb-6">
-              <div className="text-right space-y-1">
-                <h2 className="font-heading font-black text-base text-slate-950">
-                  درة السيارة لقطع غيار السيارات
-                </h2>
-                <p className="text-[11px] text-slate-600 font-bold">
-                  DORAT AL-SAYARAH AUTO SPARE PARTS
-                </p>
-                <p className="text-[10px] text-slate-500">
-                  منظومة الموارد البشرية والشؤون المالية والإدارية (Green Arrow HR)
-                </p>
-              </div>
+            {/* 2. EMPLOYEE INFO BOX */}
+            <div className="bg-slate-50 border border-slate-300 rounded-2xl p-4 mb-5">
+              <h3 className="font-black text-xs text-purple-950 mb-3 flex items-center gap-1.5 border-b border-slate-200 pb-1.5">
+                <User className="w-4 h-4 text-purple-700" />
+                <span>أولاً: بيانات الموظف المستفيد (المقترض)</span>
+              </h3>
 
-              <div className="text-center px-4 py-2 bg-slate-900 text-white rounded-2xl shadow-sm">
-                <div className="font-heading font-black text-sm tracking-wide">
-                  سند صرف سلفة موظف
-                </div>
-                <div className="text-[10px] font-mono text-emerald-300 font-bold mt-0.5" dir="ltr">
-                  ADVANCE DISBURSEMENT VOUCHER
-                </div>
-              </div>
-
-              <div className="text-left space-y-1 font-mono text-[11px]" dir="ltr">
-                <div><strong className="text-slate-900 font-sans">No:</strong> <span className="font-bold text-rose-600">{voucherNumber}</span></div>
-                <div><strong className="text-slate-900 font-sans">Date:</strong> {advance.disbursement_date || new Date().toISOString().split('T')[0]}</div>
-                <div><strong className="text-slate-900 font-sans">Hijri:</strong> 1448/03/17 هـ</div>
-              </div>
-            </div>
-
-            {/* 2. EMPLOYEE INFORMATION BOX */}
-            <div className="mb-5 bg-slate-50 rounded-2xl p-4 border border-slate-300">
-              <h4 className="font-heading font-bold text-xs text-slate-900 mb-3 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-emerald-600" />
-                <span>أولاً: بيانات الموظف المستفيد من السلفة</span>
-              </h4>
-
-              <div className="grid grid-cols-3 gap-3 text-[11px]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
                 <div>
-                  <span className="text-slate-500 font-bold">اسم الموظف: </span>
-                  <strong className="text-slate-950 font-heading">{empName}</strong>
+                  <span className="text-slate-500 block text-[10px] font-bold">اسم الموظف:</span>
+                  <strong className="text-slate-900 text-xs">{advance.employee_name}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-bold">الرقم الوظيفي: </span>
-                  <strong className="font-mono text-slate-950">#{empNum}</strong>
+                  <span className="text-slate-500 block text-[10px] font-bold">الرقم الوظيفي:</span>
+                  <strong className="text-purple-800 font-mono font-bold">#{advance.employee_number}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-bold">رقم الهوية / الإقامة: </span>
-                  <strong className="font-mono text-slate-950">{empNatId}</strong>
+                  <span className="text-slate-500 block text-[10px] font-bold">الفرع / الموقع:</span>
+                  <strong className="text-slate-900">{employee?.branch_name || employee?.branch || 'فرع كيا (السليم)'}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-bold">المسمى الوظيفي: </span>
-                  <strong className="text-slate-900">{empJob}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-bold">الفرع المعتمد: </span>
-                  <strong className="text-slate-900">{empBranch}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-bold">الراتب الأساسي: </span>
-                  <strong className="font-mono text-slate-900">{empSalary}</strong>
+                  <span className="text-slate-500 block text-[10px] font-bold">المسمى الوظيفي:</span>
+                  <strong className="text-slate-900">{employee?.job_title || 'فني / موظف'}</strong>
                 </div>
               </div>
             </div>
 
-            {/* 3. ADVANCE & DISBURSEMENT DETAILS */}
-            <div className="mb-5 bg-slate-50 rounded-2xl p-4 border border-slate-300">
-              <h4 className="font-heading font-bold text-xs text-slate-900 mb-3 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                <span>ثانياً: تفاصيل السلفة المعتمدة وطريقة السداد</span>
-              </h4>
+            {/* 3. LOAN & FINANCIAL DETAILS */}
+            <div className="bg-purple-50/60 border border-purple-200 rounded-2xl p-4 mb-5">
+              <h3 className="font-black text-xs text-purple-950 mb-3 flex items-center gap-1.5 border-b border-purple-200 pb-1.5">
+                <CreditCard className="w-4 h-4 text-purple-700" />
+                <span>ثانياً: تفاصيل وبيانات السلفة والجدولة المالية</span>
+              </h3>
 
-              <div className="grid grid-cols-2 gap-4 mb-3">
-                <div className="p-3 bg-white rounded-xl border border-slate-200">
-                  <div className="text-slate-500 text-[10px] font-bold">مبلغ السلفة المعتمد:</div>
-                  <div className="text-lg font-mono font-black text-emerald-700 mt-0.5">
-                    {totalAmount.toLocaleString('en-US')} <span className="text-xs font-sans font-bold">ريال سعودي</span>
-                  </div>
-                  <div className="text-[11px] font-bold text-slate-700 mt-1 border-t border-slate-100 pt-1">
-                    {tafqeetRiyals(totalAmount)}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <div className="p-2.5 bg-white rounded-xl border border-purple-100">
+                  <span className="text-slate-500 block text-[10px] font-bold">إجمالي مبلغ السلفة:</span>
+                  <div className="font-mono font-black text-sm text-purple-900 mt-0.5">
+                    {totalAmount.toLocaleString('en-US')} ر.س
                   </div>
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-slate-200">
-                  <div className="text-slate-500 text-[10px] font-bold">طريقة الاستقطاع والسداد:</div>
-                  <div className="text-xs font-bold text-slate-900 mt-1 space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">عدد الأقساط:</span>
-                      <span className="font-mono font-black">{installmentsCount} {installmentsCount === 1 ? 'دفعة واحدة' : 'أقساط شهرية'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">قيمة القسط الشهري:</span>
-                      <span className="font-mono font-black text-rose-600">{monthlyInstallment.toLocaleString('en-US')} ر.س / شهر</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">بدء الاستقطاع من مسير:</span>
-                      <span className="font-mono font-bold text-slate-800">شهر ({startMonth})</span>
-                    </div>
+                <div className="p-2.5 bg-white rounded-xl border border-purple-100">
+                  <span className="text-slate-500 block text-[10px] font-bold">عدد الأقساط الشهرية:</span>
+                  <div className="font-mono font-black text-sm text-slate-900 mt-0.5">
+                    {installmentsCount} أشهر
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-white rounded-xl border border-purple-100">
+                  <span className="text-slate-500 block text-[10px] font-bold">القسط الشهري المستقطع:</span>
+                  <div className="font-mono font-black text-sm text-rose-600 mt-0.5">
+                    {monthlyInstallment.toLocaleString('en-US')} ر.س/شهر
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-white rounded-xl border border-purple-100">
+                  <span className="text-slate-500 block text-[10px] font-bold">بدء الاستقطاع من مسير:</span>
+                  <div className="font-mono font-bold text-xs text-slate-800 mt-1">
+                    شهر ({startMonth})
                   </div>
                 </div>
               </div>
 
-              {/* Reason */}
-              <div className="p-2.5 bg-white rounded-xl border border-slate-200 text-[11px]">
-                <span className="text-slate-500 font-bold">الغرض من السلفة / السبب: </span>
+              <div className="p-2.5 bg-white rounded-xl border border-purple-100 text-[11px] flex items-center gap-2">
+                <span className="text-slate-500 font-bold">الغرض ومبرر السلفة:</span>
                 <span className="text-slate-900 font-medium">{advance.reason || 'سلفة شخصية طارئة بناءً على طلب الموظف'}</span>
               </div>
-
-              {/* Previous Active Balance Check */}
-              {previousBalance > 0 && (
-                <div className="mt-2.5 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between text-[11px]">
-                  <span className="font-bold flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                    <span>تنبيه المحاسبة: رصيد سلف سابقة غير مسددة على الموظف:</span>
-                  </span>
-                  <span className="font-mono font-black text-amber-950">{previousBalance.toLocaleString('en-US')} ر.س</span>
-                </div>
-              )}
             </div>
 
             {/* 4. INSTALLMENTS SCHEDULE BREAKDOWN */}
-            <div className="mb-5">
-              <h4 className="font-heading font-bold text-xs text-slate-900 mb-2 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+            <div className="mb-6">
+              <h3 className="font-black text-xs text-slate-900 mb-2 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-purple-700" />
                 <span>ثالثاً: جدول استقطاع الأقساط من الرواتب الشهرية</span>
-              </h4>
+              </h3>
 
               <table className="w-full border-collapse border border-slate-300 text-center text-[11px]">
                 <thead>
-                  <tr className="bg-slate-100 font-heading font-bold text-slate-900">
+                  <tr className="bg-slate-100 font-black text-slate-900">
                     <th className="border border-slate-300 py-1.5 px-2">الدفعة #</th>
-                    <th className="border border-slate-300 py-1.5 px-3">شهر الاستقطاع</th>
+                    <th className="border border-slate-300 py-1.5 px-3">شهر الاستحقاق</th>
                     <th className="border border-slate-300 py-1.5 px-3">مبلغ القسط المستقطع</th>
                     <th className="border border-slate-300 py-1.5 px-3">الرصيد المتبقي بعد الخصم</th>
                     <th className="border border-slate-300 py-1.5 px-3">حالة السداد</th>
@@ -245,18 +221,18 @@ export default function AdvanceVoucherA4Modal({ open, onOpenChange, advance, emp
                     
                     const parts = startMonth.split('-');
                     let yr = parseInt(parts[0] || '2026', 10);
-                    let mo = parseInt(parts[1] || '8', 10) + idx;
+                    let mo = parseInt(parts[1] || '9', 10) + idx;
                     while (mo > 12) { mo -= 12; yr += 1; }
                     const mStr = `${yr}-${String(mo).padStart(2, '0')}`;
 
                     return (
                       <tr key={idx} className="hover:bg-slate-50">
-                        <td className="border border-slate-300 py-1 font-mono font-bold">{instNum}</td>
-                        <td className="border border-slate-300 py-1 font-mono font-bold text-slate-700">{mStr}</td>
-                        <td className="border border-slate-300 py-1 font-mono font-black text-rose-700">{monthlyInstallment.toLocaleString('en-US')} ر.س</td>
-                        <td className="border border-slate-300 py-1 font-mono font-bold text-slate-600">{remAfter.toLocaleString('en-US')} ر.س</td>
-                        <td className="border border-slate-300 py-1 font-sans text-slate-500 font-medium">
-                          {idx === 0 && advance.paid_installments > 0 ? 'مسدد ✓' : 'مجدول بالمسير'}
+                        <td className="border border-slate-300 py-1.5 font-mono font-bold">القسط ({instNum}/{installmentsCount})</td>
+                        <td className="border border-slate-300 py-1.5 font-mono font-bold text-slate-800">{mStr}</td>
+                        <td className="border border-slate-300 py-1.5 font-mono font-black text-rose-600">-{monthlyInstallment.toLocaleString('en-US')} ر.س</td>
+                        <td className="border border-slate-300 py-1.5 font-mono font-bold text-slate-600">{remAfter.toLocaleString('en-US')} ر.س</td>
+                        <td className="border border-slate-300 py-1.5 font-bold text-[10px] text-amber-700">
+                          مجدول بمسير الراتب
                         </td>
                       </tr>
                     );
@@ -265,54 +241,54 @@ export default function AdvanceVoucherA4Modal({ open, onOpenChange, advance, emp
               </table>
             </div>
 
-            {/* 5. LEGAL UNDERTAKING & EMPLOYEE ACKNOWLEDGEMENT */}
-            <div className="mb-6 p-3.5 bg-slate-50 rounded-2xl border border-slate-300 text-[10px] leading-relaxed text-slate-700">
-              <h5 className="font-bold text-slate-900 mb-1">إقرار وتعهد باستلام السلفة وتفويض بالخصم:</h5>
+            {/* 5. LEGAL UNDERTAKING */}
+            <div className="mb-6 p-4 bg-amber-50/70 rounded-2xl border border-amber-300 text-[10px] leading-relaxed text-amber-950">
+              <h4 className="font-black text-xs text-amber-900 mb-1">إقرار وتعهد باستلام السلفة وتفويض صريح بالخصم:</h4>
               <p>
-                أقر أنا الموظف الموضح بياناتي أعلاه بأنني قد استلمت مبلغ السلفة المذكور وقدره ({totalAmount.toLocaleString('en-US')} ريال سعودي)، وأفوض إدارة المنشأة بتفويض رسمي غير قابل للإلغاء باستقطاع الأقساط المحددة شهرياً من راتبي ومستحقاتي حتى السداد التام، وفي حال انتهاء خدماتي لأي سبب قبل اكتمال السداد، يحق للمنشأة حسم كامل الرصيد المتبقي دفعة واحدة من مكافأة نهاية الخدمة وأي مستحقات نهائية لي.
+                أقر أنا الموظف الموضح بياناتي وتوقيعي أدناه بأنني قد استلمت مبلغ السلفة المذكور وقدره (<strong>{totalAmount.toLocaleString('en-US')} ريال سعودي</strong>) نقداً / تحويلاً بنكياً، وأفوض إدارة المنشأة بتفويض رسمي نهائي وغير قابل للإلغاء باستقطاع الأقساط المحددة شهرياً من راتبي ومستحقاتي حتى تمام السداد، وفي حال انتهاء خدماتي لأي سبب قبل اكتمال السداد، يحق للمنشأة حسم كامل الرصيد المتبقي دفعة واحدة من مكافأة نهاية الخدمة وأي مستحقات نهائية لي.
               </p>
             </div>
 
-            {/* 6. TRIPLE AUTHORIZATION SIGNATURES */}
+            {/* 6. TRIPLE OFFICIAL SIGNATURES */}
             <div className="grid grid-cols-3 gap-4 pt-4 border-t-2 border-slate-900 text-center text-xs">
               
-              <div className="space-y-6">
-                <div className="font-heading font-bold text-slate-900">
+              <div className="space-y-5">
+                <div className="font-black text-slate-900">
                   توقيع الموظف المستلم (المقترض)
                 </div>
                 <div className="h-10 border-b border-dashed border-slate-400 mx-4"></div>
-                <div className="text-[10px] text-slate-500 font-mono">
-                  التاريخ: {advance.disbursement_date || new Date().toISOString().split('T')[0]}
+                <div className="text-[10px] text-slate-600 font-bold">
+                  الاسم: {advance.employee_name}
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="font-heading font-bold text-slate-900">
+              <div className="space-y-5">
+                <div className="font-black text-slate-900">
                   المحاسب المالي (الصرف والجدولة)
                 </div>
                 <div className="font-bold text-[11px] text-slate-800">
                   هشام ابوالفضل زغلول
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono">
-                  الختم والاعتماد المالي ✓
+                <div className="text-[10px] font-bold text-indigo-700 font-mono">
+                  تم الصرف والجدولة المالية ✓
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="font-heading font-bold text-slate-900">
+              <div className="space-y-5">
+                <div className="font-black text-slate-900">
                   اعتماد المدير العام
                 </div>
                 <div className="font-bold text-[11px] text-slate-800">
                   فهد ناصر محمد الجوعي
                 </div>
                 <div className="text-[10px] font-bold text-emerald-700 font-mono">
-                  معتمد رسمياً (Approved) ✓
+                  معتمد رسمياً (Approved) 👑
                 </div>
               </div>
 
             </div>
 
-            {/* Footer */}
+            {/* 7. DOCUMENT FOOTER */}
             <div className="mt-8 pt-3 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-400 font-mono" dir="ltr">
               <span>SYSTEM-GENERATED FINANCIAL RECORD • GREEN ARROW HR ENTERPRISE</span>
               <span>VERIFIED: {voucherNumber}</span>

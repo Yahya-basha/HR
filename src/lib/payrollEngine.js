@@ -1,3 +1,40 @@
+export function normalizeAdvance(adv) {
+  if (!adv) return null;
+  const amt = Number(adv.total_amount || adv.amount) || 0;
+  const instCount = Number(adv.total_installments || adv.installments) || 1;
+  const monthly = Number(adv.monthly_installment || adv.monthly_deduction) || Math.round(amt / instCount);
+  const paid = Number(adv.paid_amount) || 0;
+  const rem = Number(adv.remaining_balance) !== undefined ? Number(adv.remaining_balance) : Math.max(0, amt - paid);
+  const startMonth = adv.start_month || (adv.date ? adv.date.slice(0, 7) : '2026-09');
+  
+  let st = adv.status;
+  if (st === 'disbursed' || (st === 'approved' && rem > 0) || (st === 'active' && rem > 0)) {
+    st = rem <= 0 ? 'completed' : 'active';
+  }
+
+  return {
+    ...adv,
+    id: adv.id || ('adv_' + Date.now()),
+    employee_number: String(adv.employee_number || '').trim(),
+    employee_name: adv.employee_name || 'موظف',
+    total_amount: amt,
+    amount: amt,
+    total_installments: instCount,
+    installments: instCount,
+    monthly_installment: monthly,
+    monthly_deduction: monthly,
+    paid_amount: paid,
+    remaining_balance: rem,
+    start_month: startMonth,
+    disbursement_date: adv.disbursement_date || (adv.date ? adv.date.slice(0, 10) : new Date().toISOString().slice(0, 10)),
+    reason: adv.reason || 'سلفة شخصية طارئة',
+    status: st,
+    approved_by: adv.approved_by || 'فهد ناصر محمد الجوعي (المدير العام)',
+    disbursed_by: adv.disbursed_by || 'هشام ابوالفضل زغلول (المحاسب)',
+    created_at: adv.created_at || (adv.date ? adv.date : new Date().toISOString()),
+  };
+}
+
 import { cloudSave } from '@/lib/cloudSyncEngine';
 // ============================================================================
 // PAYROLL ENGINE - FINANCIAL CALCULATIONS & BUSINESS LOGIC
@@ -264,8 +301,23 @@ export function getStandardShiftPunches(shiftNameOrObj) {
 
 export function getAdvances() {
   try {
-    return JSON.parse(localStorage.getItem('hr_flow_employee_advances') || '[]');
-  } catch {
+    const list1 = JSON.parse(localStorage.getItem('hr_flow_employee_advances') || '[]');
+    const list2 = JSON.parse(localStorage.getItem('hr_advances_list') || '[]');
+    const combined = [...(Array.isArray(list1) ? list1 : []), ...(Array.isArray(list2) ? list2 : [])];
+    
+    const map = new Map();
+    combined.forEach(raw => {
+      if (raw && raw.id) {
+        const norm = normalizeAdvance(raw);
+        // Filter out zero-amount ghost records
+        if (norm && norm.total_amount > 0) {
+          map.set(String(norm.id), norm);
+        }
+      }
+    });
+    return Array.from(map.values());
+  } catch (e) {
+    console.error('Failed to parse advances:', e);
     return [];
   }
 }

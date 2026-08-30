@@ -2726,6 +2726,13 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'completed'
   const { toast } = useToast();
 
+  // Normalize all advances and filter out 0-amount ghost records
+  const normalizedList = useMemo(() => {
+    return (advancesList || [])
+      .map(a => normalizeAdvance(a))
+      .filter(a => a && a.total_amount > 0);
+  }, [advancesList]);
+
   // Statistics
   const stats = useMemo(() => {
     let totalGranted = 0;
@@ -2733,32 +2740,30 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
     let activeCount = 0;
     let completedCount = 0;
 
-    advancesList.forEach(adv => {
-      const amt = Number(adv.total_amount || adv.amount) || 0;
+    normalizedList.forEach(adv => {
+      const amt = Number(adv.total_amount) || 0;
       const paid = Number(adv.paid_amount) || 0;
       totalGranted += amt;
       totalRepaid += paid;
-      const rem = Number(adv.remaining_balance) !== undefined ? Number(adv.remaining_balance) : Math.max(0, amt - paid);
+      const rem = Math.max(0, amt - paid);
       if (rem <= 0 || adv.status === 'completed') completedCount++;
       else activeCount++;
     });
 
     const totalRemaining = Math.max(0, totalGranted - totalRepaid);
-    return { totalGranted, totalRepaid, totalRemaining, activeCount, completedCount, totalCount: advancesList.length };
-  }, [advancesList]);
+    return { totalGranted, totalRepaid, totalRemaining, activeCount, completedCount, totalCount: normalizedList.length };
+  }, [normalizedList]);
 
   // Filtered advances
   const filtered = useMemo(() => {
-    return advancesList.filter(adv => {
+    return normalizedList.filter(adv => {
       const q = search.toLowerCase();
       const matchSearch = !search ||
         (adv.employee_name || '').toLowerCase().includes(q) ||
         (adv.employee_number || '').toString().includes(q) ||
         (adv.reason || '').toLowerCase().includes(q);
 
-      const amt = Number(adv.total_amount || adv.amount) || 0;
-      const paid = Number(adv.paid_amount) || 0;
-      const rem = Number(adv.remaining_balance) !== undefined ? Number(adv.remaining_balance) : Math.max(0, amt - paid);
+      const rem = Math.max(0, (Number(adv.total_amount) || 0) - (Number(adv.paid_amount) || 0));
       const isComp = rem <= 0 || adv.status === 'completed';
 
       let matchStatus = true;
@@ -2767,7 +2772,7 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
 
       return matchSearch && matchStatus;
     });
-  }, [advancesList, search, statusFilter]);
+  }, [normalizedList, search, statusFilter]);
 
   const handleDelete = (adv) => {
     if ((Number(adv.paid_amount) || 0) > 0) {
@@ -2781,10 +2786,12 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
 
     if (!confirm(`هل أنت متأكد من إلغاء سلفة الموظف: ${adv.employee_name} بمبلغ ${fmtNum(adv.total_amount)} ر.س؟`)) return;
 
-    // Delete advance from storage
     const all = getAdvances().filter(a => a.id !== adv.id);
-    localStorage.setItem('green_arrow_hr_advances', JSON.stringify(all));
-    toast({ title: '✓ تم إلغاء السلفة بنجاح' });
+    localStorage.setItem('hr_flow_employee_advances', JSON.stringify(all));
+    localStorage.setItem('hr_advances_list', JSON.stringify(all));
+    cloudSave('hr_flow_employee_advances', all);
+    cloudSave('hr_advances_list', all);
+    toast({ title: '✓ تم إلغاء وحذف السلفة بنجاح' });
     onRefresh();
   };
 
@@ -2792,7 +2799,7 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
     <div className="space-y-6" dir="rtl">
       
       {/* ─── 1. TOP TITLE BAR ──────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/20 shrink-0 font-bold">
             <CreditCard className="w-6 h-6" />
@@ -2803,7 +2810,7 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
                 نظام إدارة السلف والقروض المؤسسية
               </h1>
               <Badge className="bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 text-xs font-mono font-bold">
-                {advancesList.length} سلفة مسجلة
+                {normalizedList.length} سلفة معتمدة
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -2835,12 +2842,12 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
             </div>
             <div className="text-[10px] text-muted-foreground mt-0.5">{stats.totalCount} سلفة إجمالية</div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950 text-purple-700 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center">
             <CreditCard className="w-5 h-5" />
           </div>
         </Card>
 
-        {/* Repaid */}
+        {/* Total Repaid */}
         <Card className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between">
           <div>
             <div className="text-xs text-muted-foreground font-bold">المبالغ المسددة والمستردة</div>
@@ -2851,26 +2858,26 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
               {stats.totalGranted > 0 ? Math.round((stats.totalRepaid / stats.totalGranted) * 100) : 0}% نسبة الاسترداد
             </div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
             <CheckCircle2 className="w-5 h-5" />
           </div>
         </Card>
 
-        {/* Remaining Unpaid */}
+        {/* Total Remaining */}
         <Card className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between">
           <div>
             <div className="text-xs text-muted-foreground font-bold">الرصيد المتبقي قيد السداد</div>
             <div className="font-mono font-black text-2xl text-rose-600 dark:text-rose-400 mt-1">
               {fmtNum(stats.totalRemaining)} <span className="text-xs font-normal">ر.س</span>
             </div>
-            <div className="text-[10px] text-rose-600 font-bold mt-0.5">ذمم مدينة قيد الاستقطاع</div>
+            <div className="text-[10px] text-rose-500 font-bold mt-0.5">ذمم مدينة قيد الاستقطاع</div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950 text-rose-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
             <Clock className="w-5 h-5" />
           </div>
         </Card>
 
-        {/* Active Borrowers */}
+        {/* Active Advances */}
         <Card className="p-4 rounded-3xl border bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between">
           <div>
             <div className="text-xs text-muted-foreground font-bold">السلف النشطة الجارية</div>
@@ -2879,43 +2886,42 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
             </div>
             <div className="text-[10px] text-muted-foreground mt-0.5">{stats.completedCount} سلفة مكتملة السداد</div>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950 text-sky-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 flex items-center justify-center">
             <Users className="w-5 h-5" />
           </div>
         </Card>
 
       </div>
 
-      {/* ─── 3. ADVANCES MASTER TABLE ───────────────────────────────────────── */}
-      <Card className="rounded-3xl border shadow-sm overflow-hidden bg-white dark:bg-slate-900">
+      {/* ─── 3. SEARCH & FILTER CONTROLS ───────────────────────────────────── */}
+      <Card className="rounded-3xl border bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
         
-        {/* Search & Filter Bar */}
-        <div className="p-4 border-b bg-slate-50 dark:bg-slate-800/40 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-600" />
+        <div className="p-4 border-b flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="البحث باسم الموظف، الرقم الوظيفي، أو سبب السلفة..."
-              className="ps-10 rounded-2xl text-xs h-10 bg-white dark:bg-slate-900"
+              className="pr-9 h-10 rounded-2xl text-xs bg-slate-50 dark:bg-slate-800 border-0"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                statusFilter === 'all' ? 'bg-purple-700 text-white' : 'bg-white dark:bg-slate-900 text-muted-foreground border'
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'all' ? 'bg-purple-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground'
               }`}
             >
-              الكل ({advancesList.length})
+              الكل ({normalizedList.length})
             </button>
             <button
               type="button"
               onClick={() => setStatusFilter('active')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                statusFilter === 'active' ? 'bg-purple-700 text-white' : 'bg-white dark:bg-slate-900 text-muted-foreground border'
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'active' ? 'bg-purple-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground'
               }`}
             >
               السارية فقط ({stats.activeCount})
@@ -2923,8 +2929,8 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
             <button
               type="button"
               onClick={() => setStatusFilter('completed')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                statusFilter === 'completed' ? 'bg-purple-700 text-white' : 'bg-white dark:bg-slate-900 text-muted-foreground border'
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === 'completed' ? 'bg-purple-700 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground'
               }`}
             >
               المسددة بالكامل ({stats.completedCount})
@@ -2937,20 +2943,21 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
           <table className="w-full text-right text-xs" style={{ direction: 'rtl' }}>
             <thead>
               <tr className="bg-purple-700 text-white font-heading font-black border-b border-purple-800">
-                <th className="py-3 px-4"># الموظف</th>
-                <th className="py-3 px-3">مبلغ السلفة</th>
-                <th className="py-3 px-3">القسط الشهري والمدة</th>
-                <th className="py-3 px-3">المسدد حتى الآن</th>
-                <th className="py-3 px-3">المتبقي للسداد</th>
-                <th className="py-3 px-3">شهر البداية</th>
-                <th className="py-3 px-3">الحالة</th>
-                <th className="py-3 px-4 text-center">الخيارات والطباعة</th>
+                <th className="py-3.5 px-4"># الموظف</th>
+                <th className="py-3.5 px-3">مبلغ السلفة</th>
+                <th className="py-3.5 px-3">القسط الشهري والمدة</th>
+                <th className="py-3.5 px-3">سبب ومبرر السلفة</th>
+                <th className="py-3.5 px-3">المسدد حتى الآن</th>
+                <th className="py-3.5 px-3">المتبقي للسداد</th>
+                <th className="py-3.5 px-3">شهر البداية</th>
+                <th className="py-3.5 px-3">الحالة</th>
+                <th className="py-3.5 px-4 text-center">الخيارات والطباعة</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-muted-foreground font-bold">
+                  <td colSpan={9} className="py-12 text-center text-muted-foreground font-bold">
                     لا توجد سلف مسجلة مطابقة للبحث
                   </td>
                 </tr>
@@ -2972,18 +2979,18 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
                           {emp?.full_name || adv.employee_name}
                         </div>
                         <div className="text-[10px] text-muted-foreground font-mono">
-                          #{adv.employee_number} • {emp?.branch_name || 'الفرع الرئيسي'}
+                          #{adv.employee_number} • {emp?.branch_name || 'فرع كيا (السليم)'}
                         </div>
                       </td>
 
                       {/* Total Amount */}
-                      <td className="py-3.5 px-3 font-mono font-black text-foreground">
+                      <td className="py-3.5 px-3 font-mono font-black text-purple-950 dark:text-purple-300 text-sm">
                         {fmtNum(adv.total_amount)} ر.س
                       </td>
 
                       {/* Monthly Installment */}
                       <td className="py-3.5 px-3">
-                        <div className="font-mono font-bold text-purple-700 dark:text-purple-300">
+                        <div className="font-mono font-bold text-rose-600 dark:text-rose-400">
                           {fmtNum(adv.monthly_installment)} ر.س / شهر
                         </div>
                         <div className="text-[10px] text-muted-foreground">
@@ -2991,23 +2998,30 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
                         </div>
                       </td>
 
+                      {/* Reason Column */}
+                      <td className="py-3.5 px-3 max-w-[160px]">
+                        <span className="text-xs text-foreground font-medium line-clamp-2">
+                          {adv.reason || 'سلفة شخصية'}
+                        </span>
+                      </td>
+
                       {/* Paid with progress */}
                       <td className="py-3.5 px-3">
                         <div className="font-mono font-bold text-emerald-600">
                           {fmtNum(paid)} ر.س ({percent}%)
                         </div>
-                        <div className="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mt-1 overflow-hidden">
+                        <div className="w-20 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mt-1 overflow-hidden">
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${percent}%` }}></div>
                         </div>
                       </td>
 
                       {/* Remaining */}
-                      <td className="py-3.5 px-3 font-mono font-black text-rose-600">
+                      <td className="py-3.5 px-3 font-mono font-black text-rose-600 text-sm">
                         {fmtNum(remaining)} ر.س
                       </td>
 
                       {/* Start Month */}
-                      <td className="py-3.5 px-3 font-mono text-muted-foreground">
+                      <td className="py-3.5 px-3 font-mono font-bold text-slate-700 dark:text-slate-300">
                         {adv.start_month}
                       </td>
 
@@ -3033,11 +3047,11 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
                             size="sm"
                             variant="outline"
                             onClick={() => onPrintAdvance(adv)}
-                            className="h-8 text-xs font-bold rounded-xl gap-1 border-purple-200 text-purple-800 hover:bg-purple-50"
+                            className="h-8 text-xs font-bold rounded-xl gap-1 border-purple-300 text-purple-900 dark:text-purple-300 hover:bg-purple-50 shadow-sm"
                             title="طباعة سند وإقرار السلفة A4"
                           >
                             <Printer className="w-3.5 h-3.5 text-purple-600" />
-                            سند السلفة A4
+                            <span>سند السلفة A4</span>
                           </Button>
 
                           {/* Delete if not paid */}
