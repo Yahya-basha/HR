@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { hasPermission } from '@/lib/rbac';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Plus,
@@ -46,6 +47,24 @@ export default function Employees() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Strict RBAC Guard: Only users with employees.view can access this page
+  if (!hasPermission(user, 'employees.view')) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 space-y-4" dir="rtl">
+        <div className="w-16 h-16 rounded-3xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center text-3xl shadow-lg">
+          🔒
+        </div>
+        <h1 className="text-xl font-black text-foreground">غير مصرح بالوصول</h1>
+        <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
+          دليل وسجلات الموظفين مخصص للإدارة والموارد البشرية والمحاسبين فقط. يمكنك الاطلاع على بياناتك الشخصية عبر صفحة ملفي الشخصي.
+        </p>
+        <Button onClick={() => navigate('/employee-profile')} className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold px-6 h-10 shadow-md">
+          الانتقال إلى ملفي الشخصي 360°
+        </Button>
+      </div>
+    );
+  }
 
   const [employees, setEmployees] = useState([]);
   const [shifts, setShifts] = useState([

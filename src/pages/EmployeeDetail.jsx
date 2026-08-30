@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { hasPermission } from '@/lib/rbac';
 import { useToast } from '@/components/ui/use-toast';
 import {
   User,
@@ -237,7 +238,20 @@ export default function EmployeeDetail() {
       setAttendanceLogs(logs || []);
       setAdvancesList(getAdvances() || []);
 
-      const found = (emps || []).find(e => String(e.id) === String(id) || String(e.employee_number) === String(id));
+      const targetId = id || user?.employee_number || user?.id;
+      const found = (emps || []).find(e => {
+        if (!targetId && !user) return false;
+        if (id) {
+          return String(e.id) === String(id) || String(e.employee_number) === String(id);
+        }
+        return (
+          String(e.id) === String(targetId) ||
+          String(e.employee_number) === String(targetId) ||
+          (user?.email && e.email && e.email.toLowerCase() === user.email.toLowerCase()) ||
+          (user?.full_name && e.full_name && e.full_name.trim() === user.full_name.trim()) ||
+          (user?.national_id && e.national_id && e.national_id === user.national_id)
+        );
+      });
       if (found) {
         setEmployee(found);
         setInsuranceForm({
@@ -394,12 +408,37 @@ export default function EmployeeDetail() {
     );
   }
 
+  // Security guard: If normal employee, only allow viewing own profile
+  const canViewAllEmployees = hasPermission(user, 'employees.view');
+  const isOwnProfile = employee && (
+    String(employee.employee_number) === String(user?.employee_number) ||
+    String(employee.id) === String(user?.id) ||
+    (user?.email && employee.email && employee.email.toLowerCase() === user.email.toLowerCase())
+  );
+
+  if (employee && !canViewAllEmployees && !isOwnProfile) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 space-y-4" dir="rtl">
+        <div className="w-16 h-16 rounded-3xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center text-3xl shadow-lg">
+          🔒
+        </div>
+        <h2 className="text-xl font-black text-foreground">غير مصرح بالوصول</h2>
+        <p className="text-xs text-muted-foreground max-w-md">
+          ليس لديك صلاحية للاطلاع على ملفات الموظفين الآخرين.
+        </p>
+        <Button onClick={() => navigate('/employee-profile')} className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold px-6">
+          الانتقال إلى ملفي الشخصي 360°
+        </Button>
+      </div>
+    );
+  }
+
   if (!employee) {
     return (
       <div className="p-8 text-center" dir="rtl">
         <h2 className="text-base font-bold text-foreground">لم يتم العثور على ملف الموظف</h2>
-        <Button onClick={() => navigate('/employees')} className="mt-4 bg-emerald-600 text-white rounded-xl text-xs font-bold">
-          العودة لقائمة الموظفين
+        <Button onClick={() => navigate(hasPermission(user, 'employees.view') ? '/employees' : '/')} className="mt-4 bg-emerald-600 text-white rounded-xl text-xs font-bold">
+          {hasPermission(user, 'employees.view') ? 'العودة لقائمة الموظفين' : 'العودة للرئيسية'}
         </Button>
       </div>
     );
@@ -476,22 +515,26 @@ export default function EmployeeDetail() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              onClick={() => setGrantLeaveModal(true)}
-              className="bg-teal-600 hover:bg-teal-500 text-white rounded-2xl text-xs font-bold gap-1.5 h-10 px-4 shadow-sm"
-            >
-              <CalendarDays className="w-4 h-4" />
-              <span>+ منح إجازة</span>
-            </Button>
+            {hasPermission(user, 'leave.create') && (
+              <Button
+                onClick={() => setGrantLeaveModal(true)}
+                className="bg-teal-600 hover:bg-teal-500 text-white rounded-2xl text-xs font-bold gap-1.5 h-10 px-4 shadow-sm"
+              >
+                <CalendarDays className="w-4 h-4" />
+                <span>+ منح إجازة</span>
+              </Button>
+            )}
+            {hasPermission(user, 'documents.edit') && (
+              <Button
+                onClick={() => setUploadDocModal(true)}
+                variant="outline"
+                className="rounded-2xl text-xs font-bold gap-1.5 h-10 px-4"
+              >
+                <Upload className="w-4 h-4" />
+                <span>+ رفع مستند</span>
+              </Button>
+            )}
             
-            <Button
-              onClick={() => setUploadDocModal(true)}
-              variant="outline"
-              className="rounded-2xl text-xs font-bold gap-1.5 h-10 px-4"
-            >
-              <Upload className="w-4 h-4" />
-              <span>+ رفع مستند</span>
-            </Button>
 
             <Button
               onClick={() => window.print()}
