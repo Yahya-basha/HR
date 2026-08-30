@@ -7,7 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import MobileSidebar from '@/components/MobileSidebar';
 import { getNavItems } from '@/lib/nav';
-import { Grid, Menu, ChevronLeft } from 'lucide-react';
+import { Grid, Menu, ChevronLeft, User, Clock, FileSignature } from 'lucide-react';
 
 export default function Layout() {
   const { user } = useAuth();
