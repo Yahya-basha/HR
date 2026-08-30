@@ -18,8 +18,10 @@ export default class ErrorBoundary extends React.Component {
 
   handleReset = () => {
     try {
-      this.setState({ hasError: false, error: null, errorInfo: null });
-      window.location.href = '/';
+      // Reset error state only - do NOT redirect, stay on current page
+      this.setState({ hasError: false, error: null, errorInfo: null, showDetails: false });
+      // Soft reload using history pushState to avoid clearing in-memory caches
+      window.location.reload();
     } catch (e) {
       window.location.reload();
     }
@@ -27,8 +29,20 @@ export default class ErrorBoundary extends React.Component {
 
   handleClearCacheAndLogin = () => {
     try {
-      localStorage.clear();
-      sessionStorage.clear();
+      // SAFE: Only clear authentication session, NOT HR/payroll data
+      // This preserves all employee data, attendance logs, payroll settings stored in localStorage
+      const SAFE_KEYS_TO_REMOVE = [
+        'zenith_auth_user',
+        'zenith_auth_token',
+        'ga_auth_user',
+        'ga_session',
+        'supabase.auth.token',
+        'sb-omnvdvmmmarwsobadlsb-auth-token',
+      ];
+      SAFE_KEYS_TO_REMOVE.forEach(key => {
+        try { localStorage.removeItem(key); } catch (e) {}
+      });
+      sessionStorage.clear(); // sessionStorage is safe to clear (no persistent HR data)
       window.location.href = '/login';
     } catch (e) {
       window.location.href = '/login';
