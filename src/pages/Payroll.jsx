@@ -274,8 +274,78 @@ export default function Payroll() {
 
   // ─── ACTION HANDLERS ────────────────────────────────────────────────────────
 
+  // Fast 1-Click Standard Punch Approval (No Modal, Instant In-Memory + DB Save)
+  const handleQuickStandardPunch = async (day) => {
+    if (!currentSelectedEmp) return;
+    const emp = currentSelectedEmp;
+    const empId = emp.id || ('emp_' + emp.employee_number);
+    const empNum = String(emp.employee_number || '').replace('emp_', '');
+    const empName = emp.full_name || 'موظف';
+    const std = getStandardShiftPunches(emp.shift || '');
+
+    const checkInFinal = std.p1In ? `${day.log_date}T${std.p1In}:00` : null;
+    const checkOutFinal = std.isSplit 
+      ? (std.p2Out ? `${day.log_date}T${std.p2Out}:00` : null)
+      : (std.p1Out ? `${day.log_date}T${std.p1Out}:00` : null);
+
+    const updatedItem = {
+      ...day,
+      id: day.id || `att_${empNum}_${day.log_date}`.replace(/[^a-zA-Z0-9_]/g, '_'),
+      employee_id: empId,
+      user_id: empId,
+      employee_number: empNum,
+      employee_name: empName,
+      log_date: day.log_date,
+      check_in: checkInFinal,
+      check_out: checkOutFinal,
+      status: 'present',
+      timestamp_raw: std.raw,
+      total_hours: std.totalHours,
+      period_1_in: std.p1In,
+      period_1_out: std.p1Out,
+      period_2_in: std.p2In,
+      period_2_out: std.p2Out,
+      notes: JSON.stringify({
+        employee_number: empNum,
+        user_id: empId,
+        total_hours: std.totalHours,
+        timestamp_raw: std.raw,
+        period_1_in: std.p1In,
+        period_1_out: std.p1Out,
+        period_2_in: std.p2In,
+        period_2_out: std.p2Out,
+        manual_edit_by: user?.full_name || 'مدير الموارد البشرية',
+        manual_edit_at: new Date().toISOString()
+      })
+    };
+
+    try {
+      if (day.id) {
+        await base44.entities.AttendanceLog.update(day.id, updatedItem);
+      } else {
+        await base44.entities.AttendanceLog.create(updatedItem);
+      }
+
+      // Fast in-memory state update to avoid losing selected employee
+      setAttendanceLogs(prev => {
+        const copy = [...prev];
+        const idx = copy.findIndex(l => (l.id && l.id === day.id) || (String(l.employee_number || l.employee_id) === empNum && l.log_date === day.log_date));
+        if (idx !== -1) copy[idx] = { ...copy[idx], ...updatedItem };
+        else copy.unshift(updatedItem);
+        return copy;
+      });
+
+      toast({
+        title: '⚡ تم اعتماد حضور منضبط بنجاح',
+        description: `يوم ${day.log_date}: تم توثيق بصمات الشفت القياسية (${std.totalHours} س) بدون عجز.`
+      });
+    } catch (e) {
+      toast({ title: 'خطأ أثناء الاعتماد السريع', description: e.message, variant: 'destructive' });
+    }
+  };
+
   // Stage 1: Edit Biometric Log (Admin Only)
-      const handleSavePunchEdit = async () => {
+  const handleSavePunchEdit = async () => {
     if (!editPunchModal) return;
     try {
       const { log, emp, isSplitShift, p1In, p1Out, p2In, p2Out, newCheckIn, newCheckOut, newStatus } = editPunchModal;
