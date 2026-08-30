@@ -87,8 +87,14 @@ export default function Employees() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await base44.entities.Employee.list();
-      setEmployees(list || []);
+      const [empList, shiftList] = await Promise.all([
+        base44.entities.Employee.list(),
+        base44.entities.Shift.list()
+      ]);
+      setEmployees(empList || []);
+      if (shiftList && shiftList.length > 0) {
+        setShifts(shiftList);
+      }
     } catch (e) {
       console.error('Error loading employees:', e);
       toast({ title: 'خطأ في تحميل الموظفين', description: e.message, variant: 'destructive' });
@@ -170,12 +176,13 @@ export default function Employees() {
   const handleOpenEdit = (emp) => {
     setEditingEmp(emp);
     setForm({
+      id: emp.id || ('emp_' + emp.employee_number),
       employee_number: emp.employee_number || '',
       full_name: emp.full_name || '',
       job_title: emp.job_title || 'بائع قطع غيار',
       branch_name: emp.branch_name || 'الفرع الرئيسي',
       department_name: emp.department_name || 'درة السيارة لقطع الغيار',
-      shift: emp.shift || 'فترة عمل غير السعوديين',
+      shift: emp.shift || 'فترة عمل غير سعودي (الأساسي 8 ساعات)',
       nationality: emp.nationality || 'سعودي',
       national_id: emp.national_id || '',
       phone: emp.phone || '',
@@ -197,14 +204,18 @@ export default function Employees() {
 
     try {
       if (editingEmp) {
-        await base44.entities.Employee.update(editingEmp.id, form);
-        toast({ title: '✓ تم تحديث بيانات الموظف بنجاح' });
+        const empId = editingEmp.id || ('emp_' + editingEmp.employee_number);
+        await base44.entities.Employee.update(empId, {
+          ...form,
+          id: empId
+        });
+        toast({ title: '✓ تم تحديث بيانات الموظف والوردية بنجاح وحفظها في قاعدة البيانات' });
       } else {
         await base44.entities.Employee.create(form);
         toast({ title: '✓ تم إضافة الموظف الجديد بنجاح' });
       }
       setModalOpen(false);
-      loadData();
+      await loadData();
     } catch (e) {
       toast({ title: 'خطأ أثناء الحفظ', description: e.message, variant: 'destructive' });
     }

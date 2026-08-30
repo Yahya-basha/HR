@@ -730,9 +730,12 @@ function toDbRecord(entityName, item) {
       contract_end_date: item.contract_end_date || null
     });
 
+    const empNum = String(item.employee_number || item.id || '').replace('emp_', '');
+    const empId = item.id || ('emp_' + empNum);
+
     return {
-      id: item.id || ('emp_' + (item.employee_number || Date.now())),
-      employee_number: String(item.employee_number || item.id || '').replace('emp_', ''),
+      id: empId,
+      employee_number: empNum,
       full_name: item.full_name || '',
       email: item.email || null,
       phone: item.phone || null,
@@ -761,7 +764,6 @@ function toDbRecord(entityName, item) {
     const empName = item.employee_name || 'موظف';
     const logDate = item.log_date || (item.check_in ? String(item.check_in).slice(0, 10) : new Date().toISOString().split('T')[0]);
     
-    // Pack all rich metadata into notes JSON so Supabase table accepts it cleanly
     const metaNotes = JSON.stringify({
       employee_number: empNum,
       user_id: empId,
@@ -828,7 +830,34 @@ function toDbRecord(entityName, item) {
     };
   }
 
-      if (entityName === 'AttendanceLog') {
+  return item;
+}
+
+function fromDbRecord(entityName, row) {
+  if (!row) return row;
+
+  if (entityName === 'Employee') {
+    let meta = {};
+    if (row.manager_name && typeof row.manager_name === 'string' && row.manager_name.startsWith('{')) {
+      try {
+        meta = JSON.parse(row.manager_name);
+      } catch (e) {}
+    }
+    return {
+      ...row,
+      is_insured: meta.is_insured !== undefined ? meta.is_insured : false,
+      gosi_number: meta.gosi_number || '',
+      company: meta.company || 'شركة درة السيارة لقطع غيار السيارات',
+      gender: meta.gender || row.gender || 'male',
+      marital_status: meta.marital_status || 'أعزب',
+      contract_type: meta.contract_type || 'محدد',
+      contract_end_date: meta.contract_end_date || null,
+      manager_name: meta.manager_name || (typeof row.manager_name === 'string' && !row.manager_name.startsWith('{') ? row.manager_name : null),
+      shift: row.shift || 'فترة عمل غير سعودي'
+    };
+  }
+
+  if (entityName === 'AttendanceLog') {
     let extra = {};
     if (row.notes) {
       try {
@@ -872,7 +901,7 @@ function toDbRecord(entityName, item) {
   if (entityName === 'LeaveRequest') {
     return {
       ...row,
-      employee_number: row.employee_id
+      employee_number: row.employee_id || row.employee_number
     };
   }
 
