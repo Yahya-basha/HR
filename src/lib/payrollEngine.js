@@ -625,8 +625,9 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   // Friday allowance ONLY for days with real biometric attendance on Friday
   const fridayAllowance = fridayWorkedDays * fridayDailyRate;
   const fridayNote = fridayWorkedDays > 0 ? `${fridayWorkedDays} جمعات دوام فعلي × ${fridayDailyRate} = ${fridayAllowance} ريال` : null;
-  const dailyOvertimeAllowance = overtimeDays * overtimeDailyRate;
-  const dailyOvertimeNote = overtimeDays > 0 ? `${overtimeDays} يوم × ${overtimeDailyRate} = ${dailyOvertimeAllowance} ريال` : null;
+  // 9-Hour Monthly Flat Allowance: 100 SAR fixed for the month upon full attendance completion
+  const dailyOvertimeAllowance = (is9HourShift && presentDays > 0) ? 100 : 0;
+  const dailyOvertimeNote = dailyOvertimeAllowance > 0 ? 'بدل مقطوع عن اكتمال دوام 9 ساعات الشهري = 100 ريال' : null;
 
   // GOSI: 100% employer paid (zero deduction from employee)
   const isInsured = emp.is_insured === true || emp.is_insured === 'true';

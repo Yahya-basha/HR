@@ -1157,81 +1157,25 @@ export default function Payroll() {
                   )}
                 </Card>
 
-                {/* 2. Shortfall Hours & Delay Penalty */}
+                {/* 2. 9-Hour Monthly Fixed Allowance Card */}
                 <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-3">
                   <div className="flex items-center justify-between border-b pb-3">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-rose-600" />
-                      <h3 className="font-heading font-black text-sm text-foreground">2. خصم عجز ساعات الدوام والتأخير</h3>
+                      <Clock className="w-5 h-5 text-indigo-600" />
+                      <h3 className="font-heading font-black text-sm text-foreground">2. بدل اكتمال دوام 9 ساعات الشهري</h3>
                     </div>
-                    <Badge className="bg-rose-100 text-rose-800 text-xs font-mono font-bold border-0">
-                      {formatHours(currentSelectedPayroll.shortfallHours)} ساعة
+                    <Badge className={`${currentSelectedPayroll.dailyOvertimeAllowance > 0 ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' : 'bg-slate-100 text-slate-700'} text-xs font-mono font-bold border-0`}>
+                      {currentSelectedPayroll.dailyOvertimeAllowance > 0 ? 'مستحق (+100 ر.س)' : 'غير مستحق'}
                     </Badge>
                   </div>
-
-                  <div className="space-y-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-xs">
+                  <div className="space-y-2 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-xs">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">المبلغ المحتسب آلياً:</span>
-                      <span className="font-mono font-black text-rose-600">-{fmtNum(currentSelectedPayroll.proposedShortfallDeduction)} ر.س</span>
+                      <span className="text-muted-foreground">نوع البدل:</span>
+                      <span className="font-bold text-foreground">مكافأة شهرية مقطوعة لدوام 9 ساعات</span>
                     </div>
-
-                    <div className="space-y-1.5 pt-2 border-t">
-                      <Label className="text-xs font-bold">قرار المدير العام:</Label>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button
-                          size="sm"
-                          variant={currentSelectedPayroll.shortfallApprovalStatus === 'approved' ? 'default' : 'outline'}
-                          onClick={() => {
-                            saveShortfallApproval(currentSelectedEmp.employee_number || currentSelectedEmp.id, monthPrefix, {
-                              status: 'approved',
-                              finalDeduction: currentSelectedPayroll.proposedShortfallDeduction,
-                              note: 'اعتماد كامل العجز',
-                              approvedBy: user?.full_name || 'المدير العام'
-                            });
-                            loadData();
-                          }}
-                          className="text-[11px] rounded-xl font-bold h-8"
-                        >
-                          اعتماد كامل
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant={currentSelectedPayroll.shortfallApprovalStatus === 'modified' ? 'default' : 'outline'}
-                          onClick={() => {
-                            const customVal = prompt('أدخل المبلغ المعتمد للخصم (ر.س):', currentSelectedPayroll.approvedShortfallDeduction);
-                            if (customVal !== null) {
-                              saveShortfallApproval(currentSelectedEmp.employee_number || currentSelectedEmp.id, monthPrefix, {
-                                status: 'modified',
-                                finalDeduction: Number(customVal) || 0,
-                                note: 'تعديل استثنائي',
-                                approvedBy: user?.full_name || 'المدير العام'
-                              });
-                              loadData();
-                            }
-                          }}
-                          className="text-[11px] rounded-xl font-bold h-8"
-                        >
-                          تعديل المبلغ
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant={currentSelectedPayroll.shortfallApprovalStatus === 'rejected' ? 'destructive' : 'outline'}
-                          onClick={() => {
-                            saveShortfallApproval(currentSelectedEmp.employee_number || currentSelectedEmp.id, monthPrefix, {
-                              status: 'rejected',
-                              finalDeduction: 0,
-                              note: 'إعفاء تام بقرار المدير',
-                              approvedBy: user?.full_name || 'المدير العام'
-                            });
-                            loadData();
-                          }}
-                          className="text-[11px] rounded-xl font-bold h-8"
-                        >
-                          إعفاء (0)
-                        </Button>
-                      </div>
+                    <div className="flex justify-between border-t pt-2 font-bold">
+                      <span>المبلغ المستحق لهذا الشهر:</span>
+                      <span className="font-mono font-black text-indigo-600 text-sm">+{fmtNum(currentSelectedPayroll.dailyOvertimeAllowance)} ر.س</span>
                     </div>
                   </div>
                 </Card>
