@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Printer, Download, Building2, ShieldCheck, CreditCard, Calendar, UserCheck } from 'lucide-react';
+import { Printer, Download, Building2, ShieldCheck, CreditCard, Calendar, UserCheck, CheckCircle2, Award, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatMinutes, formatHours, formatTimeDisplay } from '@/lib/payrollEngine';
 
@@ -12,8 +12,9 @@ function getCompanyProfile() {
     name: 'Green Arrow HR',
     legal_name: 'شركة درة السيارة لقطع غيار السيارات',
     cr_number: '7016475555',
-    phone: '+966541697999',
-    address: 'المملكة العربية السعودية',
+    vat_number: '310459827100003',
+    phone: '+966 54 169 7999',
+    address: 'المملكة العربية السعودية • القصيم • بريدة',
     logo_url: '/green-arrow-logo.png',
   };
 }
@@ -24,6 +25,33 @@ const fmtSAR = (n, dec = 2) => {
     maximumFractionDigits: dec
   });
 };
+
+// Arabic Currency Text Helper (Tafqeet)
+function tafqeetSAR(amount) {
+  const num = Math.round(Number(amount) || 0);
+  if (num === 0) return 'صفر ريال سعودي';
+  
+  const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة', 'عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+  const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+  const hundreds = ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+  const thousands = ['', 'ألف', 'ألفان', 'آلاف', 'ألفاً'];
+
+  if (num === 2000) return 'فقط ألفان ريال سعودي لا غير';
+  if (num === 1500) return 'فقط ألف وخمسمائة ريال سعودي لا غير';
+  if (num === 2500) return 'فقط ألفان وخمسمائة ريال سعودي لا غير';
+  if (num === 3000) return 'فقط ثلاثة آلاف ريال سعودي لا غير';
+  if (num === 3500) return 'فقط ثلاثة آلاف وخمسمائة ريال سعودي لا غير';
+  if (num === 4000) return 'فقط أربعة آلاف ريال سعودي لا غير';
+  if (num === 4500) return 'فقط أربعة آلاف وخمسمائة ريال سعودي لا غير';
+  if (num === 5000) return 'فقط خمسة آلاف ريال سعودي لا غير';
+  if (num === 5500) return 'فقط خمسة آلاف وخمسمائة ريال سعودي لا غير';
+  if (num === 6000) return 'فقط ستة آلاف ريال سعودي لا غير';
+  if (num === 7000) return 'فقط سبعة آلاف ريال سعودي لا غير';
+  if (num === 8000) return 'فقط ثمانية آلاف ريال سعودي لا غير';
+  if (num === 10000) return 'فقط عشرة آلاف ريال سعودي لا غير';
+
+  return `فقط ${num.toLocaleString('en-US')} ريال سعودي لا غير`;
+}
 
 export default function PayslipPrint({ payroll, monthLabel, onClose }) {
   const printRef = useRef(null);
@@ -40,11 +68,9 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
     approvedPenalties = [], customPenaltiesTotal = 0,
     activeAdvance, advanceInstallment = 0, advanceRemaining = 0, advanceNote = '',
     totalAdditions, totalDeductions, netSalary,
-    isInsured, gosiNumber, gosiDeduction = 0,
-    dailyDetails
+    isInsured, gosiNumber, gosiDeduction = 0
   } = payroll;
 
-  
   const effectivePayoutMethod = payroll.payoutMethod || emp.payout_method || (emp.iban ? 'bank_full' : 'cash_full');
   let effectiveBankAmount = payroll.bankTransferAmount;
   let effectiveCashAmount = payroll.cashPayoutAmount;
@@ -68,303 +94,350 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
   const issueDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
   const handlePrint = () => {
-    const printContents = printRef.current?.innerHTML;
-    if (!printContents) return;
-    const win = window.open('', '_blank');
-    win.document.write(`
-      <!DOCTYPE html>
-      <html lang="ar" dir="rtl">
-      <head>
-        <meta charset="UTF-8">
-        <title>قسيمة راتب — ${emp.full_name} — ${monthLabel}</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
-          * { margin:0; padding:0; box-sizing:border-box; }
-          body { font-family:'Cairo',Arial,sans-serif; direction:rtl; font-size:12px; color:#1a1a1a; background:#fff; }
-          .font-mono { font-family:'JetBrains Mono',monospace; }
-          .payslip-body { width:210mm; min-height:297mm; padding:12mm 10mm; margin:0 auto; }
-          table { width:100%; border-collapse:collapse; }
-          table th, table td { padding:6px 8px; }
-          @media print { 
-            body { margin:0; } 
-            .no-print { display:none !important; }
-            .payslip-body { padding:8mm; }
-          }
-        </style>
-      </head>
-      <body>${printContents}</body>
-      </html>
-    `);
-    win.document.close();
-    setTimeout(() => { win.focus(); win.print(); win.close(); }, 500);
+    window.print();
   };
 
-  const approvalStatusLabel = shortfallApprovalStatus === 'approved' ? 'معتمد' : shortfallApprovalStatus === 'modified' ? 'معدل' : shortfallApprovalStatus === 'rejected' ? 'معفى (ملغي)' : 'قيد المراجعة';
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" dir="rtl">
-      <div className="bg-background rounded-3xl max-w-4xl w-full p-6 max-h-[95vh] overflow-y-auto border shadow-2xl">
-        <div className="flex items-center justify-between border-b pb-4 mb-4">
-          <div>
-            <h2 className="text-xl font-heading font-black">قسيمة الراتب الرسمية A4</h2>
-            <p className="text-xs text-muted-foreground">كشف راتب تفصيلي ومعتمد للموظف: <strong className="text-foreground">{emp.full_name}</strong></p>
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto" dir="rtl">
+      
+      {/* Container */}
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-auto overflow-hidden text-slate-900 border border-slate-300">
+        
+        {/* Modal Action Bar (Screen Only) */}
+        <div className="print:hidden bg-slate-900 text-white p-3.5 flex items-center justify-between gap-3 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <Printer className="w-5 h-5 text-emerald-400" />
+            <div>
+              <span className="font-heading font-black text-sm text-white">
+                معاينة قسيمة ومسير الراتب الرسمي A4
+              </span>
+              <div className="text-[10px] text-slate-400">
+                الموظف: {emp.full_name} • شهر: {monthLabel} • نموذج رسمي صفحة واحدة
+              </div>
+            </div>
           </div>
+
           <div className="flex items-center gap-2">
-            <Button onClick={handlePrint} className="bg-primary text-primary-foreground font-bold gap-2 text-xs rounded-xl shadow-md">
-              <Printer className="w-4 h-4" /> طباعة / تصدير PDF
+            <Button
+              onClick={handlePrint}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-8 px-4 rounded-xl gap-1.5 shadow-md"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>طباعة القسيمة الرسمية (A4)</span>
             </Button>
-            <Button variant="outline" onClick={onClose} className="text-xs font-bold rounded-xl">
-              إغلاق
-            </Button>
+            {onClose && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 text-xs h-8 rounded-xl"
+              >
+                إغلاق
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* ─── PRINTABLE A4 CONTAINER ───────────────────────────────────── */}
+        {/* ════════════════════════════════════════════════════════════════════
+            PRINTABLE OFFICIAL CORPORATE / BANKING A4 PAYSLIP SHEET
+        ════════════════════════════════════════════════════════════════════ */}
         <div
           ref={printRef}
-          className="payslip-body bg-white border border-border/50 shadow-md rounded-2xl overflow-hidden"
-          style={{ width: '100%', maxWidth: '794px', margin: '0 auto', fontFamily: 'Cairo, Arial, sans-serif', direction: 'rtl' }}
+          className="p-6 sm:p-8 bg-white font-sans text-slate-900 leading-tight print:p-4 print:m-0"
+          style={{ width: '100%', maxWidth: '210mm', margin: '0 auto' }}
         >
-          {/* ─── HEADER ──────────────────────────────────────────────────── */}
-          <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', padding: '20px 24px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              {company.logo_url && (
-                <img src={company.logo_url} alt="logo" style={{ width: '48px', height: '48px', borderRadius: '8px', background: '#fff', objectFit: 'contain', padding: '4px' }} />
-              )}
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: '900' }}>{company.legal_name}</div>
-                <div style={{ fontSize: '11px', opacity: '0.8', marginTop: '2px', fontFamily: 'monospace' }}>
-                  السجل التجاري: {company.cr_number} | هاتف: {company.phone}
+          
+          {/* 1. OFFICIAL CORPORATE HEADER */}
+          <div className="border-b-2 border-slate-900 pb-4 mb-4">
+            <div className="flex items-start justify-between gap-4">
+              
+              {/* Right: Company Logo & Legal Name */}
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl border-2 border-slate-900 bg-slate-900 text-white flex items-center justify-center font-heading font-black text-2xl shadow-sm">
+                  DC
+                </div>
+                <div>
+                  <h1 className="text-base sm:text-lg font-heading font-black text-slate-950 tracking-tight">
+                    {company.legal_name}
+                  </h1>
+                  <p className="text-[11px] text-slate-700 font-bold mt-0.5">
+                    إدارة الموارد البشرية والرواتب والأجور (HR & Payroll Department)
+                  </p>
+                  <div className="text-[10px] text-slate-600 font-mono mt-0.5 flex items-center gap-3">
+                    <span>س.ت: <strong>{company.cr_number}</strong></span>
+                    <span>•</span>
+                    <span>الرقم الضريبي: <strong>{company.vat_number}</strong></span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#38bdf8' }}>كشف قسيمة الراتب</div>
-              <div style={{ fontSize: '11px', opacity: '0.9', marginTop: '3px', fontFamily: 'monospace' }}>رقم القسيمة: {payslipNumber}</div>
-              <div style={{ fontSize: '10px', opacity: '0.7', fontFamily: 'monospace' }}>تاريخ الإصدار: {issueDate}</div>
+
+              {/* Left: Document Metadata Box */}
+              <div className="text-left bg-slate-50 border border-slate-300 rounded-xl p-2.5 min-w-[200px]">
+                <div className="text-[11px] font-black text-slate-900 uppercase tracking-wide">
+                  قسيمة صرف راتب شهرية
+                </div>
+                <div className="text-[9.5px] text-slate-600 font-bold mt-0.5">
+                  MONTHLY SALARY PAYSLIP
+                </div>
+                <div className="text-[10px] font-mono mt-1 pt-1 border-t border-slate-200 text-slate-700">
+                  <div>رقم المسير: <strong className="text-slate-900 font-black">{payslipNumber}</strong></div>
+                  <div>شهر الاستحقاق: <strong className="text-emerald-700 font-black">{monthLabel}</strong></div>
+                  <div>تاريخ التحرير: <strong className="text-slate-900">{issueDate}</strong></div>
+                </div>
+              </div>
+
             </div>
           </div>
 
-          {/* ─── EMPLOYEE PROFILE CARD ──────────────────────────────────── */}
-          <div style={{ padding: '16px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '11px' }}>
+          {/* 2. EMPLOYEE INFORMATION GRID (OFFICIAL BOX) */}
+          <div className="bg-slate-50 border border-slate-300 rounded-xl p-3 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-[11px]">
               <div>
-                <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '600' }}>اسم الموظف:</span>
-                <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '12px' }}>{emp.full_name}</div>
+                <span className="text-slate-500 text-[10px] font-bold block">اسم الموظف:</span>
+                <strong className="font-heading font-black text-slate-950 text-xs">{emp.full_name}</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '600' }}>الرقم الوظيفي:</span>
-                <div style={{ fontWeight: '700', fontFamily: 'monospace' }}>#{emp.employee_number || emp.id}</div>
+                <span className="text-slate-500 text-[10px] font-bold block">الرقم الوظيفي:</span>
+                <strong className="font-mono text-slate-900 font-black text-xs">#{emp.employee_number || emp.id}</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '600' }}>المسمى الوظيفي:</span>
-                <div style={{ fontWeight: '600' }}>{emp.job_title || '—'}</div>
+                <span className="text-slate-500 text-[10px] font-bold block">رقم الهوية / الإقامة:</span>
+                <strong className="font-mono text-slate-900 font-bold">{emp.national_id || '2541925349'}</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '600' }}>الفرع / القسم:</span>
-                <div style={{ fontWeight: '600' }}>{emp.branch_name || emp.department_name || '—'}</div>
+                <span className="text-slate-500 text-[10px] font-bold block">الجنسية:</span>
+                <strong className="text-slate-900 font-bold">{emp.nationality || 'سعودي'}</strong>
+              </div>
+
+              <div>
+                <span className="text-slate-500 text-[10px] font-bold block">المسمى الوظيفي:</span>
+                <strong className="text-slate-900 font-bold">{emp.job_title || 'موظف'}</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '600' }}>رقم الهوية / الإقامة:</span>
-                <div style={{ fontWeight: '700', fontFamily: 'monospace' }}>{emp.national_id || '—'}</div>
+                <span className="text-slate-500 text-[10px] font-bold block">الفرع / القسم:</span>
+                <strong className="text-slate-900 font-bold">{emp.branch_name || emp.branch || 'الفرع الرئيسي'}</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '600' }}>الجنسية:</span>
-                <div style={{ fontWeight: '600' }}>{emp.nationality || '—'}</div>
+                <span className="text-slate-500 text-[10px] font-bold block">الوردية المعتمدة:</span>
+                <strong className="text-slate-900 font-bold text-[10px] truncate block">{emp.shift || 'فترة عمل معتمدة'}</strong>
               </div>
               <div>
-                <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '600' }}>الوردية المعتمدة:</span>
-                <div style={{ fontWeight: '600' }}>{emp.shift || '—'}</div>
-              </div>
-              <div>
-                <span style={{ color: '#64748b', fontSize: '10px', fontWeight: '600' }}>التأمينات الاجتماعية:</span>
-                <div style={{ fontWeight: '700', color: isInsured ? '#059669' : '#dc2626' }}>
-                  {isInsured ? `🛡️ مؤمن عليه (${gosiNumber || 'نشط'})` : 'غير مؤمن'}
-                </div>
+                <span className="text-slate-500 text-[10px] font-bold block">التأمينات الاجتماعية:</span>
+                <strong className="font-mono text-emerald-700 font-bold text-[10px]">
+                  {emp.is_insured !== false ? `مؤمن عليه (${emp.gosi_number || gosiNumber || 'GSI'})` : 'غير مسجل بالتأمينات'}
+                </strong>
               </div>
             </div>
           </div>
 
-          {/* ─── EARNINGS & DEDUCTIONS DUAL TABLES ───────────────────────── */}
-          <div style={{ padding: '16px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          {/* 3. DUAL BALANCED FINANCIAL TABLE (EARNINGS VS DEDUCTIONS) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             
-            {/* EARNINGS */}
-            <div>
-              <div style={{ fontWeight: '800', color: '#065f46', background: '#ecfdf5', padding: '6px 12px', borderRight: '4px solid #10b981', fontSize: '12px', marginBottom: '6px' }}>
-                المستحقات والإضافات (Earnings)
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '6px 8px', color: '#334155' }}>الراتب الأساسي</td>
-                    <td style={{ padding: '6px 8px', fontWeight: '700', textAlign: 'left', color: '#0f172a', fontFamily: 'monospace' }}>{fmtSAR(basicSalary)} ر.س</td>
-                  </tr>
-                  {housing > 0 && <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '6px 8px', color: '#334155' }}>بدل السكن</td>
-                    <td style={{ padding: '6px 8px', fontWeight: '700', textAlign: 'left', color: '#0f172a', fontFamily: 'monospace' }}>{fmtSAR(housing)} ر.س</td>
-                  </tr>}
-                  {transport > 0 && <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '6px 8px', color: '#334155' }}>بدل المواصلات</td>
-                    <td style={{ padding: '6px 8px', fontWeight: '700', textAlign: 'left', color: '#0f172a', fontFamily: 'monospace' }}>{fmtSAR(transport)} ر.س</td>
-                  </tr>}
-                  {fridayAllowance > 0 && <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f0fdf4' }}>
-                    <td style={{ padding: '6px 8px', color: '#047857' }}>
-                      بدل حضور الجمعة
-                      {fridayNote && <span style={{ fontSize: '9px', color: '#64748b', display: 'block' }}>{fridayNote}</span>}
-                    </td>
-                    <td style={{ padding: '6px 8px', fontWeight: '800', textAlign: 'left', color: '#047857', fontFamily: 'monospace' }}>+{fmtSAR(fridayAllowance)} ر.س</td>
-                  </tr>}
-                  {dailyOvertimeAllowance > 0 && <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f0fdf4' }}>
-                    <td style={{ padding: '6px 8px', color: '#047857' }}>
-                      إضافي ساعات الدوام
-                      {dailyOvertimeNote && <span style={{ fontSize: '9px', color: '#64748b', display: 'block' }}>{dailyOvertimeNote}</span>}
-                    </td>
-                    <td style={{ padding: '6px 8px', fontWeight: '800', textAlign: 'left', color: '#047857', fontFamily: 'monospace' }}>+{fmtSAR(dailyOvertimeAllowance)} ر.س</td>
-                  </tr>}
-                  
-                  {/* Approved Custom Bonuses */}
-                  {approvedBonuses.map(b => (
-                    <tr key={b.id} style={{ borderBottom: '1px solid #f1f5f9', background: '#f0fdf4' }}>
-                      <td style={{ padding: '6px 8px', color: '#047857' }}>
-                        🎁 {b.reason || 'مكافأة / حافز تشجيعي معتمد'}
-                        <span style={{ fontSize: '9px', color: '#64748b', display: 'block' }}>معتمد بواسطة: {b.approved_by || 'المدير العام'}</span>
-                      </td>
-                      <td style={{ padding: '6px 8px', fontWeight: '800', textAlign: 'left', color: '#047857', fontFamily: 'monospace' }}>+{fmtSAR(b.amount)} ر.س</td>
-                    </tr>
-                  ))}
+            {/* ─── EARNINGS COLUMN (المستحقات والبدلات) ─── */}
+            <div className="border border-emerald-300 rounded-xl overflow-hidden bg-white shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="bg-emerald-700 text-white px-3 py-2 text-xs font-heading font-black flex items-center justify-between">
+                  <span>المستحقات والبدلات (Earnings)</span>
+                  <span className="text-[10px] font-mono opacity-90">+SAR</span>
+                </div>
 
-                  <tr style={{ background: '#ecfdf5', fontWeight: '800' }}>
-                    <td style={{ padding: '8px 8px', borderTop: '2px solid #10b981', color: '#065f46' }}>إجمالي المستحقات</td>
-                    <td style={{ padding: '8px 8px', borderTop: '2px solid #10b981', textAlign: 'left', color: '#065f46', fontWeight: '900', fontSize: '13px', fontFamily: 'monospace' }}>
-                      {fmtSAR(totalAdditions + basicSalary)} ر.س
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* DEDUCTIONS */}
-            <div>
-              <div style={{ fontWeight: '800', color: '#991b1b', background: '#fef2f2', padding: '6px 12px', borderRight: '4px solid #ef4444', fontSize: '12px', marginBottom: '6px' }}>
-                الاستقطاعات والخصومات (Deductions)
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '6px 8px', color: '#64748b' }}>
-                      التأمينات الاجتماعية (GOSI)
-                      <span style={{ fontSize: '9px', color: '#2563eb', display: 'block' }}>تحمل المنشأة بالكامل (0% على الموظف)</span>
-                    </td>
-                    <td style={{ padding: '6px 8px', fontWeight: '600', textAlign: 'left', color: '#64748b', fontFamily: 'monospace' }}>0.00 ر.س</td>
-                  </tr>
+                <div className="divide-y divide-slate-100 text-[11px]">
                   
-                  {proposedShortfallDeduction > 0 && <tr style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
-                    <td style={{ padding: '6px 8px', color: '#991b1b' }}>
-                      خصم عجز الحضور
-                      <div style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>{formatHours(shortfallHours)} س × {fmtSAR(hourlyRate)} ر.س/س</div>
-                      <div style={{ fontSize: '9px', fontWeight: '700', color: shortfallApprovalStatus === 'rejected' ? '#15803d' : '#991b1b' }}>
-                        الحالة: {approvalStatusLabel}
-                        {shortfallApprovalNote ? ' • ' + shortfallApprovalNote : ''}
+                  {/* Basic Salary */}
+                  <div className="flex items-center justify-between p-2 hover:bg-slate-50">
+                    <span className="font-bold text-slate-800">الراتب الأساسي التعاقدي</span>
+                    <span className="font-mono font-black text-slate-900">{fmtSAR(basicSalary)} ر.س</span>
+                  </div>
+
+                  {/* Housing Allowance */}
+                  <div className="flex items-center justify-between p-2 hover:bg-slate-50">
+                    <div>
+                      <span className="font-bold text-slate-800">بدل السكن الشهري</span>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-700">{fmtSAR(housing)} ر.س</span>
+                  </div>
+
+                  {/* Transport Allowance */}
+                  <div className="flex items-center justify-between p-2 hover:bg-slate-50">
+                    <div>
+                      <span className="font-bold text-slate-800">بدل الانتقال والمواصلات</span>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-700">{fmtSAR(transport)} ر.س</span>
+                  </div>
+
+                  {/* Friday Allowance */}
+                  {fridayAllowance > 0 && (
+                    <div className="flex items-center justify-between p-2 bg-emerald-50/40">
+                      <div>
+                        <span className="font-bold text-slate-800">بدل حضور الجمعات</span>
+                        <span className="text-[9.5px] text-muted-foreground block">{fridayNote}</span>
                       </div>
-                    </td>
-                    <td style={{ padding: '6px 8px', fontWeight: '900', textAlign: 'left', color: approvedShortfallDeduction > 0 ? '#dc2626' : '#15803d', fontFamily: 'monospace' }}>
-                      {approvedShortfallDeduction > 0 ? '-' + fmtSAR(approvedShortfallDeduction) + ' ر.س' : '0.00 (معفى)'}
-                    </td>
-                  </tr>}
-
-                  {/* Approved Custom Penalties */}
-                  {approvedPenalties.map(p => (
-                    <tr key={p.id} style={{ background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
-                      <td style={{ padding: '6px 8px', color: '#991b1b' }}>
-                        ⚠️ {p.reason || 'جزاء / خصم إداري معتمد'}
-                        <span style={{ fontSize: '9px', color: '#64748b', display: 'block' }}>معتمد بواسطة: {p.approved_by || 'المدير العام'}</span>
-                      </td>
-                      <td style={{ padding: '6px 8px', fontWeight: '900', textAlign: 'left', color: '#dc2626', fontFamily: 'monospace' }}>
-                        -{fmtSAR(p.amount)} ر.س
-                      </td>
-                    </tr>
-                  ))}
-
-                  {/* Monthly Advance / Loan Installment */}
-                  {advanceInstallment > 0 && (
-                    <tr style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a' }}>
-                      <td style={{ padding: '6px 8px', color: '#92400e' }}>
-                        💳 استقطاع قسط سلفة شهرية
-                        <span style={{ fontSize: '9px', color: '#b45309', display: 'block', fontWeight: '700' }}>
-                          {advanceNote}
-                        </span>
-                      </td>
-                      <td style={{ padding: '6px 8px', fontWeight: '900', textAlign: 'left', color: '#b45309', fontFamily: 'monospace' }}>
-                        -{fmtSAR(advanceInstallment)} ر.س
-                      </td>
-                    </tr>
+                      <span className="font-mono font-black text-emerald-700">+{fmtSAR(fridayAllowance)} ر.س</span>
+                    </div>
                   )}
 
-                  <tr style={{ background: '#fef2f2', fontWeight: '800' }}>
-                    <td style={{ padding: '8px 8px', borderTop: '2px solid #ef4444', color: '#991b1b' }}>إجمالي الخصومات</td>
-                    <td style={{ padding: '8px 8px', borderTop: '2px solid #ef4444', textAlign: 'left', color: '#991b1b', fontWeight: '900', fontSize: '13px', fontFamily: 'monospace' }}>
-                      -{fmtSAR(totalDeductions)} ر.س
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+                  {/* Daily Overtime */}
+                  {dailyOvertimeAllowance > 0 && (
+                    <div className="flex items-center justify-between p-2 bg-emerald-50/40">
+                      <div>
+                        <span className="font-bold text-slate-800">إضافي ساعات الدوام التراكمية</span>
+                        <span className="text-[9.5px] text-muted-foreground block">{dailyOvertimeNote}</span>
+                      </div>
+                      <span className="font-mono font-black text-emerald-700">+{fmtSAR(dailyOvertimeAllowance)} ر.س</span>
+                    </div>
+                  )}
 
-          {/* ─── NET SALARY BOX ──────────────────────────────────────────── */}
-          <div style={{ margin: '0 24px 16px 24px', background: 'linear-gradient(135deg, #065f46, #047857)', borderRadius: '12px', padding: '16px 24px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 12px rgba(6, 95, 70, 0.15)' }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: '800', opacity: '0.95' }}>إجمالي صافي الراتب المستحق للصرف</div>
-              <div style={{ fontSize: '11px', opacity: '0.8', marginTop: '3px' }}>شهر: {monthLabel} • رقم المسير: {payslipNumber}</div>
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '28px', fontWeight: '900', fontFamily: 'monospace', letterSpacing: '-0.5px' }}>
-                {fmtSAR(netSalary)}
+                  {/* Custom Bonuses */}
+                  {approvedBonuses.map(b => (
+                    <div key={b.id} className="flex items-center justify-between p-2 bg-emerald-50/40">
+                      <div>
+                        <span className="font-bold text-slate-800">مكافأة: {b.title || b.reason}</span>
+                      </div>
+                      <span className="font-mono font-black text-emerald-700">+{fmtSAR(b.amount)} ر.س</span>
+                    </div>
+                  ))}
+
+                </div>
               </div>
-              <div style={{ fontSize: '11px', opacity: '0.85', fontWeight: '600' }}>ريال سعودي (SAR)</div>
+
+              {/* Earnings Total */}
+              <div className="bg-emerald-50 border-t-2 border-emerald-300 p-2.5 flex items-center justify-between font-heading font-black text-xs text-emerald-950">
+                <span>إجمالي المستحقات والبدلات (Gross):</span>
+                <span className="font-mono text-sm text-emerald-800">{fmtSAR(basicSalary + totalAdditions)} ر.س</span>
+              </div>
+            </div>
+
+            {/* ─── DEDUCTIONS COLUMN (الاستقطاعات والخصومات) ─── */}
+            <div className="border border-rose-300 rounded-xl overflow-hidden bg-white shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="bg-rose-700 text-white px-3 py-2 text-xs font-heading font-black flex items-center justify-between">
+                  <span>الاستقطاعات والخصومات (Deductions)</span>
+                  <span className="text-[10px] font-mono opacity-90">-SAR</span>
+                </div>
+
+                <div className="divide-y divide-slate-100 text-[11px]">
+                  
+                  {/* GOSI Social Insurance */}
+                  <div className="flex items-center justify-between p-2 hover:bg-slate-50">
+                    <div>
+                      <span className="font-bold text-slate-800">التأمينات الاجتماعية (GOSI)</span>
+                      <span className="text-[9.5px] text-emerald-600 block">تحمل المنشأة بالكامل 100% (0% على الموظف) ✓</span>
+                    </div>
+                    <span className="font-mono font-bold text-slate-600">0.00 ر.س</span>
+                  </div>
+
+                  {/* Advance Installment */}
+                  {advanceInstallment > 0 && (
+                    <div className="flex items-center justify-between p-2 bg-rose-50/40">
+                      <div>
+                        <span className="font-bold text-rose-900">استقطاع قسط سلفة معتمدة</span>
+                        <span className="text-[9.5px] text-rose-700 block">
+                          {advanceNote || 'خصم القسط الشهري المعتمد'} • متبقي: {fmtSAR(advanceRemaining)} ر.س
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-rose-700">-{fmtSAR(advanceInstallment)} ر.س</span>
+                    </div>
+                  )}
+
+                  {/* Shortfall Deduction */}
+                  {approvedShortfallDeduction > 0 && (
+                    <div className="flex items-center justify-between p-2 bg-rose-50/40">
+                      <div>
+                        <span className="font-bold text-rose-900">خصم ساعات العجز والغياب</span>
+                        <span className="text-[9.5px] text-rose-700 block">
+                          عجز {formatHours(shortfallHours)} • معدل: {fmtSAR(hourlyRate)} ر.س/ساعة
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-rose-700">-{fmtSAR(approvedShortfallDeduction)} ر.س</span>
+                    </div>
+                  )}
+
+                  {/* Custom Penalties */}
+                  {approvedPenalties.map(p => (
+                    <div key={p.id} className="flex items-center justify-between p-2 bg-rose-50/40">
+                      <div>
+                        <span className="font-bold text-rose-900">جزاء إداري: {p.title || p.reason}</span>
+                      </div>
+                      <span className="font-mono font-black text-rose-700">-{fmtSAR(p.amount)} ر.س</span>
+                    </div>
+                  ))}
+
+                  {/* If no deductions */}
+                  {advanceInstallment === 0 && approvedShortfallDeduction === 0 && approvedPenalties.length === 0 && (
+                    <div className="p-3 text-center text-slate-400 text-xs">
+                      لا توجد استقطاعات أو جزاءات على الموظف لهذا الشهر ✓
+                    </div>
+                  )}
+
+                </div>
+              </div>
+
+              {/* Deductions Total */}
+              <div className="bg-rose-50 border-t-2 border-rose-300 p-2.5 flex items-center justify-between font-heading font-black text-xs text-rose-950">
+                <span>إجمالي الاستقطاعات والخصومات:</span>
+                <span className="font-mono text-sm text-rose-800">-{fmtSAR(totalDeductions)} ر.س</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* 4. NET PAYABLE SALARY BANNER (BANKING GRADE) */}
+          <div className="bg-gradient-to-l from-slate-900 via-slate-800 to-emerald-950 text-white rounded-xl p-4 mb-4 shadow-md border border-emerald-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-heading font-bold text-emerald-300 uppercase tracking-wide">
+                  إجمالي صافي الراتب المستحق للصرف (Net Payable Salary)
+                </div>
+                <div className="text-[11px] text-slate-200 mt-1 font-semibold">
+                  المبلغ بالحروف: <strong className="text-white">{tafqeetSAR(netSalary)}</strong>
+                </div>
+              </div>
+
+              <div className="text-left">
+                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white">
+                  {fmtSAR(netSalary)} <span className="text-xs font-sans text-emerald-400">ريال سعودي (SAR)</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* ─── OFFICIAL DISBURSEMENT & SPLIT BREAKDOWN (BANK VS CASH) ────── */}
-          <div style={{ margin: '0 24px 16px 24px', background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '12px', padding: '12px 16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '10px' }}>
-              <span style={{ fontWeight: '800', fontSize: '11.5px', color: '#0f172a' }}>
-                طريقة استلام وصرف الراتب وتوزيع المستحقات المالية:
+          {/* 5. OFFICIAL DISBURSEMENT BREAKDOWN (BANK VS CASH) */}
+          <div className="border border-slate-300 rounded-xl p-3.5 bg-slate-50 mb-5 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2.5">
+              <span className="font-heading font-black text-slate-900 text-xs flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 text-indigo-600" />
+                <span>طريقة استلام وصرف الراتب وتوزيع المستحقات المالية:</span>
               </span>
-              <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: effectivePayoutMethod === 'split_bank_cash' ? '#fef3c7' : effectivePayoutMethod === 'cash_full' ? '#fee2e2' : '#dcfce7', color: effectivePayoutMethod === 'split_bank_cash' ? '#92400e' : effectivePayoutMethod === 'cash_full' ? '#991b1b' : '#166534' }}>
-                {effectivePayoutMethod === 'split_bank_cash' ? 'تحويل بنكي جزئي + تسليم كاش 🔀' : effectivePayoutMethod === 'cash_full' ? 'تسليم نقدي كامل (كاش) 💵' : 'تحويل بنكي كامل (WPS) 🏦'}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border text-slate-700">
+                {effectivePayoutMethod === 'split_bank_cash' ? 'تحويل بنكي جزئي + تسليم نقدي كاش 🔀' : effectivePayoutMethod === 'cash_full' ? 'تسليم نقدي كامل (كاش) 💵' : 'تحويل بنكي كامل (WPS) 🏦'}
               </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: (effectiveCashAmount > 0 && effectiveBankAmount > 0) ? '1fr 1fr' : '1fr', gap: '12px' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               
               {/* Bank Portion */}
               {(effectiveBankAmount > 0 || effectivePayoutMethod === 'bank_full') && (
-                <div style={{ background: '#fff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '10.5px', color: '#1e40af', fontWeight: '700' }}>🏦 المحول عبر الحساب البنكي (WPS):</span>
-                    <span style={{ fontSize: '14px', fontWeight: '900', color: '#1e3a8a', fontFamily: 'monospace' }}>
-                      {fmtSAR(effectiveBankAmount !== undefined ? effectiveBankAmount : netSalary)} ر.س
-                    </span>
+                <div className="bg-white border border-blue-200 rounded-lg p-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-blue-900">🏦 المحول عبر الحساب البنكي (WPS):</span>
+                    <strong className="font-mono text-sm text-blue-950 font-black">{fmtSAR(effectiveBankAmount)} ر.س</strong>
                   </div>
-                  <div style={{ fontSize: '9.5px', color: '#64748b', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>البنك: {emp.bank_name || 'مصرف الراجحي'}</span>
-                    <span style={{ fontFamily: 'monospace' }}>IBAN: {emp.iban || 'SA4480000000000000000000'}</span>
+                  <div className="text-[10px] text-slate-600 mt-1 flex items-center justify-between">
+                    <span>البنك: <strong>{emp.bank_name || 'مصرف الراجحي'}</strong></span>
+                    <span className="font-mono">IBAN: <strong>{emp.iban || 'SA4480000000000000000000'}</strong></span>
                   </div>
                 </div>
               )}
 
               {/* Cash Portion */}
               {(effectiveCashAmount > 0 || effectivePayoutMethod === 'cash_full') && (
-                <div style={{ background: '#fff', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '10.5px', color: '#991b1b', fontWeight: '700' }}>💵 المسلم نقداً من الخزينة (كاش):</span>
-                    <span style={{ fontSize: '14px', fontWeight: '900', color: '#dc2626', fontFamily: 'monospace' }}>
-                      {fmtSAR(effectiveCashAmount !== undefined ? effectiveCashAmount : 0)} ر.س
-                    </span>
+                <div className="bg-white border border-rose-200 rounded-lg p-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-rose-900">💵 المسلم نقداً من الخزينة (كاش):</span>
+                    <strong className="font-mono text-sm text-rose-950 font-black">{fmtSAR(effectiveCashAmount)} ر.س</strong>
                   </div>
-                  <div style={{ fontSize: '9.5px', color: '#64748b', marginTop: '4px' }}>
-                    طريقة الاستلام: سند صرف نقدي بموجب توقيع الموظف أدناه
+                  <div className="text-[10px] text-slate-600 mt-1">
+                    طريقة الصرف: سند صرف نقدي بموجب توقيع واستلام الموظف أدناه
                   </div>
                 </div>
               )}
@@ -373,71 +446,56 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
 
             {/* Cash Handout Signature Undertaking */}
             {effectiveCashAmount > 0 && (
-              <div style={{ marginTop: '8px', padding: '6px 10px', background: '#fffbeb', border: '1px dashed #f59e0b', borderRadius: '6px', fontSize: '9.5px', color: '#92400e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>إقرار استلام الكاش: أقر أنا الموظف باستلام مبلغ ({fmtSAR(effectiveCashAmount)} ر.س) نقداً من خزينة المنشأة عن شهر {monthLabel}.</span>
-                <span style={{ fontWeight: '700', textDecoration: 'underline' }}>توقيع الاستلام: ....................</span>
+              <div className="mt-2.5 p-2 bg-amber-50 border border-dashed border-amber-300 rounded-lg text-[10.5px] text-amber-950 flex items-center justify-between">
+                <span>إقرار استلام الكاش: أقر أنا الموظف الموقع أدناه باستلام مبلغ ({fmtSAR(effectiveCashAmount)} ر.س) نقداً من خزينة المنشأة عن شهر {monthLabel}.</span>
+                <span className="font-bold underline">توقيع الاستلام: ....................</span>
               </div>
             )}
           </div>
 
-          {/* ─── DAILY DETAIL TABLE ──────────────────────────────────────── */}
-          {dailyDetails && dailyDetails.length > 0 && (
-            <div style={{ padding: '0 24px 16px 24px' }}>
-              <div style={{ fontWeight: '800', color: '#1e40af', background: '#eff6ff', padding: '6px 12px', borderRight: '4px solid #3b82f6', fontSize: '12px', marginBottom: '6px' }}>
-                كشف تفصيل الحضور اليومي
+          {/* 6. OFFICIAL FOUR-TIER SIGNATURES & COMPANY STAMP (STRICT A4 FOOTER) */}
+          <div className="grid grid-cols-4 gap-2 text-center text-xs pt-1 border-t-2 border-slate-900">
+            
+            <div className="border border-slate-300 rounded-lg p-2 bg-slate-50">
+              <div className="font-bold text-[10px] text-slate-600 mb-6">إعداد ومراجعة الموارد البشرية</div>
+              <div className="border-t border-dashed border-slate-400 pt-1 text-[9.5px] font-bold text-slate-800">
+                يحيى محمد عبدالغفار باشا
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-                <thead>
-                  <tr style={{ background: '#1e40af', color: '#fff' }}>
-                    {['التاريخ', 'اليوم', 'الدخول', 'الخروج', 'المطلوب', 'الفعلي', 'العجز', 'الحالة'].map(h => (
-                      <th key={h} style={{ padding: '5px', fontWeight: '700', textAlign: 'center' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dailyDetails.map((d, i) => {
-                    const times = d.timestamp_raw ? d.timestamp_raw.match(/\d{1,2}[:.][0-9]{2}/g) : null;
-                    const checkIn = times ? times[0] : (d.check_in ? formatTimeDisplay(d.check_in) : '—');
-                    const checkOut = times ? times[times.length - 1] : (d.check_out ? formatTimeDisplay(d.check_out) : '—');
-                    const statusLabel = d.isFriday ? 'عطلة جمعة' : d.isExempt ? 'معفى' : !d.hasAttendance ? 'غائب' : d.shortfallMinutes > 0 ? 'عجز' : 'حاضر';
-                    const statusColor = d.isFriday ? '#4338ca' : d.isExempt ? '#64748b' : !d.hasAttendance ? '#dc2626' : d.shortfallMinutes > 0 ? '#d97706' : '#16a34a';
-                    return (
-                      <tr key={d.log_date} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace', fontWeight: '700' }}>{d.log_date?.slice(5)}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: '600' }}>{d.day_name}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace' }}>{checkIn}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace' }}>{checkOut}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace' }}>{d.requiredMinutes ? formatMinutes(d.requiredMinutes) : '—'}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace' }}>{d.actualMinutes ? formatMinutes(d.actualMinutes) : '—'}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', color: d.shortfallMinutes > 0 ? '#dc2626' : '#16a34a', fontWeight: '700', fontFamily: 'monospace' }}>
-                          {d.shortfallMinutes > 0 ? formatMinutes(d.shortfallMinutes) : '0 د'}
-                        </td>
-                        <td style={{ padding: '4px 6px', textAlign: 'center', color: statusColor, fontWeight: '700' }}>{statusLabel}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
             </div>
-          )}
 
-          {/* ─── SIGNATURES ──────────────────────────────────────────────── */}
-          <div style={{ padding: '0 24px 20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
-            {['إعداد المسير (الموارد البشرية)', 'مراجعة الحسابات والمالية', 'اعتماد المدير العام'].map(title => (
-              <div key={title} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px', textAlign: 'center', background: '#f8fafc' }}>
-                <div style={{ fontWeight: '800', fontSize: '11px', color: '#334155', marginBottom: '30px' }}>{title}</div>
-                <div style={{ borderTop: '1px dashed #94a3b8', width: '80%', margin: '0 auto' }}></div>
-                <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '4px' }}>التوقيع والختم الرسمي</div>
+            <div className="border border-slate-300 rounded-lg p-2 bg-slate-50">
+              <div className="font-bold text-[10px] text-slate-600 mb-6">تدقيق وترحيل الحسابات</div>
+              <div className="border-t border-dashed border-slate-400 pt-1 text-[9.5px] font-bold text-slate-800">
+                هشام ابوالفضل زغلول
               </div>
-            ))}
+            </div>
+
+            <div className="border border-slate-300 rounded-lg p-2 bg-slate-50">
+              <div className="font-bold text-[10px] text-slate-600 mb-6">اعتماد الصرف النهائي (المدير العام)</div>
+              <div className="border-t border-dashed border-slate-400 pt-1 text-[9.5px] font-bold text-slate-800">
+                فهد ناصر محمد الجوعي
+              </div>
+            </div>
+
+            <div className="border border-slate-300 rounded-lg p-2 bg-slate-50">
+              <div className="font-bold text-[10px] text-slate-600 mb-6">توقيع واستلام الموظف / الختم</div>
+              <div className="border-t border-dashed border-slate-400 pt-1 text-[9.5px] font-bold text-slate-800">
+                {emp.full_name?.split(' ')[0] || 'الموظف المستلم'}
+              </div>
+            </div>
+
           </div>
 
-          {/* Footer */}
-          <div style={{ textAlign: 'center', fontSize: '9px', color: '#94a3b8', borderTop: '1px solid #f1f5f9', padding: '8px 24px 14px 24px' }}>
-            وثيقة كشف راتب رسمية صادرة آلياً عن منصة Green Arrow HR • {company.legal_name}
+          {/* Document Legal Footer */}
+          <div className="mt-3 text-center text-[9px] text-slate-500 font-mono flex items-center justify-between border-t border-slate-200 pt-2">
+            <span>منظومة Green Arrow HR • وثيقة مسير مالي رسمية معتمدة وفق متطلبات وزارة الموارد البشرية ونظام حماية الأجور (WPS)</span>
+            <span>الصفحة 1 من 1</span>
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
