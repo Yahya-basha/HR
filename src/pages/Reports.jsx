@@ -1,3 +1,30 @@
+
+function getCompanyProfile() {
+  try {
+    const saved = localStorage.getItem('hr_flow_company_profile') || localStorage.getItem('company_profile');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        name_ar: parsed.legal_name || parsed.name_ar || parsed.name || 'شركة درة الصيارة للتجارة',
+        name_en: parsed.name_en || 'DORAT AL-SAYARAH TRADING CO.',
+        cr_number: parsed.cr_number || '7016475555',
+        tax_number: parsed.tax_number || '310459827100003',
+        address: parsed.address || 'الرياض - المملكة العربية السعودية',
+        logo_url: parsed.logo_url || '/green-arrow-logo.png'
+      };
+    }
+  } catch (e) {}
+
+  return {
+    name_ar: 'شركة درة الصيارة للتجارة',
+    name_en: 'DORAT AL-SAYARAH TRADING CO.',
+    cr_number: '7016475555',
+    tax_number: '310459827100003',
+    address: 'الرياض - المملكة العربية السعودية',
+    logo_url: '/green-arrow-logo.png'
+  };
+}
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -138,6 +165,7 @@ export const REPORT_DEFINITIONS = [
 ];
 
 export default function Reports() {
+  const [company, setCompany] = useState(getCompanyProfile);
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -747,7 +775,39 @@ export default function Reports() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto max-h-[600px]">
+              
+              {/* ─── PRINT ONLY OFFICIAL CORPORATE HEADER WITH DYNAMIC LOGO ─── */}
+              <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-4" dir="rtl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {company.logo_url ? (
+                      <img src={company.logo_url} alt="شعار الشركة" className="h-12 w-auto max-h-12 object-contain" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-slate-900 text-white font-bold flex items-center justify-center text-lg">GA</div>
+                    )}
+                    <div>
+                      <h1 className="text-base font-heading font-black text-slate-950">{company.name_ar}</h1>
+                      <p className="text-[10px] text-slate-600 font-mono font-bold">{company.name_en}</p>
+                      <div className="text-[9px] text-slate-600 mt-0.5">
+                        السجل التجاري: <strong className="font-mono">{company.cr_number}</strong> • الرقم الضريبي: <strong className="font-mono">{company.tax_number}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-left border border-slate-300 rounded-lg p-2 bg-slate-50 text-[10px] space-y-0.5 min-w-[200px]">
+                    <div><strong>التقرير:</strong> {currentReportDef?.title}</div>
+                    <div><strong>الفترة:</strong> من {fromDate} إلى {toDate}</div>
+                    <div><strong>الفرع:</strong> {filterBranch === 'all' ? 'كافة الفروع' : filterBranch}</div>
+                    <div><strong>تاريخ الطباعة:</strong> {new Date().toLocaleDateString('en-US')}</div>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-slate-200 text-center">
+                  <h2 className="text-sm font-heading font-black text-slate-950 uppercase">{currentReportDef?.title}</h2>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto max-h-[600px] print:max-h-none">
                 <Table className="text-right text-xs">
                   <TableHeader className="sticky top-0 bg-card z-10">
                     <TableRow>
@@ -950,6 +1010,29 @@ export default function Reports() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* ─── PRINT ONLY SIGNATURES & STAMPS FOOTER ─── */}
+              <div className="hidden print:grid grid-cols-3 gap-4 text-center text-xs pt-4 mt-6 border-t-2 border-slate-900" dir="rtl">
+                <div className="border border-slate-300 rounded p-2 bg-slate-50">
+                  <div className="font-bold text-[9.5px] text-slate-500 mb-5">إعداد وتدقيق الموارد البشرية</div>
+                  <div className="border-t border-dashed border-slate-300 pt-1 text-[10px] font-bold text-slate-800">
+                    يحيى محمد عبدالغفار باشا
+                  </div>
+                </div>
+                <div className="border border-slate-300 rounded p-2 bg-slate-50">
+                  <div className="font-bold text-[9.5px] text-slate-500 mb-5">تدقيق وترحيل الحسابات</div>
+                  <div className="border-t border-dashed border-slate-300 pt-1 text-[10px] font-bold text-slate-800">
+                    هشام ابوالفضل زغلول
+                  </div>
+                </div>
+                <div className="border border-slate-300 rounded p-2 bg-slate-50">
+                  <div className="font-bold text-[9.5px] text-slate-500 mb-5">اعتماد ومصادقة المدير العام</div>
+                  <div className="border-t border-dashed border-slate-300 pt-1 text-[10px] font-bold text-slate-800">
+                    فهد ناصر محمد الجوعي
+                  </div>
+                </div>
+              </div>
+
             </Card>
           )}
 
