@@ -31,6 +31,8 @@ import {
   isFriday,
   getPayrollSettings,
   saveShortfallApproval,
+  saveAbsenceApproval,
+  getAbsenceApproval,
   getAuditLog,
   formatMinutes,
   formatHours,
@@ -272,6 +274,10 @@ export default function Payroll() {
   const [overrideTrigger, setOverrideTrigger] = useState(0);
   const [isEditingAdvance, setIsEditingAdvance] = useState(false);
   const [customAdvanceAmount, setCustomAdvanceAmount] = useState('');
+  const [isEditingAbsence, setIsEditingAbsence] = useState(false);
+  const [customAbsenceAmount, setCustomAbsenceAmount] = useState('');
+  const [isEditingShortfall, setIsEditingShortfall] = useState(false);
+  const [customShortfallAmount, setCustomShortfallAmount] = useState('');
 
   // Load Data
   const loadData = useCallback(async () => {
@@ -1215,12 +1221,11 @@ export default function Payroll() {
 
           {/* ═════════════════════════════════════════════════════════════════ */}
           {/* ─── STAGE 2: DEDUCTIONS & ADVANCES APPROVAL ───────────────────── */}
-          {/* ═════════════════════════════════════════════════════════════════ */}
           {currentStep === 2 && currentSelectedEmp && currentSelectedPayroll && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               
-              {/* Employee Navigator */}
-              <div className="flex items-center justify-between bg-card p-4 rounded-3xl border shadow-sm">
+              {/* Employee Navigator Bar */}
+              <div className="flex items-center justify-between bg-card p-4 rounded-3xl border shadow-sm flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold text-muted-foreground">تدقيق استقطاعات:</span>
                   <Select value={selectedEmpId} onValueChange={setSelectedEmpId}>
@@ -1258,10 +1263,10 @@ export default function Payroll() {
                 </div>
               </div>
 
-              {/* Deductions Breakdown Grid */}
+              {/* ─── DEDUCTIONS AUDIT GRID ───────────────────────────────────── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                {/* 1. Advance Installment Card */}
+                {/* 1. ADVANCE INSTALLMENT CARD */}
                 <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-4">
                   <div className="flex items-center justify-between border-b pb-3">
                     <div className="flex items-center gap-2">
@@ -1271,19 +1276,19 @@ export default function Payroll() {
                         <p className="text-[11px] text-muted-foreground">التحكم في خصم القسط (تأجيل، تعديل، أو اعتماد الخصم)</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div>
                       {currentSelectedPayroll.activeAdvance ? (
                         currentSelectedPayroll.advanceOverrideStatus === 'skipped' ? (
-                          <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border-amber-300 text-xs font-bold gap-1">
-                            ⏸️ الخصم مؤجل لهذا الشهر
+                          <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border-amber-300 text-xs font-bold">
+                            ⏸️ مؤجل لهذا الشهر
                           </Badge>
                         ) : currentSelectedPayroll.advanceOverrideStatus === 'modified' ? (
-                          <Badge className="bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300 text-xs font-bold gap-1">
+                          <Badge className="bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300 text-xs font-bold">
                             ✏️ قسط مخصص ({fmtNum(currentSelectedPayroll.advanceInstallment)} ر.س)
                           </Badge>
                         ) : (
-                          <Badge className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 text-xs font-bold gap-1">
-                            ✓ قسط مجدول معتمد
+                          <Badge className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 text-xs font-bold">
+                            ✓ معتمد
                           </Badge>
                         )
                       ) : (
@@ -1293,120 +1298,77 @@ export default function Payroll() {
                   </div>
 
                   {currentSelectedPayroll.activeAdvance ? (
-                    <div className="space-y-4">
-                      {/* Financial Details Box */}
-                      <div className="space-y-2.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl text-xs">
+                    <div className="space-y-3.5">
+                      <div className="space-y-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl text-xs">
                         <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">إجمالي مبلغ السلفة:</span>
-                          <span className="font-mono font-bold text-foreground">{fmtNum(currentSelectedPayroll.activeAdvance.total_amount)} ر.س</span>
+                          <span className="text-muted-foreground">إجمالي السلفة:</span>
+                          <span className="font-mono font-bold">{fmtNum(currentSelectedPayroll.activeAdvance.total_amount)} ر.س</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">القسط الشهري المجدول أصلاً:</span>
-                          <span className="font-mono font-bold text-foreground">
-                            {fmtNum(currentSelectedPayroll.activeAdvance.monthly_installment || currentSelectedPayroll.activeAdvance.monthly_deduction || 500)} ر.س
-                          </span>
+                          <span className="text-muted-foreground">القسط المجدول:</span>
+                          <span className="font-mono font-bold">{fmtNum(currentSelectedPayroll.activeAdvance.monthly_installment || 500)} ر.س</span>
                         </div>
-                        <div className="flex justify-between items-center p-2 rounded-xl bg-white dark:bg-slate-950 border">
-                          <span className="font-bold text-slate-800 dark:text-slate-200">
-                            القسط المعتمد للاستقطاع هذا الشهر:
-                          </span>
-                          <span className={`font-mono font-black text-sm ${currentSelectedPayroll.advanceInstallment === 0 ? 'text-amber-600' : 'text-rose-600'}`}>
+                        <div className="flex justify-between items-center p-2 rounded-xl bg-white dark:bg-slate-950 border font-bold">
+                          <span>المستقطع لهذا الشهر:</span>
+                          <span className={`font-mono text-sm ${currentSelectedPayroll.advanceInstallment === 0 ? 'text-amber-600' : 'text-rose-600 font-black'}`}>
                             {currentSelectedPayroll.advanceInstallment === 0 ? '0.00 ر.س (مؤجل)' : `-${fmtNum(currentSelectedPayroll.advanceInstallment)} ر.س`}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center border-t border-slate-200 dark:border-slate-800 pt-2 font-bold">
-                          <span>الرصيد المتبقي بعد هذا الشهر:</span>
-                          <span className="font-mono text-slate-900 dark:text-slate-100 text-sm">
-                            {fmtNum(currentSelectedPayroll.advanceRemaining)} ر.س
-                          </span>
+                        <div className="flex justify-between items-center border-t pt-1.5 font-bold">
+                          <span>المتبقي بعد الخصم:</span>
+                          <span className="font-mono text-slate-800 dark:text-slate-200">{fmtNum(currentSelectedPayroll.advanceRemaining)} ر.س</span>
                         </div>
-                        {currentSelectedPayroll.advanceNote && (
-                          <div className="text-[10px] text-muted-foreground bg-slate-100 dark:bg-slate-800/60 p-2 rounded-lg">
-                            <strong>ملاحظة السلفة:</strong> {currentSelectedPayroll.advanceNote}
-                          </div>
-                        )}
                       </div>
 
-                      {/* Control Actions: Postpone, Custom Amount, Reset */}
-                      <div className="pt-1 space-y-3">
-                        <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          إجراءات إدارة قسط السلفة لشهر {monthPrefix}:
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          
-                          {/* Action 1: Defer / Postpone */}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant={currentSelectedPayroll.advanceOverrideStatus === 'skipped' ? 'default' : 'outline'}
-                            onClick={() => handlePostponeAdvance(currentSelectedPayroll.emp)}
-                            className={`rounded-xl text-xs font-bold h-9 gap-1.5 ${currentSelectedPayroll.advanceOverrideStatus === 'skipped' ? 'bg-amber-600 hover:bg-amber-500 text-white' : 'border-amber-300 text-amber-900 dark:text-amber-200 hover:bg-amber-50'}`}
-                          >
-                            <span>⏸️ تأجيل الخصم (0 ر.س)</span>
-                          </Button>
-
-                          {/* Action 2: Open Custom Amount Form Toggle */}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant={isEditingAdvance ? 'default' : 'outline'}
-                            onClick={() => {
-                              setIsEditingAdvance(!isEditingAdvance);
-                              setCustomAdvanceAmount(String(currentSelectedPayroll.advanceInstallment || ''));
-                            }}
-                            className={`rounded-xl text-xs font-bold h-9 gap-1.5 ${isEditingAdvance ? 'bg-blue-600 text-white' : 'border-blue-300 text-blue-900 dark:text-blue-200 hover:bg-blue-50'}`}
-                          >
-                            <span>✏️ تعديل قيمة القسط</span>
-                          </Button>
-
-                          {/* Action 3: Restore Default / Approve */}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleResetAdvanceToDefault(currentSelectedPayroll.emp)}
-                            className="rounded-xl text-xs font-bold h-9 gap-1.5 border-slate-300 text-slate-700 hover:bg-slate-100"
-                          >
-                            <span>🔄 استعادة القسط المجدول</span>
-                          </Button>
-
-                        </div>
-
-                        {/* Inline Edit Form for Custom Amount */}
-                        {isEditingAdvance && (
-                          <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-2xl space-y-3 animate-in fade-in-50">
-                            <div className="font-bold text-xs text-blue-950 dark:text-blue-200 flex items-center justify-between">
-                              <span>تحديد مبلغ قسط مخصص لشهر {monthPrefix}:</span>
-                              <span className="text-[10px] text-muted-foreground font-mono">الحد الأقصى: {fmtNum(currentSelectedPayroll.activeAdvance.remaining_balance)} ر.س</span>
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <div className="relative flex-1">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max={currentSelectedPayroll.activeAdvance.remaining_balance}
-                                  value={customAdvanceAmount}
-                                  onChange={(e) => setCustomAdvanceAmount(e.target.value)}
-                                  placeholder="أدخل مبلغ القسط بالريال..."
-                                  className="rounded-xl text-xs font-bold h-9 font-mono bg-white dark:bg-slate-900"
-                                />
-                                <span className="absolute left-3 top-2 text-xs font-bold text-muted-foreground">ر.س</span>
-                              </div>
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => handleSaveCustomAdvance(currentSelectedPayroll.emp)}
-                                className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold h-9 px-4 shadow-sm"
-                              >
-                                ✓ تطبيق وحفظ القسط
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={currentSelectedPayroll.advanceOverrideStatus === 'skipped' ? 'default' : 'outline'}
+                          onClick={() => handlePostponeAdvance(currentSelectedPayroll.emp)}
+                          className={`rounded-xl text-xs font-bold h-8 px-2.5 ${currentSelectedPayroll.advanceOverrideStatus === 'skipped' ? 'bg-amber-600 text-white' : 'border-amber-300 text-amber-900 dark:text-amber-200'}`}
+                        >
+                          ⏸️ تأجيل (0 ر.س)
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isEditingAdvance ? 'default' : 'outline'}
+                          onClick={() => {
+                            setIsEditingAdvance(!isEditingAdvance);
+                            setCustomAdvanceAmount(String(currentSelectedPayroll.advanceInstallment || ''));
+                          }}
+                          className={`rounded-xl text-xs font-bold h-8 px-2.5 ${isEditingAdvance ? 'bg-blue-600 text-white' : 'border-blue-300 text-blue-900 dark:text-blue-200'}`}
+                        >
+                          ✏️ تعديل القسط
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleResetAdvanceToDefault(currentSelectedPayroll.emp)}
+                          className="rounded-xl text-xs font-bold h-8 px-2.5 border-slate-300 text-slate-700"
+                        >
+                          🔄 استعادة
+                        </Button>
                       </div>
+
+                      {isEditingAdvance && (
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 rounded-xl flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={customAdvanceAmount}
+                            onChange={(e) => setCustomAdvanceAmount(e.target.value)}
+                            placeholder="مبلغ القسط..."
+                            className="rounded-lg text-xs font-mono h-8 bg-white dark:bg-slate-900"
+                          />
+                          <Button size="sm" onClick={() => handleSaveCustomAdvance(currentSelectedPayroll.emp)} className="bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold h-8 px-3">
+                            تطبيق
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="py-6 text-center text-muted-foreground text-xs font-bold">
@@ -1415,101 +1377,344 @@ export default function Payroll() {
                   )}
                 </Card>
 
-                {/* 2. 9-Hour Monthly Fixed Allowance Card */}
-                <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-3">
+                {/* 2. ABSENCE DAYS DEDUCTIONS CARD */}
+                <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-4">
                   <div className="flex items-center justify-between border-b pb-3">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-indigo-600" />
-                      <h3 className="font-heading font-black text-sm text-foreground">2. بدل اكتمال دوام 9 ساعات الشهري</h3>
+                      <CalendarDays className="w-5 h-5 text-rose-600" />
+                      <div>
+                        <h3 className="font-heading font-black text-sm text-foreground">2. استقطاع أيام الغياب</h3>
+                        <p className="text-[11px] text-muted-foreground">اعتماد خصم الأيام غير المحققة أو التجاوز والإعفاء</p>
+                      </div>
                     </div>
-                    <Badge className={`${currentSelectedPayroll.dailyOvertimeAllowance > 0 ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300' : 'bg-slate-100 text-slate-700'} text-xs font-mono font-bold border-0`}>
-                      {currentSelectedPayroll.dailyOvertimeAllowance > 0 ? 'مستحق (+100 ر.س)' : 'غير مستحق'}
-                    </Badge>
+                    <div>
+                      {currentSelectedPayroll.absentDays > 0 ? (
+                        currentSelectedPayroll.absenceApprovalStatus === 'waived' ? (
+                          <Badge className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 text-xs font-bold gap-1">
+                            🛡️ معفى / متجاوز عنه
+                          </Badge>
+                        ) : currentSelectedPayroll.absenceApprovalStatus === 'modified' ? (
+                          <Badge className="bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300 text-xs font-bold gap-1">
+                            ✏️ خصم معدل ({fmtNum(currentSelectedPayroll.approvedAbsenceDeduction)} ر.س)
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-300 border-rose-300 text-xs font-bold gap-1">
+                            ⚠️ معتمد للخصم
+                          </Badge>
+                        )
+                      ) : (
+                        <Badge variant="outline" className="text-xs font-bold text-emerald-700 bg-emerald-50">لا يوجد غياب (0 يوم)</Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-2 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">نوع البدل:</span>
-                      <span className="font-bold text-foreground">مكافأة شهرية مقطوعة لدوام 9 ساعات</span>
+
+                  <div className="space-y-3.5">
+                    <div className="space-y-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">عدد أيام الغياب المسجلة:</span>
+                        <span className="font-bold text-foreground">{currentSelectedPayroll.absentDays || 0} يوم</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">معدل أجر اليوم الواحد:</span>
+                        <span className="font-mono font-bold text-foreground">{fmtNum(currentSelectedPayroll.dailySalaryRate)} ر.س/يوم</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 rounded-xl bg-white dark:bg-slate-950 border font-bold">
+                        <span>الخصم المالي المعتمد للغياب:</span>
+                        <span className={`font-mono text-sm ${(currentSelectedPayroll.approvedAbsenceDeduction || 0) === 0 ? 'text-emerald-600' : 'text-rose-600 font-black'}`}>
+                          {(currentSelectedPayroll.approvedAbsenceDeduction || 0) === 0 ? '0.00 ر.س (لا يوجد خصم)' : `-${fmtNum(currentSelectedPayroll.approvedAbsenceDeduction)} ر.س`}
+                        </span>
+                      </div>
+                      {currentSelectedPayroll.absenceApprovalNote && (
+                        <div className="text-[10px] text-muted-foreground bg-slate-100 dark:bg-slate-800/60 p-2 rounded-lg">
+                          <strong>ملاحظة الغياب:</strong> {currentSelectedPayroll.absenceApprovalNote}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex justify-between border-t pt-2 font-bold">
-                      <span>المبلغ المستحق لهذا الشهر:</span>
-                      <span className="font-mono font-black text-indigo-600 text-sm">+{fmtNum(currentSelectedPayroll.dailyOvertimeAllowance)} ر.س</span>
+
+                    {/* Action Controls for Absence: Approve vs Waive vs Custom */}
+                    {currentSelectedPayroll.absentDays > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {/* Approve deduction */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={currentSelectedPayroll.absenceApprovalStatus === 'approved' ? 'default' : 'outline'}
+                            onClick={() => handleApproveAbsence(currentSelectedPayroll.emp)}
+                            className={`rounded-xl text-xs font-bold h-8 px-2.5 ${currentSelectedPayroll.absenceApprovalStatus === 'approved' ? 'bg-rose-600 text-white' : 'border-rose-300 text-rose-800 hover:bg-rose-50'}`}
+                          >
+                            ✓ اعتماد الخصم (-{fmtNum(currentSelectedPayroll.proposedAbsenceDeduction)} ر.س)
+                          </Button>
+
+                          {/* Waive / Excuse */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={currentSelectedPayroll.absenceApprovalStatus === 'waived' ? 'default' : 'outline'}
+                            onClick={() => handleWaiveAbsence(currentSelectedPayroll.emp)}
+                            className={`rounded-xl text-xs font-bold h-8 px-2.5 ${currentSelectedPayroll.absenceApprovalStatus === 'waived' ? 'bg-emerald-600 text-white' : 'border-emerald-300 text-emerald-800 hover:bg-emerald-50'}`}
+                          >
+                            🛡️ تجاوز / إعفاء (0 ر.س)
+                          </Button>
+
+                          {/* Custom Amount */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={isEditingAbsence ? 'default' : 'outline'}
+                            onClick={() => {
+                              setIsEditingAbsence(!isEditingAbsence);
+                              setCustomAbsenceAmount(String(currentSelectedPayroll.approvedAbsenceDeduction || currentSelectedPayroll.proposedAbsenceDeduction || ''));
+                            }}
+                            className={`rounded-xl text-xs font-bold h-8 px-2.5 ${isEditingAbsence ? 'bg-blue-600 text-white' : 'border-blue-300 text-blue-900 hover:bg-blue-50'}`}
+                          >
+                            ✏️ تعديل الخصم
+                          </Button>
+                        </div>
+
+                        {isEditingAbsence && (
+                          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 rounded-xl flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={customAbsenceAmount}
+                              onChange={(e) => setCustomAbsenceAmount(e.target.value)}
+                              placeholder="مبلغ خصم الغياب بالريال..."
+                              className="rounded-lg text-xs font-mono h-8 bg-white dark:bg-slate-900"
+                            />
+                            <Button size="sm" onClick={() => handleSaveCustomAbsence(currentSelectedPayroll.emp)} className="bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold h-8 px-3">
+                              تطبيق
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                {/* 3. WORKING HOURS SHORTFALL & LATENESS DEDUCTION CARD */}
+                <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-amber-600" />
+                      <div>
+                        <h3 className="font-heading font-black text-sm text-foreground">3. استقطاع عجز الساعات والتأخير</h3>
+                        <p className="text-[11px] text-muted-foreground">اعتماد خصم دقائق التأخير والعجز أو التجاوز والإعفاء</p>
+                      </div>
                     </div>
+                    <div>
+                      {currentSelectedPayroll.totalShortfallMinutes > 0 ? (
+                        currentSelectedPayroll.shortfallApprovalStatus === 'waived' ? (
+                          <Badge className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 text-xs font-bold gap-1">
+                            🛡️ معفى / متجاوز عنه
+                          </Badge>
+                        ) : currentSelectedPayroll.shortfallApprovalStatus === 'modified' ? (
+                          <Badge className="bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300 text-xs font-bold gap-1">
+                            ✏️ خصم معدل ({fmtNum(currentSelectedPayroll.approvedShortfallDeduction)} ر.س)
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border-amber-300 text-xs font-bold gap-1">
+                            ⚠️ معتمد للخصم
+                          </Badge>
+                        )
+                      ) : (
+                        <Badge variant="outline" className="text-xs font-bold text-emerald-700 bg-emerald-50">لا يوجد عجز ساعات (0 د)</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3.5">
+                    <div className="space-y-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">إجمالي وقت العجز والتأخير:</span>
+                        <span className="font-mono font-bold text-foreground">
+                          {formatMinutes(currentSelectedPayroll.totalShortfallMinutes)} ({fmtNum(currentSelectedPayroll.shortfallHours)} ساعة)
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">معدل أجر الساعة المحسوب:</span>
+                        <span className="font-mono font-bold text-foreground">{fmtNum(currentSelectedPayroll.hourlyRate)} ر.س/ساعة</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 rounded-xl bg-white dark:bg-slate-950 border font-bold">
+                        <span>الخصم المالي المعتمد للعجز:</span>
+                        <span className={`font-mono text-sm ${(currentSelectedPayroll.approvedShortfallDeduction || 0) === 0 ? 'text-emerald-600' : 'text-rose-600 font-black'}`}>
+                          {(currentSelectedPayroll.approvedShortfallDeduction || 0) === 0 ? '0.00 ر.س (لا يوجد خصم)' : `-${fmtNum(currentSelectedPayroll.approvedShortfallDeduction)} ر.س`}
+                        </span>
+                      </div>
+                      {currentSelectedPayroll.shortfallApprovalNote && (
+                        <div className="text-[10px] text-muted-foreground bg-slate-100 dark:bg-slate-800/60 p-2 rounded-lg">
+                          <strong>ملاحظة العجز:</strong> {currentSelectedPayroll.shortfallApprovalNote}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Controls for Shortfall: Approve vs Waive vs Custom */}
+                    {currentSelectedPayroll.totalShortfallMinutes > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {/* Approve deduction */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={currentSelectedPayroll.shortfallApprovalStatus === 'approved' ? 'default' : 'outline'}
+                            onClick={() => handleApproveShortfall(currentSelectedPayroll.emp)}
+                            className={`rounded-xl text-xs font-bold h-8 px-2.5 ${currentSelectedPayroll.shortfallApprovalStatus === 'approved' ? 'bg-amber-600 text-white' : 'border-amber-300 text-amber-800 hover:bg-amber-50'}`}
+                          >
+                            ✓ اعتماد الخصم (-{fmtNum(currentSelectedPayroll.proposedShortfallDeduction)} ر.س)
+                          </Button>
+
+                          {/* Waive / Excuse */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={currentSelectedPayroll.shortfallApprovalStatus === 'waived' ? 'default' : 'outline'}
+                            onClick={() => handleWaiveShortfall(currentSelectedPayroll.emp)}
+                            className={`rounded-xl text-xs font-bold h-8 px-2.5 ${currentSelectedPayroll.shortfallApprovalStatus === 'waived' ? 'bg-emerald-600 text-white' : 'border-emerald-300 text-emerald-800 hover:bg-emerald-50'}`}
+                          >
+                            🛡️ تجاوز / إعفاء (0 ر.س)
+                          </Button>
+
+                          {/* Custom Amount */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={isEditingShortfall ? 'default' : 'outline'}
+                            onClick={() => {
+                              setIsEditingShortfall(!isEditingShortfall);
+                              setCustomShortfallAmount(String(currentSelectedPayroll.approvedShortfallDeduction || currentSelectedPayroll.proposedShortfallDeduction || ''));
+                            }}
+                            className={`rounded-xl text-xs font-bold h-8 px-2.5 ${isEditingShortfall ? 'bg-blue-600 text-white' : 'border-blue-300 text-blue-900 hover:bg-blue-50'}`}
+                          >
+                            ✏️ تعديل الخصم
+                          </Button>
+                        </div>
+
+                        {isEditingShortfall && (
+                          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 rounded-xl flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={customShortfallAmount}
+                              onChange={(e) => setCustomShortfallAmount(e.target.value)}
+                              placeholder="مبلغ خصم العجز بالريال..."
+                              className="rounded-lg text-xs font-mono h-8 bg-white dark:bg-slate-900"
+                            />
+                            <Button size="sm" onClick={() => handleSaveCustomShortfall(currentSelectedPayroll.emp)} className="bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold h-8 px-3">
+                              تطبيق
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+
+                {/* 4. DISCIPLINARY PENALTIES & DEDUCTIONS CARD */}
+                <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <div>
+                      <h3 className="font-heading font-black text-sm text-foreground">4. الجزاءات والخصومات الإدارية الموثقة</h3>
+                      <p className="text-[11px] text-muted-foreground">تسجيل أي خصم إضافي مع ذكر السبب والمبرر المعتمد</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setAdjType('penalty');
+                        setAdjForm({
+                          employee_number: currentSelectedEmp.employee_number || currentSelectedEmp.id,
+                          type: 'penalty',
+                          category: 'administrative_penalty',
+                          amount: 200,
+                          days_count: 1,
+                          month_prefix: monthPrefix,
+                          reason: 'خصم إداري موثق',
+                          approved_by: 'فهد ناصر محمد الجوعي (المدير العام)'
+                        });
+                        setNewAdjModal(true);
+                      }}
+                      className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl gap-1.5 h-8 px-3 shadow-sm"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" /> + إضافة استقطاع / جزاء
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {currentSelectedPayroll.approvedPenalties?.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground text-xs font-bold">
+                        لا توجد جزاءات أو خصومات إدارية مسجلة لهذا الموظف في شهر {monthPrefix}.
+                      </div>
+                    ) : (
+                      currentSelectedPayroll.approvedPenalties?.map(p => (
+                        <div key={p.id} className="flex items-center justify-between p-3 rounded-2xl border bg-rose-50/40 dark:bg-rose-950/20 text-xs">
+                          <div>
+                            <span className="font-bold text-rose-800 dark:text-rose-300">⚠️ {p.reason || 'جزاء إداري'}</span>
+                            <span className="text-muted-foreground mr-2 font-mono text-[11px]">({p.category})</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono font-black text-rose-600 text-sm">-{fmtNum(p.amount)} ر.س</span>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDeleteAdjustment(p.id)}
+                              className="h-7 w-7 text-rose-600 rounded-lg hover:bg-rose-100"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </Card>
 
               </div>
 
-              {/* 3. Disciplinary & Absence Deductions List */}
-              <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <h3 className="font-heading font-black text-sm text-foreground">3. استقطاعات الغياب والجزاءات الإدارية الموثقة</h3>
-                    <p className="text-xs text-muted-foreground">تسجيل أي خصم إضافي مع ذكر السبب الإداري والمبرر المعتمد</p>
+              {/* ─── DETAILED COMPREHENSIVE DEDUCTIONS SUMMARY BANNER ──────── */}
+              <div className="p-5 bg-gradient-to-r from-rose-50 to-rose-100/70 dark:from-rose-950/50 dark:to-rose-900/30 border border-rose-300 dark:border-rose-800 rounded-3xl space-y-3">
+                <div className="flex items-center justify-between border-b border-rose-200 dark:border-rose-800/80 pb-3 flex-wrap gap-2">
+                  <div className="font-heading font-black text-sm text-rose-950 dark:text-rose-100 flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-rose-600" />
+                    <span>ملخص تدقيق الاستقطاعات المعتمدة للموظف ({currentSelectedEmp.full_name}) لشهر {monthPrefix}:</span>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setAdjType('penalty');
-                      setAdjForm({
-                        employee_number: currentSelectedEmp.employee_number || currentSelectedEmp.id,
-                        type: 'penalty',
-                        category: 'absence_penalty',
-                        amount: 200,
-                        days_count: 1,
-                        month_prefix: monthPrefix,
-                        reason: 'خصم غياب بدون إذن مسبق',
-                        approved_by: 'فهد ناصر محمد الجوعي (المدير العام)'
-                      });
-                      setNewAdjModal(true);
-                    }}
-                    className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl gap-1.5 h-8"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" /> + إضافة استقطاع / جزاء
-                  </Button>
+                  <div className="font-mono font-black text-rose-700 dark:text-rose-300 text-lg bg-white dark:bg-slate-900 px-3.5 py-1 rounded-2xl border border-rose-200 shadow-sm">
+                    إجمالي الاستقطاعات: -{fmtNum(currentSelectedPayroll.totalDeductions)} ر.س
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  {currentSelectedPayroll.approvedPenalties?.length === 0 ? (
-                    <div className="text-center py-6 text-muted-foreground text-xs font-bold">
-                      لا توجد جزاءات أو خصومات إدارية مسجلة لهذا الموظف في شهر {monthPrefix}.
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-center font-mono">
+                  <div className="p-2.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-rose-200/60">
+                    <div className="text-[10px] text-muted-foreground font-sans">قسط السلفة:</div>
+                    <div className="font-bold text-amber-700 dark:text-amber-300 text-sm mt-0.5">
+                      -{fmtNum(currentSelectedPayroll.advanceInstallment || 0)} ر.س
                     </div>
-                  ) : (
-                    currentSelectedPayroll.approvedPenalties?.map(p => (
-                      <div key={p.id} className="flex items-center justify-between p-3.5 rounded-2xl border bg-rose-50/40 dark:bg-rose-950/20 text-xs">
-                        <div>
-                          <span className="font-bold text-rose-800 dark:text-rose-300">⚠️ {p.reason || 'جزاء إداري'}</span>
-                          <span className="text-muted-foreground mr-2 font-mono text-[11px]">({p.category})</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono font-black text-rose-600 text-sm">-{fmtNum(p.amount)} ر.س</span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleDeleteAdjustment(p.id)}
-                            className="h-7 w-7 text-rose-600 rounded-lg hover:bg-rose-100"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                  </div>
 
-                {/* Total Deductions Summary Card */}
-                <div className="p-4 bg-rose-100/60 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900 rounded-2xl flex items-center justify-between">
-                  <span className="font-bold text-xs text-rose-900 dark:text-rose-200">إجمالي استقطاعات الموظف المعتمدة لشهر {monthPrefix}:</span>
-                  <span className="font-mono font-black text-rose-700 dark:text-rose-300 text-base">
-                    -{fmtNum(currentSelectedPayroll.totalDeductions)} ر.س
-                  </span>
+                  <div className="p-2.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-rose-200/60">
+                    <div className="text-[10px] text-muted-foreground font-sans">خصم الغياب:</div>
+                    <div className="font-bold text-rose-700 dark:text-rose-300 text-sm mt-0.5">
+                      -{fmtNum(currentSelectedPayroll.approvedAbsenceDeduction || 0)} ر.س
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-rose-200/60">
+                    <div className="text-[10px] text-muted-foreground font-sans">خصم عجز الساعات:</div>
+                    <div className="font-bold text-rose-700 dark:text-rose-300 text-sm mt-0.5">
+                      -{fmtNum(currentSelectedPayroll.approvedShortfallDeduction || 0)} ر.س
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-rose-200/60">
+                    <div className="text-[10px] text-muted-foreground font-sans">الجزاءات الإدارية:</div>
+                    <div className="font-bold text-rose-700 dark:text-rose-300 text-sm mt-0.5">
+                      -{fmtNum(currentSelectedPayroll.customPenaltiesTotal || 0)} ر.س
+                    </div>
+                  </div>
                 </div>
-              </Card>
+              </div>
 
             </div>
           )}
 
-          {/* ═════════════════════════════════════════════════════════════════ */}
           {/* ─── STAGE 3: EARNINGS & INCENTIVES APPROVAL ───────────────────── */}
           {/* ═════════════════════════════════════════════════════════════════ */}
           {currentStep === 3 && currentSelectedEmp && currentSelectedPayroll && (

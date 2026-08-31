@@ -816,6 +816,28 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
   const proposedAbsenceDeduction = Math.round(absentDays * dailySalaryRate * 100) / 100;
   const proposedUnpaidLeaveDeduction = Math.round(unpaidLeaveDays * dailySalaryRate * 100) / 100;
 
+  // Absence Approval / Waiver (اعتماد أو تجاوز غياب الأيام)
+  let approvedAbsenceDeduction = proposedAbsenceDeduction;
+  let absenceApprovalStatus = 'approved';
+  let absenceApprovalNote = '';
+  try {
+    const savedAbsAppr = localStorage.getItem('hr_flow_absence_appr_' + (emp.employee_number || emp.id) + '_' + (monthPrefix || 'all'));
+    if (savedAbsAppr) {
+      const ap = JSON.parse(savedAbsAppr);
+      absenceApprovalStatus = ap.status || 'approved';
+      if (ap.status === 'waived') {
+        approvedAbsenceDeduction = 0;
+        absenceApprovalNote = ap.note || 'تم التجاوز والإعفاء من خصم الغياب بقرار الإدارة';
+      } else if (ap.status === 'modified') {
+        approvedAbsenceDeduction = Number(ap.finalDeduction) || 0;
+        absenceApprovalNote = ap.note || `خصم غياب معدل (${approvedAbsenceDeduction} ر.س)`;
+      } else {
+        approvedAbsenceDeduction = proposedAbsenceDeduction;
+        absenceApprovalNote = ap.note || 'معتمد للخصم';
+      }
+    }
+  } catch {}
+
   // Friday allowance ONLY for days with real biometric attendance on Friday
   const fridayAllowance = fridayWorkedDays * fridayDailyRate;
   const fridayNote = fridayWorkedDays > 0 ? `${fridayWorkedDays} جمعات دوام فعلي × ${fridayDailyRate} = ${fridayAllowance} ريال` : null;
@@ -835,10 +857,13 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     if (saved) {
       const ap = JSON.parse(saved);
       shortfallApprovalStatus = ap.status || 'pending';
-      if (ap.status === 'approved' || ap.status === 'modified') {
-        approvedShortfallDeduction = Number(ap.finalDeduction) || 0;
+      if (ap.status === 'waived') {
+        approvedShortfallDeduction = 0;
+        shortfallApprovalNote = ap.note || 'تم التجاوز والإعفاء من خصم عجز الساعات بقرار الإدارة';
+      } else if (ap.status === 'approved' || ap.status === 'modified') {
+        approvedShortfallDeduction = Number(ap.finalDeduction) !== undefined ? Number(ap.finalDeduction) : proposedShortfallDeduction;
+        shortfallApprovalNote = ap.note || (ap.status === 'modified' ? `خصم عجز ساعات معدل (${approvedShortfallDeduction} ر.س)` : 'معتمد للخصم');
       }
-      shortfallApprovalNote = ap.note || '';
     } else {
       // Default to proposed delay deduction
       approvedShortfallDeduction = proposedShortfallDeduction;
@@ -891,7 +916,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
 
   // TOTALS CALCULATION
   const totalAdditions = housing + transport + electricity + phone + otherAllowance + fridayAllowance + dailyOvertimeAllowance + customBonusesTotal;
-  const totalDeductions = approvedShortfallDeduction + proposedAbsenceDeduction + proposedUnpaidLeaveDeduction + customPenaltiesTotal + advanceInstallment;
+  const totalDeductions = approvedShortfallDeduction + approvedAbsenceDeduction + proposedUnpaidLeaveDeduction + customPenaltiesTotal + advanceInstallment;
   const netSalary = Math.max(0, basicSalary + totalAdditions - totalDeductions);
 
   // 4. PAYOUT METHOD & SPLIT DISBURSEMENT (Bank Transfer vs Cash Handout)
@@ -950,6 +975,9 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     proposedShortfallDeduction,
     approvedShortfallDeduction,
     proposedAbsenceDeduction,
+    approvedAbsenceDeduction,
+    absenceApprovalStatus,
+    absenceApprovalNote,
     proposedUnpaidLeaveDeduction,
     shortfallApprovalStatus,
     shortfallApprovalNote,
@@ -968,6 +996,35 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     totalDeductions,
     netSalary,
   };
+}
+
+
+/**
+ * Save Absence Days Deduction Approval / Waiver
+ */
+export function saveAbsenceApproval(employeeNumber, monthPrefix, decision) {
+  const record = {
+    status: decision.status || 'approved', // 'approved' | 'waived' | 'modified'
+    finalDeduction: Number(decision.finalDeduction) !== undefined ? Number(decision.finalDeduction) : 0,
+    note: decision.note || '',
+    approvedBy: decision.approvedBy || 'المدير العام',
+    approvedAt: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem('hr_flow_absence_appr_' + employeeNumber + '_' + monthPrefix, JSON.stringify(record));
+    cloudSave('hr_flow_absence_appr_' + employeeNumber + '_' + monthPrefix, record);
+  } catch {}
+  appendAuditLog({ action: 'absence_' + decision.status, employeeNumber, monthPrefix, ...record });
+  return record;
+}
+
+export function getAbsenceApproval(employeeNumber, monthPrefix) {
+  try {
+    const saved = localStorage.getItem('hr_flow_absence_appr_' + employeeNumber + '_' + monthPrefix);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function saveShortfallApproval(employeeNumber, monthPrefix, decision) {
