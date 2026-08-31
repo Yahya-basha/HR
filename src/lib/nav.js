@@ -50,7 +50,6 @@ export const navigationModules = [
       { to: '/alerts', label: 'مركز التنبيهات والوثائق', icon: Bell, permission: 'alerts.view' },
       { to: '/employee-profile', label: 'ملفي الشخصي 360°', icon: UserCheck },
       { to: '/portal', label: 'بوابة الموظف', icon: UserCheck },
-      { to: '/documents-print', label: 'مستنداتي والطباعة', icon: FolderOpen },
     ]
   },
   {
@@ -151,6 +150,7 @@ export const navigationModules = [
       { to: '/reports?report=employee_master_data', label: 'بيانات الموظفين الشاملة', icon: Users },
       { to: '/reports?report=leave_report', label: 'تقرير الإجازات والأرصدة', icon: CalendarDays },
       { to: '/reports?report=advances_and_loans', label: 'تقرير السلف والقروض', icon: CreditCard, permission: 'loans.view' },
+      { to: '/documents-print', label: 'طباعة النماذج والمستندات الرسمية', icon: FolderOpen, permission: 'reports.view' },
     ]
   },
   {
