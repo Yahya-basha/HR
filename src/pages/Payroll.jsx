@@ -3077,9 +3077,22 @@ function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls
 
 // ─── DEDICATED ADVANCES & LOANS MANAGEMENT HUB COMPONENT ─────────────────────
 function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAdvance, onPrintAdvance, fmtNum }) {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'completed'
   const { toast } = useToast();
+
+  // Repayment Modal State
+  const [repaymentModalOpen, setRepaymentModalOpen] = useState(false);
+  const [selectedAdvForRepay, setSelectedAdvForRepay] = useState(null);
+  const [isSubmittingRepay, setIsSubmittingRepay] = useState(false);
+  const [repayForm, setRepayForm] = useState({
+    amount: '',
+    payment_date: new Date().toISOString().split('T')[0],
+    payment_method: 'cash',
+    notes: '',
+    receipt_number: ''
+  });
 
   // Normalize all advances and filter out 0-amount ghost records
   const normalizedList = useMemo(() => {
@@ -3444,6 +3457,137 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
         </div>
 
       </Card>
+
+      {/* ─── REPAYMENT MODAL (تسجيل سداد مالي من السلفة) ───────────────────────── */}
+      <Dialog open={repaymentModalOpen} onOpenChange={setRepaymentModalOpen}>
+        <DialogContent className="max-w-md text-right" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-black text-lg text-foreground flex items-center gap-2">
+              <Coins className="w-5 h-5 text-emerald-600" />
+              <span>تسجيل سداد مالي من السلفة</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedAdvForRepay && (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (isSubmittingRepay) return;
+              setIsSubmittingRepay(true);
+              try {
+                const amtNum = Number(repayForm.amount);
+                if (!amtNum || amtNum <= 0) {
+                  throw new Error('يرجى إدخال مبلغ سداد صحيح أكبر من الصفر');
+                }
+
+                await recordAdvanceRepayment({
+                  advanceId: selectedAdvForRepay.id,
+                  amount: amtNum,
+                  paymentDate: repayForm.payment_date,
+                  paymentMethod: repayForm.payment_method,
+                  notes: repayForm.notes,
+                  receiptNumber: repayForm.receipt_number,
+                  recordedBy: user?.full_name || 'المحاسب المالي'
+                });
+
+                toast({ title: '✓ تم تسجيل وسداد الدفعة بنجاح وتحديث الرصيد سحابياً' });
+                setRepaymentModalOpen(false);
+                setSelectedAdvForRepay(null);
+                onRefresh();
+              } catch (err) {
+                toast({ title: 'خطأ في تسجيل السداد', description: err.message, variant: 'destructive' });
+              } finally {
+                setIsSubmittingRepay(false);
+              }
+            }} className="space-y-4 py-2 text-xs">
+              
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border space-y-1.5">
+                <div className="flex justify-between font-bold text-foreground">
+                  <span>الموظف:</span>
+                  <span>{selectedAdvForRepay.employee_name}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>إجمالي السلفة:</span>
+                  <span className="font-mono">{fmtNum(selectedAdvForRepay.total_amount)} ر.س</span>
+                </div>
+                <div className="flex justify-between font-bold text-rose-600">
+                  <span>الرصيد المتبقي الحالي:</span>
+                  <span className="font-mono">{fmtNum(selectedAdvForRepay.remaining_balance || selectedAdvForRepay.total_amount)} ر.س</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold">مبلغ السداد (ر.س) *</Label>
+                  <Input
+                    type="number"
+                    value={repayForm.amount}
+                    onChange={(e) => setRepayForm({ ...repayForm, amount: e.target.value })}
+                    max={Number(selectedAdvForRepay.remaining_balance || selectedAdvForRepay.total_amount)}
+                    min="1"
+                    className="h-9 text-xs font-mono font-bold"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold">تاريخ السداد *</Label>
+                  <Input
+                    type="date"
+                    value={repayForm.payment_date}
+                    onChange={(e) => setRepayForm({ ...repayForm, payment_date: e.target.value })}
+                    className="h-9 text-xs font-mono"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold">طريقة السداد *</Label>
+                  <Select value={repayForm.payment_method} onValueChange={(v) => setRepayForm({ ...repayForm, payment_method: v })}>
+                    <SelectTrigger className="h-9 text-xs rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">نقداً (كاش) 💵</SelectItem>
+                      <SelectItem value="bank_transfer">تحويل بنكي 🏦</SelectItem>
+                      <SelectItem value="manual_adjustment">خصم تسوية إدارية 🔀</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold">رقم سند القبض / الإيصال</Label>
+                  <Input
+                    value={repayForm.receipt_number}
+                    onChange={(e) => setRepayForm({ ...repayForm, receipt_number: e.target.value })}
+                    placeholder="مثال: REC-99412"
+                    className="h-9 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-bold">ملاحظات السداد</Label>
+                <Input
+                  value={repayForm.notes}
+                  onChange={(e) => setRepayForm({ ...repayForm, notes: e.target.value })}
+                  placeholder="ملاحظات أو سبب السداد الاستثنائي..."
+                  className="h-9 text-xs"
+                />
+              </div>
+
+              <DialogFooter className="gap-2 sm:justify-start pt-2">
+                <Button type="submit" disabled={isSubmittingRepay} className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold h-9 px-4 gap-1.5 shadow-md">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isSubmittingRepay ? 'جاري الحفظ...' : 'تأكيد وحفظ السداد المالي'}</span>
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setRepaymentModalOpen(false)} className="rounded-xl text-xs font-bold h-9">
+                  إلغاء
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
