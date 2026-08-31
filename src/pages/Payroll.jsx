@@ -3,7 +3,7 @@ import { MaskedSalary, PrivacyMaskToggle } from '@/lib/FinancialPrivacyContext';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import {
-  Wallet, Download, Printer, CheckCircle2, Clock, AlertTriangle,
+  Wallet, Download, Printer, CheckCircle2, Clock, AlertTriangle, Coins,
   Eye, FileSpreadsheet, ShieldCheck, Users, CalendarCheck, CalendarDays, Calendar, History,
   Filter, Search, X, Edit3, Check, XCircle, Gift, AlertOctagon,
   CreditCard, PlusCircle, Trash2, ChevronRight, ChevronLeft,
