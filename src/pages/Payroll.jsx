@@ -3136,7 +3136,7 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
     }
 
     try {
-      await deleteAdvance(adv.id);
+      await deleteAdvance(adv.id, adv);
       toast({ title: '✓ تم حذف وإلغاء السلفة بنجاح من النظام والسحابة' });
       onRefresh();
     } catch (err) {
@@ -3394,13 +3394,33 @@ function AdvancesManagementHub({ employees, advancesList, onRefresh, onOpenNewAd
                           {/* Print Promissory Note A4 */}
                           <Button
                             size="sm"
+                            onClick={() => {
+                              setSelectedAdvForRepay(adv);
+                              setRepayForm({
+                                amount: String(Math.min(adv.monthly_installment || 500, remaining)),
+                                payment_date: new Date().toISOString().split('T')[0],
+                                payment_method: 'cash',
+                                notes: 'سداد دفعة نقدية من السلفة',
+                                receipt_number: 'REC-' + Date.now().toString().slice(-5)
+                              });
+                              setRepaymentModalOpen(true);
+                            }}
+                            className="h-8 text-xs font-bold rounded-xl gap-1 bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm"
+                            title="تسجيل سداد دفعة من السلفة في أي وقت"
+                          >
+                            <Coins className="w-3.5 h-3.5" />
+                            <span>تسجيل سداد 💵</span>
+                          </Button>
+
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => onPrintAdvance(adv)}
                             className="h-8 text-xs font-bold rounded-xl gap-1 border-purple-300 text-purple-900 dark:text-purple-300 hover:bg-purple-50 shadow-sm"
                             title="طباعة سند وإقرار السلفة A4"
                           >
                             <Printer className="w-3.5 h-3.5 text-purple-600" />
-                            <span>سند السلفة A4</span>
+                            <span>سند A4</span>
                           </Button>
 
                           <Button
