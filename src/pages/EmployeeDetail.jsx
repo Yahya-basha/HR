@@ -121,6 +121,15 @@ export default function EmployeeDetail() {
   const [editEmployeeModal, setEditEmployeeModal] = useState(false);
   const [uploadDocModal, setUploadDocModal] = useState(false);
   const [editInsuranceModal, setEditInsuranceModal] = useState(false);
+  const [editAllowancesModal, setEditAllowancesModal] = useState(false);
+  const [allowanceForm, setAllowanceForm] = useState({
+    housing_allowance: 0,
+    transport_allowance: 0,
+    electricity_allowance: 0,
+    phone_allowance: 0,
+    other_allowance: 0,
+    allowance_notes: ''
+  });
   const [addCustodyModal, setAddCustodyModal] = useState(false);
   const [addPenaltyModal, setAddPenaltyModal] = useState(false);
   const [addDependentModal, setAddDependentModal] = useState(false);
@@ -1345,16 +1354,38 @@ export default function EmployeeDetail() {
                 <p className="text-xs text-muted-foreground">تفاصيل الراتب الأساسي والبدلات والاستقطاعات الصافية</p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-muted/30 border space-y-3 text-xs">
+                            <div className="p-4 rounded-2xl bg-muted/30 border space-y-3 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-foreground">كشف راتب شهر أغسطس 2026</span>
-                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 font-bold text-[10px]">معتمد للصرف ✓</Badge>
+                  <div>
+                    <span className="font-bold text-sm text-foreground">كشف راتب وباقة بدلات الموظف</span>
+                    <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 font-bold text-[10px] me-2">معتمد للصرف ✓</Badge>
+                  </div>
+                  {canEdit && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setAllowanceForm({
+                          housing_allowance: employee.housing_allowance || 0,
+                          transport_allowance: employee.transport_allowance || 0,
+                          electricity_allowance: employee.electricity_allowance || 0,
+                          phone_allowance: employee.phone_allowance || 0,
+                          other_allowance: employee.other_allowance || 0,
+                          allowance_notes: employee.allowance_notes || ''
+                        });
+                        setEditAllowancesModal(true);
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold gap-1.5 h-8 px-3 shadow-sm"
+                    >
+                      <Coins className="w-3.5 h-3.5" />
+                      <span>تعديل باقة البدلات</span>
+                    </Button>
+                  )}
                 </div>
-                <div className="grid grid-cols-4 gap-2 text-center text-[11px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[11px]">
                   <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">الأساسي: <strong className="font-mono"><MaskedSalary value={employee.salary} /></strong></div>
-                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">بدل السكن: <strong className="font-mono"><MaskedSalary value={employee.housing_allowance} /></strong></div>
-                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">بدل النقل: <strong className="font-mono"><MaskedSalary value={employee.transport_allowance} /></strong></div>
-                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300">الصافي: <strong className="font-mono text-emerald-700 font-black"><MaskedSalary value={employee.salary} /></strong></div>
+                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">بدل السكن: <strong className="font-mono text-sky-700"><MaskedSalary value={employee.housing_allowance || 0} /></strong></div>
+                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800 border">بدل النقل: <strong className="font-mono text-emerald-700"><MaskedSalary value={employee.transport_allowance || 0} /></strong></div>
+                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300">إجمالي الراتب: <strong className="font-mono text-emerald-800 font-black"><MaskedSalary value={Number(employee.salary || 0) + Number(employee.housing_allowance || 0) + Number(employee.transport_allowance || 0) + Number(employee.electricity_allowance || 0) + Number(employee.phone_allowance || 0) + Number(employee.other_allowance || 0)} /></strong></div>
                 </div>
               </div>
             </Card>

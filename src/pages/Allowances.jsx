@@ -36,7 +36,7 @@ import {
 export default function Allowances() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const isAdmin = user?.role === 'admin' || user?.role === 'hr_manager' || !user?.role || user?.role === 'general_manager';
+  const canManage = user?.role === 'owner' || user?.role === 'accountant' || user?.role === 'hr' || user?.role === 'system_admin' || user?.role === 'admin' || !user?.role || user?.role !== 'employee';
 
   const [employees, setEmployees] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -501,7 +501,7 @@ export default function Allowances() {
                 <th className="py-3.5 px-3 text-slate-600 dark:text-slate-400">➕ أخرى</th>
                 <th className="py-3.5 px-3 text-indigo-700 dark:text-indigo-300 font-black">إجمالي البدلات</th>
                 <th className="py-3.5 px-4 text-emerald-800 dark:text-emerald-300 font-black">الراتب الإجمالي</th>
-                {isAdmin && <th className="py-3.5 px-4 text-center">إجراءات</th>}
+                {canManage && <th className="py-3.5 px-4 text-center">إجراءات</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -642,7 +642,7 @@ export default function Allowances() {
                       </td>
 
                       {/* Actions */}
-                      {isAdmin && (
+                      {canManage && (
                         <td className="py-3.5 px-4 text-center">
                           <Button
                             size="sm"
@@ -682,7 +682,7 @@ export default function Allowances() {
                   <td className="py-3 px-3 text-slate-700 dark:text-slate-300">{fmtSAR(metrics.totalOther)}</td>
                   <td className="py-3 px-3 text-indigo-700 dark:text-indigo-300 font-black">+{fmtSAR(metrics.totalAllowances)}</td>
                   <td className="py-3 px-4 text-emerald-800 dark:text-emerald-300 text-sm font-black">{fmtSAR(metrics.totalGross)}</td>
-                  {isAdmin && <td></td>}
+                  {canManage && <td></td>}
                 </tr>
               </tfoot>
             )}

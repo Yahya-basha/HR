@@ -63,7 +63,7 @@ export const ROLE_PERMISSIONS = {
     'requests.view_all','requests.approve',
     'reports.view','reports.export',
     'alerts.view','approvals.manage',
-    'allowances.view','settings.view',
+    'allowances.view','allowances.edit','settings.view',
     'announcements.send','my.requests',
   ],
 
@@ -74,7 +74,7 @@ export const ROLE_PERMISSIONS = {
     'loans.view','loans.approve.financial','loans.disburse',
     'leave.view','shifts.view',
     'reports.view','reports.export',
-    'allowances.view','approvals.manage','settings.view','my.requests',
+    'allowances.view','allowances.edit','approvals.manage','settings.view','my.requests',
   ],
 
   hr: [
@@ -89,7 +89,7 @@ export const ROLE_PERMISSIONS = {
     'requests.view_all','requests.approve','requests.create',
     'reports.view','reports.export',
     'alerts.view','approvals.manage',
-    'allowances.view',
+    'allowances.view','allowances.edit',
     'branches.manage','departments.manage',
     'announcements.send','settings.view','my.requests',
   ],
