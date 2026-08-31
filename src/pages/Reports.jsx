@@ -1,3 +1,4 @@
+import { initFullCloudSync } from '@/lib/cloudSyncEngine';
 import { getCompanyProfile } from '@/lib/companyProfile';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -187,6 +188,7 @@ export default function Reports() {
     async function loadData() {
       setLoading(true);
       try {
+        await initFullCloudSync().catch(() => {});
         const [emps, logs, shs, leaves] = await Promise.all([
           base44.entities.Employee.list(),
           base44.entities.AttendanceLog.list('-log_date', 3000),
@@ -205,6 +207,12 @@ export default function Reports() {
       }
     }
     loadData();
+
+    const handleSync = () => {
+      setAdvancesList(getAdvances());
+    };
+    window.addEventListener('cloud_data_synced', handleSync);
+    return () => window.removeEventListener('cloud_data_synced', handleSync);
   }, []);
 
   const currentReportDef = useMemo(() => {
@@ -390,35 +398,43 @@ export default function Reports() {
           summary = { totalEmployees: rows.length };
 
         } else if (repId === 'advances_and_loans') {
-          const advs = advancesList && advancesList.length > 0 ? advancesList : getAdvances();
-          advs.forEach((adv, idx) => {
+          const rawAdvs = getAdvances();
+          const advs = rawAdvs.length > 0 ? rawAdvs : (advancesList || []);
+          let activeIndex = 1;
+          advs.forEach((adv) => {
+            if (adv.status === 'rejected') return;
             const emp = employees.find(e => String(e.employee_number || e.id) === String(adv.employee_number));
-            const matchBranch = filterBranch === 'all' || (emp?.branch_name || '') === filterBranch;
+            const matchBranch = filterBranch === 'all' || (emp?.branch_name || emp?.branch || '') === filterBranch;
             const matchEmp = filterEmpId === 'all' || String(adv.employee_number) === String(filterEmpId);
 
             if (matchBranch && matchEmp) {
-              const total = Number(adv.total_amount) || 0;
-              const paid = Number(adv.paid_amount) || 0;
-              const rem = Math.max(0, total - paid);
+              const total = Number(adv.total_amount || adv.amount) || 0;
+              const monthly = Number(adv.monthly_installment || adv.monthly_deduction) || 0;
+              const totalInst = Number(adv.total_installments || adv.installments) || (monthly > 0 ? Math.ceil(total / monthly) : 1);
+              const paidInst = Number(adv.paid_installments) || 0;
+              const paid = Number(adv.paid_amount !== undefined ? adv.paid_amount : (paidInst * monthly)) || 0;
+              const rem = Number(adv.remaining_balance !== undefined ? adv.remaining_balance : Math.max(0, total - paid));
+
               rows.push({
-                index: idx + 1,
-                emp_num: adv.employee_number,
+                index: activeIndex++,
+                emp_num: adv.employee_number || emp?.employee_number || '--',
                 emp_name: emp?.full_name || adv.employee_name || 'موظف',
-                branch: emp?.branch_name || 'الفرع الرئيسي',
+                branch: emp?.branch_name || emp?.branch || 'الفرع الرئيسي',
                 total_amount: total,
-                monthly_installment: adv.monthly_installment || 0,
-                total_installments: adv.total_installments || 1,
+                monthly_installment: monthly,
+                total_installments: totalInst,
                 paid_amount: paid,
                 remaining_amount: rem,
-                start_month: adv.start_month || '2026-08',
-                status: rem <= 0 ? 'مسددة بالكامل' : 'سارية وقيد الاستقطاع'
+                start_month: adv.start_month || (adv.date ? adv.date.slice(0, 7) : '2026-08'),
+                status: rem <= 0 ? 'مسددة بالكامل' : (adv.status === 'disbursed' || adv.status === 'active' ? 'سارية وقيد الاستقطاع' : 'معتمدة')
               });
             }
           });
           summary = {
             totalAdvances: rows.reduce((acc, r) => acc + Number(r.total_amount || 0), 0),
             totalPaid: rows.reduce((acc, r) => acc + Number(r.paid_amount || 0), 0),
-            totalRemaining: rows.reduce((acc, r) => acc + Number(r.remaining_amount || 0), 0)
+            totalRemaining: rows.reduce((acc, r) => acc + Number(r.remaining_amount || 0), 0),
+            activeCount: rows.filter(r => r.remaining_amount > 0).length
           };
 
         } else if (repId === 'medical_insurance') {
