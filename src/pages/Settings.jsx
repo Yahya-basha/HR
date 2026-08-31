@@ -1,3 +1,4 @@
+import { getCompanyProfile, saveCompanyProfile, DEFAULT_COMPANY_PROFILE } from '@/lib/companyProfile';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useI18n } from '@/lib/i18n';
@@ -81,11 +82,10 @@ export default function Settings() {
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
-    localStorage.setItem('hr_flow_company_profile', JSON.stringify(companyProfile));
-    window.dispatchEvent(new Event('storage'));
+    saveCompanyProfile(companyProfile);
     toast({
       title: 'تم حفظ بيانات المنشأة والشعار بنجاح ✅',
-      description: 'تم تحديث الشعار والاسم التجاري عبر جميع شاشات النظام.'
+      description: 'تم تحديث الشعار والاسم التجاري ومزامنتها لجميع مستخدمي النظام.'
     });
   };
 
@@ -120,11 +120,10 @@ export default function Settings() {
   };
 
   const handleRemoveLogo = () => {
-    const updated = { ...companyProfile, logo_url: '/green-arrow-logo.png' };
+    const updated = { ...companyProfile, logo_url: '/company-logo.svg' };
     setCompanyProfile(updated);
-    localStorage.setItem('hr_flow_company_profile', JSON.stringify(updated));
-    window.dispatchEvent(new Event('storage'));
-    toast({ title: 'تمت استعادة الشعار الافتراضي للنظام' });
+    saveCompanyProfile(updated);
+    toast({ title: 'تمت استعادة الشعار الافتراضي للمنشأة' });
   };
 
   return (

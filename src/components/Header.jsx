@@ -1,3 +1,4 @@
+import { getCompanyProfile } from '@/lib/companyProfile';
 import { PrivacyMaskToggle } from '@/lib/FinancialPrivacyContext';
 import NotificationsDropdown from '@/components/NotificationsDropdown';
 import { initFullCloudSync, exportSystemBackupJSON } from '@/lib/cloudSyncEngine';
@@ -137,7 +138,7 @@ export default function Header({ onOpenMobileMenu }) {
         {/* Brand Logo & Name */}
         <Link to="/" className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform p-1">
-            <img src="/green-arrow-logo.png" alt="logo" className="w-full h-full object-contain" />
+            <img src={getCompanyProfile().logo_url || "/company-logo.svg"} alt="logo" className="w-full h-full object-contain" />
           </div>
           <div className="hidden sm:block">
             <div className="text-sm font-heading font-black text-foreground tracking-tight flex items-center gap-1.5">

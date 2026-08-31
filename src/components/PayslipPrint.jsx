@@ -9,32 +9,7 @@ import {
   FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-function getCompanyProfile() {
-  try {
-    const saved = localStorage.getItem('hr_flow_company_profile') || localStorage.getItem('company_profile');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        name_ar: parsed.legal_name || parsed.name_ar || parsed.name || 'شركة درة الصيارة للتجارة',
-        name_en: parsed.name_en || 'DORAT AL-SAYARAH TRADING CO.',
-        cr_number: parsed.cr_number || '7016475555',
-        tax_number: parsed.tax_number || '310459827100003',
-        address: parsed.address || 'الرياض - المملكة العربية السعودية',
-        logo_url: parsed.logo_url || '/green-arrow-logo.png'
-      };
-    }
-  } catch (e) {}
-
-  return {
-    name_ar: 'شركة درة الصيارة للتجارة',
-    name_en: 'DORAT AL-SAYARAH TRADING CO.',
-    cr_number: '7016475555',
-    tax_number: '310459827100003',
-    address: 'الرياض - المملكة العربية السعودية',
-    logo_url: '/green-arrow-logo.png'
-  };
-}
+import { getCompanyProfile } from '@/lib/companyProfile';
 
 const fmtSAR = (n, dec = 2) => {
   return (Number(n) || 0).toLocaleString('en-US', {

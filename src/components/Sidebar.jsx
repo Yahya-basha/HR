@@ -1,3 +1,4 @@
+import { getCompanyProfile } from '@/lib/companyProfile';
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
@@ -118,7 +119,7 @@ export default function Sidebar({ isSubMenuOpen, setIsSubMenuOpen }) {
           className="w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-md mb-3 hover:scale-105 transition-transform shrink-0 p-1"
           title="Green Arrow HR - لوحة التحكم"
         >
-          <img src="/green-arrow-logo.png" alt="logo" className="w-7 h-7 object-contain" />
+          <img src={getCompanyProfile().logo_url || "/company-logo.svg"} alt="logo" className="w-8 h-8 object-contain" />
         </Link>
 
         {/* Primary Module Icons List */}

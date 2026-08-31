@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <linearGradient id="blueGear" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8" />
+      <stop offset="50%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1e40af" />
+    </linearGradient>
+    <linearGradient id="silverRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="50%" stop-color="#94a3b8" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <linearGradient id="innerGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="5" stdDeviation="4" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded card -->
+  <rect x="25" y="25" width="450" height="450" rx="90" fill="url(#innerGlow)" stroke="#e2e8f0" stroke-width="6" filter="url(#dropShadow)" />
+
+  <!-- Outer Blue Cogwheel / Gear -->
+  <g transform="translate(250, 250)">
+    <!-- Gear Teeth -->
+    <path d="
+      M -40,-180 L 40,-180 L 35,-145 L -35,-145 Z
+      M 75,-165 L 140,-115 L 120,-85 L 60,-130 Z
+      M 160,-90 L 185,-10 L 150,0 L 130,-75 Z
+      M 185,15 L 160,95 L 130,80 L 150,5 Z
+      M 135,120 L 70,170 L 55,135 L 115,90 Z
+      M 35,150 L -45,150 L -40,115 L 30,115 Z
+      M -75,170 L -140,120 L -115,90 L -55,135 Z
+      M -160,95 L -185,15 L -150,5 L -130,80 Z
+      M -185,-10 L -160,-90 L -130,-75 L -150,0 Z
+      M -140,-115 L -75,-165 L -60,-130 L -120,-85 Z
+    " fill="url(#blueGear)" />
+
+    <!-- Main Gear Base Circle -->
+    <circle cx="0" cy="0" r="150" fill="url(#blueGear)" />
+    
+    <!-- Outer Silver Ring -->
+    <circle cx="0" cy="0" r="115" fill="url(#silverRing)" />
+    
+    <!-- Inner White Core -->
+    <circle cx="0" cy="0" r="90" fill="#ffffff" stroke="#e2e8f0" stroke-width="4" />
+
+    <!-- Mechanical Wrench / Spanner Notch -->
+    <path d="M -135,130 L -210,195 A 25,25 0 0,0 -175,230 L -100,165 Z" fill="url(#silverRing)" stroke="#475569" stroke-width="3" />
+    <circle cx="-192" cy="212" r="12" fill="#ffffff" stroke="#64748b" stroke-width="3" />
+
+    <!-- DC Monogram Text -->
+    <text x="-4" y="24" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="82" font-weight="900" fill="#1e40af" text-anchor="middle" letter-spacing="-3">
+      DC
+    </text>
+
+    <!-- Star / Diamond Sparkle Accent -->
+    <polygon points="45,-45 50,-58 63,-53 52,-42 57,-30 45,-38 33,-30 38,-42 27,-53 40,-58" fill="#f59e0b" />
+  </g>
+</svg>

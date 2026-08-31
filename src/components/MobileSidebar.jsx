@@ -1,3 +1,4 @@
+import { getCompanyProfile } from '@/lib/companyProfile';
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
@@ -28,7 +29,7 @@ export default function MobileSidebar({ isOpen, onClose }) {
     const saved = localStorage.getItem('hr_flow_company_profile');
     return saved ? JSON.parse(saved) : { 
       name: 'Green Arrow HR', 
-      logo_url: '/green-arrow-logo.png' 
+      logo_url: '/company-logo.svg' 
     };
   });
 
@@ -76,7 +77,7 @@ export default function MobileSidebar({ isOpen, onClose }) {
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-white/95 backdrop-blur-md border border-white shadow-md ring-2 ring-emerald-400/30 flex items-center justify-center p-1 shrink-0">
               <img 
-                src={companyProfile.logo_url || '/green-arrow-logo.png'} 
+                src={companyProfile.logo_url || "/company-logo.svg"} 
                 alt="Logo" 
                 className="w-full h-full object-contain filter drop-shadow-sm" 
               />

@@ -1,3 +1,4 @@
+import { getCompanyProfile } from '@/lib/companyProfile';
 import { initFullCloudSync } from '@/lib/cloudSyncEngine';
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
@@ -55,6 +56,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    // Ensure default DC company profile and logo are loaded for all users
+    getCompanyProfile();
     initFullCloudSync();
     checkUserAuth();
   }, [checkUserAuth]);
