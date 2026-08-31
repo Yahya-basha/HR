@@ -233,7 +233,7 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
               <div className="flex items-center gap-3">
                 {company.logo_url ? (
                   <img
-                    src={company.logo_url}
+                    src={company.logo_url || "/company-logo.svg"} onError={(e) => { e.currentTarget.src = "/company-logo.svg"; }}
                     alt="شعار الشركة"
                     className="h-12 w-auto max-h-12 max-w-[130px] object-contain"
                   />

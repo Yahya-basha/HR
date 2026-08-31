@@ -1,3 +1,4 @@
+import { getCompanyProfile } from '@/lib/companyProfile';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Printer, FileText } from 'lucide-react';
@@ -243,7 +244,7 @@ export default function DocumentsPrint() {
             <div className="text-center space-y-2 print-logo" style={{flex: '1 1 40%'}}>
               <div className="mx-auto w-16 h-16 rounded-full border-2 border-[#D4AF37] bg-gradient-to-tr from-[#0B1F3A] to-[#1E3A8A] flex items-center justify-center shadow-md overflow-hidden">
                 {companyProfile.logo_url ? (
-                  <img src={companyProfile.logo_url} alt="شعار الشركة" className="w-14 h-14 object-contain p-1" />
+                  <img src={companyProfile.logo_url || "/company-logo.svg"} onError={(e) => { e.currentTarget.src = "/company-logo.svg"; }} alt="شعار الشركة" className="w-14 h-14 object-contain p-1" />
                 ) : (
                   <span className="font-serif font-black text-xl tracking-wider text-[#D4AF37]">DC</span>
                 )}

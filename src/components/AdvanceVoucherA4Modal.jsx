@@ -1,30 +1,4 @@
-
-function getCompanyProfile() {
-  try {
-    const saved = localStorage.getItem('hr_flow_company_profile') || localStorage.getItem('company_profile');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        name_ar: parsed.legal_name || parsed.name_ar || parsed.name || 'شركة درة الصيارة للتجارة',
-        name_en: parsed.name_en || 'DORAT AL-SAYARAH TRADING CO.',
-        cr_number: parsed.cr_number || '7016475555',
-        tax_number: parsed.tax_number || '310459827100003',
-        address: parsed.address || 'الرياض - المملكة العربية السعودية',
-        logo_url: parsed.logo_url || '/green-arrow-logo.png'
-      };
-    }
-  } catch (e) {}
-
-  return {
-    name_ar: 'شركة درة الصيارة للتجارة',
-    name_en: 'DORAT AL-SAYARAH TRADING CO.',
-    cr_number: '7016475555',
-    tax_number: '310459827100003',
-    address: 'الرياض - المملكة العربية السعودية',
-    logo_url: '/green-arrow-logo.png'
-  };
-}
-
+import { getCompanyProfile } from '@/lib/companyProfile';
 import React, { useRef } from 'react';
 import {
   Dialog,
@@ -144,7 +118,7 @@ export default function AdvanceVoucherA4Modal({
                 {/* Left: Logo & Date */}
                 <div className="text-left space-y-1">
                   <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center p-1 font-bold ms-auto">
-                    <img src="/green-arrow-logo.png" alt="logo" className="w-full h-full object-contain" />
+                    <img src={companyProfile.logo_url || "/company-logo.svg"} alt="logo" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.src = "/company-logo.svg"; }} />
                   </div>
                   <div className="text-[10px] text-slate-600 font-mono pt-1">
                     التاريخ: <strong className="text-slate-900">{advance.disbursement_date || new Date().toISOString().slice(0, 10)}</strong>

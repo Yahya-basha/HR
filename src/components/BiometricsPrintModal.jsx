@@ -1,23 +1,11 @@
+import { getCompanyProfile } from '@/lib/companyProfile';
 import { useRef } from 'react';
 import { Printer, Calendar, Clock, Building2, User, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatMinutes, formatHours, formatTimeDisplay } from '@/lib/payrollEngine';
 
-function getCompanyProfile() {
-  try {
-    const saved = localStorage.getItem('hr_flow_company_profile');
-    if (saved) return JSON.parse(saved);
-  } catch {}
-  return {
-    name: 'Green Arrow HR',
-    legal_name: 'شركة درة السيارة لقطع غيار السيارات',
-    cr_number: '7016475555',
-    phone: '+966541697999',
-    address: 'المملكة العربية السعودية',
-    logo_url: '/green-arrow-logo.png',
-  };
-}
+
 
 export default function BiometricsPrintModal({ open, onOpenChange, employee, dailyDetails, monthLabel, payroll }) {
   const printRef = useRef(null);
@@ -85,7 +73,7 @@ export default function BiometricsPrintModal({ open, onOpenChange, employee, dai
           <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', padding: '16px 20px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               {company.logo_url && (
-                <img src={company.logo_url} alt="logo" style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#fff', objectFit: 'contain', padding: '3px' }} />
+                <img src={company.logo_url || "/company-logo.svg"} onError={(e) => { e.currentTarget.src = "/company-logo.svg"; }} alt="logo" style={{ width: '42px', height: '42px', borderRadius: '8px', background: '#fff', objectFit: 'contain', padding: '3px' }} />
               )}
               <div>
                 <div style={{ fontSize: '14px', fontWeight: '900' }}>{company.legal_name}</div>
