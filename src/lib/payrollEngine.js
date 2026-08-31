@@ -681,15 +681,30 @@ export function getAdvances() {
     
     const map = new Map();
     combined.forEach(raw => {
-      if (raw && raw.id) {
+      if (raw) {
         const norm = normalizeAdvance(raw);
         if (norm && norm.total_amount > 0) {
-          // If already in map, keep newer status or higher paid amount
-          if (!map.has(String(norm.id))) {
-            map.set(String(norm.id), norm);
+          // Robust composite fingerprint key to deduplicate identical advances
+          const empNum = String(norm.employee_number || '').trim();
+          const amount = Math.round(Number(norm.total_amount || norm.amount || 0));
+          const reason = String(norm.reason || '').trim().toLowerCase();
+          const startMonth = norm.start_month || '2026-08';
+          
+          const uniqueKey = norm.id && norm.id.startsWith('adv_custom_') 
+            ? norm.id 
+            : `${empNum}_${amount}_${startMonth}_${reason.slice(0, 10)}`;
+          
+          if (!map.has(uniqueKey)) {
+            map.set(uniqueKey, norm);
           } else {
-            const prev = map.get(String(norm.id));
-            map.set(String(norm.id), { ...prev, ...norm });
+            const prev = map.get(uniqueKey);
+            // Merge gracefully keeping existing IDs and progress
+            map.set(uniqueKey, { 
+              ...norm, 
+              ...prev, 
+              remaining_balance: prev.remaining_balance !== undefined ? prev.remaining_balance : norm.remaining_balance,
+              paid_amount: Math.max(Number(prev.paid_amount || 0), Number(norm.paid_amount || 0))
+            });
           }
         }
       }
