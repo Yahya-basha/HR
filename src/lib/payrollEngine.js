@@ -424,26 +424,280 @@ export function getStandardShiftPunches(shiftNameOrObj) {
 // EMPLOYEE ADVANCES & LOANS MANAGEMENT
 // ============================================================================
 
+export const DEFAULT_MASTER_ADVANCES = [
+  {
+    id: "adv_1033_1",
+    employee_id: "emp_1033",
+    employee_number: "1033",
+    employee_name: "عبد الله ناصر عبد الله محمد عمر",
+    total_amount: 2697,
+    amount: 2697,
+    monthly_installment: 500,
+    monthly_deduction: 500,
+    total_installments: 6,
+    installments: 6,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 2697,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "رصيد سلفة قديمة مستحقة",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T16:45:58.862Z",
+    history: []
+  },
+  {
+    id: "adv_1032_1",
+    employee_id: "emp_1032",
+    employee_number: "1032",
+    employee_name: "محمد عادل احمد نعمان",
+    total_amount: 11874,
+    amount: 11874,
+    monthly_installment: 500,
+    monthly_deduction: 500,
+    total_installments: 24,
+    installments: 24,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 11874,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "رصيد سلفة قديمة مستحقة",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T16:45:32.430Z",
+    history: []
+  },
+  {
+    id: "adv_1021_1",
+    employee_id: "emp_1021",
+    employee_number: "1021",
+    employee_name: "إبراهيم عبد العزيز التويجري",
+    total_amount: 3700,
+    amount: 3700,
+    monthly_installment: 500,
+    monthly_deduction: 500,
+    total_installments: 8,
+    installments: 8,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 3700,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "رصيد سلفة قديمة مستحقة",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T16:43:32.019Z",
+    history: []
+  },
+  {
+    id: "adv_1022_1",
+    employee_id: "emp_1022",
+    employee_number: "1022",
+    employee_name: "يحيي محمد عبدالغفار باشا",
+    total_amount: 8270,
+    amount: 8270,
+    monthly_installment: 500,
+    monthly_deduction: 500,
+    total_installments: 17,
+    installments: 17,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 8270,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "رصيد سلفة قديمة مستحقة",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T16:42:07.074Z",
+    history: []
+  },
+  {
+    id: "adv_1017_1",
+    employee_id: "emp_1017",
+    employee_number: "1017",
+    employee_name: "محمد سالم صالح أحمد المردم",
+    total_amount: 11465,
+    amount: 11465,
+    monthly_installment: 500,
+    monthly_deduction: 500,
+    total_installments: 23,
+    installments: 23,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 11465,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "رصيد سلفة قديمة مستحقة",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T16:41:31.297Z",
+    history: []
+  },
+  {
+    id: "adv_1013_1",
+    employee_id: "emp_1013",
+    employee_number: "1013",
+    employee_name: "وضاح صالح سالم أحمد العولقي",
+    total_amount: 1430,
+    amount: 1430,
+    monthly_installment: 500,
+    monthly_deduction: 500,
+    total_installments: 3,
+    installments: 3,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 1430,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "رصيد سلفة قديمة مستحقة",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T16:37:01.100Z",
+    history: []
+  },
+  {
+    id: "adv_1004_1",
+    employee_id: "emp_1004",
+    employee_number: "1004",
+    employee_name: "صالح علي المحيميد",
+    total_amount: 50,
+    amount: 50,
+    monthly_installment: 50,
+    monthly_deduction: 50,
+    total_installments: 1,
+    installments: 1,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 50,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "رصيد سلفة قديمة مستحقة",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T16:36:11.137Z",
+    history: []
+  },
+  {
+    id: "adv_1004_2",
+    employee_id: "emp_1004",
+    employee_number: "1004",
+    employee_name: "صالح علي المحيميد",
+    total_amount: 1000,
+    amount: 1000,
+    monthly_installment: 250,
+    monthly_deduction: 250,
+    total_installments: 4,
+    installments: 4,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 1000,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "مزنوق",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T15:43:32.248Z",
+    history: []
+  },
+  {
+    id: "adv_1004_3",
+    employee_id: "emp_1004",
+    employee_number: "1004",
+    employee_name: "صالح علي المحيميد",
+    total_amount: 1002,
+    amount: 1002,
+    monthly_installment: 501,
+    monthly_deduction: 501,
+    total_installments: 2,
+    installments: 2,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 1002,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "سفر",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T15:39:04.131Z",
+    history: []
+  },
+  {
+    id: "adv_1004_4",
+    employee_id: "emp_1004",
+    employee_number: "1004",
+    employee_name: "صالح علي المحيميد",
+    total_amount: 1000,
+    amount: 1000,
+    monthly_installment: 1000,
+    monthly_deduction: 1000,
+    total_installments: 1,
+    installments: 1,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 1000,
+    start_month: "2026-08",
+    disbursement_date: "2026-08-30",
+    reason: "سفر",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T14:59:59.257Z",
+    history: []
+  },
+  {
+    id: "adv_1004_5",
+    employee_id: "emp_1004",
+    employee_number: "1004",
+    employee_name: "صالح علي المحيميد",
+    total_amount: 5000,
+    amount: 5000,
+    monthly_installment: 5000,
+    monthly_deduction: 5000,
+    total_installments: 1,
+    installments: 1,
+    paid_installments: 0,
+    paid_amount: 0,
+    remaining_balance: 5000,
+    start_month: "2026-09",
+    disbursement_date: "2026-08-30",
+    reason: "سلفة شخصية",
+    status: "active",
+    approved_by: "فهد ناصر محمد الجوعي (المدير العام)",
+    created_at: "2026-08-30T15:34:11.718Z",
+    history: []
+  }
+];
+
 export function getAdvances() {
   try {
     const list1 = JSON.parse(localStorage.getItem('hr_flow_employee_advances') || '[]');
     const list2 = JSON.parse(localStorage.getItem('hr_advances_list') || '[]');
-    const combined = [...(Array.isArray(list1) ? list1 : []), ...(Array.isArray(list2) ? list2 : [])];
+    const combined = [
+      ...(Array.isArray(list1) ? list1 : []),
+      ...(Array.isArray(list2) ? list2 : []),
+      ...DEFAULT_MASTER_ADVANCES
+    ];
     
     const map = new Map();
     combined.forEach(raw => {
       if (raw && raw.id) {
         const norm = normalizeAdvance(raw);
-        // Filter out zero-amount ghost records
         if (norm && norm.total_amount > 0) {
-          map.set(String(norm.id), norm);
+          // If already in map, keep newer status or higher paid amount
+          if (!map.has(String(norm.id))) {
+            map.set(String(norm.id), norm);
+          } else {
+            const prev = map.get(String(norm.id));
+            map.set(String(norm.id), { ...prev, ...norm });
+          }
         }
       }
     });
     return Array.from(map.values());
   } catch (e) {
     console.error('Failed to parse advances:', e);
-    return [];
+    return DEFAULT_MASTER_ADVANCES;
   }
 }
 
