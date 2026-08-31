@@ -269,6 +269,9 @@ export default function Payroll() {
   const [advancesList, setAdvancesList] = useState([]);
   const [adjustmentsList, setAdjustmentsList] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [overrideTrigger, setOverrideTrigger] = useState(0);
+  const [isEditingAdvance, setIsEditingAdvance] = useState(false);
+  const [customAdvanceAmount, setCustomAdvanceAmount] = useState('');
 
   // Load Data
   const loadData = useCallback(async () => {
@@ -333,7 +336,7 @@ export default function Payroll() {
         monthPrefix,
       });
     });
-  }, [employees, attendanceLogs, shifts, settings, monthPrefix, advancesList, adjustmentsList, isLocked]);
+  }, [employees, attendanceLogs, shifts, settings, monthPrefix, advancesList, adjustmentsList, isLocked, overrideTrigger]);
 
   // Filtered Payrolls by branch & search
   const filteredPayrolls = useMemo(() => {
@@ -1259,30 +1262,150 @@ export default function Payroll() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* 1. Advance Installment Card */}
-                <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-3">
+                <Card className="p-5 rounded-3xl border bg-card shadow-sm space-y-4">
                   <div className="flex items-center justify-between border-b pb-3">
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-5 h-5 text-amber-600" />
-                      <h3 className="font-heading font-black text-sm text-foreground">1. استقطاع قسط السلفة الشهرية</h3>
+                      <div>
+                        <h3 className="font-heading font-black text-sm text-foreground">1. استقطاع قسط السلفة الشهرية</h3>
+                        <p className="text-[11px] text-muted-foreground">التحكم في خصم القسط (تأجيل، تعديل، أو اعتماد الخصم)</p>
+                      </div>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono font-bold">
-                      {currentSelectedPayroll.activeAdvance ? 'سلفة نشطة' : 'لا توجد سلفة'}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {currentSelectedPayroll.activeAdvance ? (
+                        currentSelectedPayroll.advanceOverrideStatus === 'skipped' ? (
+                          <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border-amber-300 text-xs font-bold gap-1">
+                            ⏸️ الخصم مؤجل لهذا الشهر
+                          </Badge>
+                        ) : currentSelectedPayroll.advanceOverrideStatus === 'modified' ? (
+                          <Badge className="bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300 text-xs font-bold gap-1">
+                            ✏️ قسط مخصص ({fmtNum(currentSelectedPayroll.advanceInstallment)} ر.س)
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 text-xs font-bold gap-1">
+                            ✓ قسط مجدول معتمد
+                          </Badge>
+                        )
+                      ) : (
+                        <Badge variant="outline" className="text-xs font-bold">لا توجد سلفة</Badge>
+                      )}
+                    </div>
                   </div>
 
                   {currentSelectedPayroll.activeAdvance ? (
-                    <div className="space-y-3 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 p-4 rounded-2xl text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">إجمالي السلفة:</span>
-                        <span className="font-mono font-bold">{fmtNum(currentSelectedPayroll.activeAdvance.total_amount)} ر.س</span>
+                    <div className="space-y-4">
+                      {/* Financial Details Box */}
+                      <div className="space-y-2.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">إجمالي مبلغ السلفة:</span>
+                          <span className="font-mono font-bold text-foreground">{fmtNum(currentSelectedPayroll.activeAdvance.total_amount)} ر.س</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">القسط الشهري المجدول أصلاً:</span>
+                          <span className="font-mono font-bold text-foreground">
+                            {fmtNum(currentSelectedPayroll.activeAdvance.monthly_installment || currentSelectedPayroll.activeAdvance.monthly_deduction || 500)} ر.س
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 rounded-xl bg-white dark:bg-slate-950 border">
+                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                            القسط المعتمد للاستقطاع هذا الشهر:
+                          </span>
+                          <span className={`font-mono font-black text-sm ${currentSelectedPayroll.advanceInstallment === 0 ? 'text-amber-600' : 'text-rose-600'}`}>
+                            {currentSelectedPayroll.advanceInstallment === 0 ? '0.00 ر.س (مؤجل)' : `-${fmtNum(currentSelectedPayroll.advanceInstallment)} ر.س`}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-slate-200 dark:border-slate-800 pt-2 font-bold">
+                          <span>الرصيد المتبقي بعد هذا الشهر:</span>
+                          <span className="font-mono text-slate-900 dark:text-slate-100 text-sm">
+                            {fmtNum(currentSelectedPayroll.advanceRemaining)} ر.س
+                          </span>
+                        </div>
+                        {currentSelectedPayroll.advanceNote && (
+                          <div className="text-[10px] text-muted-foreground bg-slate-100 dark:bg-slate-800/60 p-2 rounded-lg">
+                            <strong>ملاحظة السلفة:</strong> {currentSelectedPayroll.advanceNote}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">القسط المستقطع لهذا الشهر:</span>
-                        <span className="font-mono font-black text-rose-600 text-sm">-{fmtNum(currentSelectedPayroll.advanceInstallment)} ر.س</span>
-                      </div>
-                      <div className="flex justify-between border-t border-amber-200/60 pt-2 font-bold">
-                        <span>المتبقي بعد الخصم:</span>
-                        <span className="font-mono text-amber-800 dark:text-amber-300">{fmtNum(currentSelectedPayroll.advanceRemaining)} ر.س</span>
+
+                      {/* Control Actions: Postpone, Custom Amount, Reset */}
+                      <div className="pt-1 space-y-3">
+                        <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          إجراءات إدارة قسط السلفة لشهر {monthPrefix}:
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          
+                          {/* Action 1: Defer / Postpone */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={currentSelectedPayroll.advanceOverrideStatus === 'skipped' ? 'default' : 'outline'}
+                            onClick={() => handlePostponeAdvance(currentSelectedPayroll.emp)}
+                            className={`rounded-xl text-xs font-bold h-9 gap-1.5 ${currentSelectedPayroll.advanceOverrideStatus === 'skipped' ? 'bg-amber-600 hover:bg-amber-500 text-white' : 'border-amber-300 text-amber-900 dark:text-amber-200 hover:bg-amber-50'}`}
+                          >
+                            <span>⏸️ تأجيل الخصم (0 ر.س)</span>
+                          </Button>
+
+                          {/* Action 2: Open Custom Amount Form Toggle */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={isEditingAdvance ? 'default' : 'outline'}
+                            onClick={() => {
+                              setIsEditingAdvance(!isEditingAdvance);
+                              setCustomAdvanceAmount(String(currentSelectedPayroll.advanceInstallment || ''));
+                            }}
+                            className={`rounded-xl text-xs font-bold h-9 gap-1.5 ${isEditingAdvance ? 'bg-blue-600 text-white' : 'border-blue-300 text-blue-900 dark:text-blue-200 hover:bg-blue-50'}`}
+                          >
+                            <span>✏️ تعديل قيمة القسط</span>
+                          </Button>
+
+                          {/* Action 3: Restore Default / Approve */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleResetAdvanceToDefault(currentSelectedPayroll.emp)}
+                            className="rounded-xl text-xs font-bold h-9 gap-1.5 border-slate-300 text-slate-700 hover:bg-slate-100"
+                          >
+                            <span>🔄 استعادة القسط المجدول</span>
+                          </Button>
+
+                        </div>
+
+                        {/* Inline Edit Form for Custom Amount */}
+                        {isEditingAdvance && (
+                          <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-2xl space-y-3 animate-in fade-in-50">
+                            <div className="font-bold text-xs text-blue-950 dark:text-blue-200 flex items-center justify-between">
+                              <span>تحديد مبلغ قسط مخصص لشهر {monthPrefix}:</span>
+                              <span className="text-[10px] text-muted-foreground font-mono">الحد الأقصى: {fmtNum(currentSelectedPayroll.activeAdvance.remaining_balance)} ر.س</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={currentSelectedPayroll.activeAdvance.remaining_balance}
+                                  value={customAdvanceAmount}
+                                  onChange={(e) => setCustomAdvanceAmount(e.target.value)}
+                                  placeholder="أدخل مبلغ القسط بالريال..."
+                                  className="rounded-xl text-xs font-bold h-9 font-mono bg-white dark:bg-slate-900"
+                                />
+                                <span className="absolute left-3 top-2 text-xs font-bold text-muted-foreground">ر.س</span>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => handleSaveCustomAdvance(currentSelectedPayroll.emp)}
+                                className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold h-9 px-4 shadow-sm"
+                              >
+                                ✓ تطبيق وحفظ القسط
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                   ) : (
