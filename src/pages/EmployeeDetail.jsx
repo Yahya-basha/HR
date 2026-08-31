@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { hasPermission } from '@/lib/rbac';
+import { hasPermission, canAccessEmployeeData, canViewSalary } from '@/lib/rbac';
 import { useToast } from '@/components/ui/use-toast';
 import {
   User,
@@ -444,6 +444,37 @@ export default function EmployeeDetail() {
       toast({ title: 'خطأ', description: e.message, variant: 'destructive' });
     }
   };
+
+
+  // Strict Employee Data Isolation Check
+  const isAuthorized = useMemo(() => {
+    if (!user || !employee) return true;
+    return canAccessEmployeeData(user, employee);
+  }, [user, employee]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-6" dir="rtl">
+        <Card className="max-w-md w-full p-8 text-center space-y-4 border-rose-200 bg-rose-50/50 dark:bg-rose-950/20 shadow-xl rounded-3xl">
+          <div className="w-16 h-16 rounded-2xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 mx-auto flex items-center justify-center text-3xl">
+            🔒
+          </div>
+          <h2 className="text-xl font-heading font-black text-slate-900 dark:text-white">
+            غير مصرح بالوصول لهذا الملف
+          </h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            تم تطبيق سياسة أمان وحماية البيانات الصارمة. لا يمكنك استعراض الملفات الوظيفية أو المالية لموظفين آخرين.
+          </p>
+          <Button
+            onClick={() => navigate('/portal')}
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-xs h-11 shadow-md"
+          >
+            العودة إلى بوابتي الشخصية ➔
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

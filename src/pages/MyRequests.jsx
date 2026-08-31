@@ -1,3 +1,4 @@
+import { getUnifiedRequests, saveUnifiedRequest } from '@/lib/requestsEngine';
 import { MaskedSalary, PrivacyMaskToggle } from '@/lib/FinancialPrivacyContext';
 import { cloudSave, initFullCloudSync } from '@/lib/cloudSyncEngine';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
