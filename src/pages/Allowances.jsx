@@ -15,6 +15,7 @@ import {
   Car,
   Zap,
   Phone,
+  ShoppingBag,  ShoppingCart,
   PlusCircle,
   Search,
   Filter,
@@ -230,7 +231,7 @@ export default function Allowances() {
             <div>
               <h1 className="text-xl font-heading font-black tracking-tight">سجل وإدارة البدلات والمزايا المالية</h1>
               <p className="text-xs text-indigo-200/80">
-                إدارة مركزية شاملة لبدلات السكن، المواصلات، الكهرباء، والاتصالات لكافة موظفي الشركة
+                إدارة مركزية شاملة لبدلات السكن، المواصلات، الكهرباء، والمشتريات لكافة موظفي الشركة
               </p>
             </div>
           </div>
@@ -248,7 +249,7 @@ export default function Allowances() {
 
           <Button
             onClick={() => {
-              const headers = ['الرقم الوظيفي', 'اسم الموظف', 'الفرع', 'القسم', 'الراتب الأساسي', 'بدل السكن', 'بدل المواصلات', 'بدل الكهرباء', 'بدل الهاتف', 'بدلات أخرى', 'إجمالي البدلات', 'إجمالي الراتب'];
+              const headers = ['الرقم الوظيفي', 'اسم الموظف', 'الفرع', 'القسم', 'الراتب الأساسي', 'بدل السكن', 'بدل المواصلات', 'بدل الكهرباء', 'بدل المشتريات', 'بدلات أخرى', 'إجمالي البدلات', 'إجمالي الراتب'];
               const rows = filteredEmployees.map(e => {
                 const h = Number(e.housing_allowance) || 0;
                 const t = Number(e.transport_allowance) || 0;
@@ -355,8 +356,8 @@ export default function Allowances() {
         {/* 5. Phone Allowance */}
         <Card className="p-4 rounded-3xl border bg-gradient-to-br from-purple-50/80 to-purple-100/50 dark:from-purple-950/40 dark:to-purple-900/20 border-purple-200 dark:border-purple-800/60 shadow-sm">
           <div className="flex items-center justify-between text-purple-700 dark:text-purple-300">
-            <span className="text-[11px] font-bold">بدل الاتصالات 📱</span>
-            <Phone className="w-4 h-4 opacity-80" />
+            <span className="text-[11px] font-bold">بدل المشتريات 🛒</span>
+            <ShoppingBag className="w-4 h-4 opacity-80" />
           </div>
           <div className="mt-2 text-xl font-black font-mono text-purple-900 dark:text-purple-200">
             {fmtSAR(metrics.totalPhone)} <span className="text-[10px] font-sans font-normal text-muted-foreground">ر.س</span>
@@ -439,7 +440,7 @@ export default function Allowances() {
                 <SelectItem value="has_housing" className="text-sky-700 font-bold">🏠 لديهم بدل سكن</SelectItem>
                 <SelectItem value="has_transport" className="text-emerald-700 font-bold">🚗 لديهم بدل مواصلات</SelectItem>
                 <SelectItem value="has_electricity" className="text-amber-700 font-bold">⚡ لديهم بدل كهرباء</SelectItem>
-                <SelectItem value="has_phone" className="text-purple-700 font-bold">📱 لديهم بدل اتصالات</SelectItem>
+                <SelectItem value="has_phone" className="text-purple-700 font-bold">🛒 لديهم بدل مشتريات</SelectItem>
                 <SelectItem value="has_other" className="text-rose-700 font-bold">➕ لديهم بدلات أخرى</SelectItem>
                 <SelectItem value="no_allowance" className="text-slate-500 font-bold">🚫 بدون بدلات (أساسي فقط)</SelectItem>
               </SelectContent>
@@ -497,7 +498,7 @@ export default function Allowances() {
                 <th className="py-3.5 px-3 text-sky-700 dark:text-sky-400">🏠 بدل سكن</th>
                 <th className="py-3.5 px-3 text-emerald-700 dark:text-emerald-400">🚗 بدل مواصلات</th>
                 <th className="py-3.5 px-3 text-amber-700 dark:text-amber-400">⚡ بدل كهرباء</th>
-                <th className="py-3.5 px-3 text-purple-700 dark:text-purple-400">📱 بدل هاتف</th>
+                <th className="py-3.5 px-3 text-purple-700 dark:text-purple-400">🛒 بدل مشتريات</th>
                 <th className="py-3.5 px-3 text-slate-600 dark:text-slate-400">➕ أخرى</th>
                 <th className="py-3.5 px-3 text-indigo-700 dark:text-indigo-300 font-black">إجمالي البدلات</th>
                 <th className="py-3.5 px-4 text-emerald-800 dark:text-emerald-300 font-black">الراتب الإجمالي</th>
@@ -777,7 +778,7 @@ export default function Allowances() {
                 <div className="space-y-1">
                   <Label className="font-bold flex items-center gap-1.5 text-purple-800 dark:text-purple-300">
                     <Phone className="w-3.5 h-3.5" />
-                    <span>4. بدل الهاتف والاتصالات:</span>
+                    <span>4. بدل المشتريات والاتصالات:</span>
                   </Label>
                   <Input
                     type="number"
