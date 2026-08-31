@@ -1,3 +1,4 @@
+import AdvanceVoucherA4Modal from '@/components/AdvanceVoucherA4Modal';
 import { initFullCloudSync } from '@/lib/cloudSyncEngine';
 import { getCompanyProfile } from '@/lib/companyProfile';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -169,6 +170,7 @@ export default function Reports() {
   const [shifts, setShifts] = useState([]);
   const [leavesList, setLeavesList] = useState([]);
   const [advancesList, setAdvancesList] = useState([]);
+  const [selectedAdvForVoucher, setSelectedAdvForVoucher] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Generated Data
@@ -964,9 +966,32 @@ export default function Reports() {
                               <TableCell className="font-mono text-rose-600 font-bold">{Number(row.remaining_amount).toLocaleString()} ر.س</TableCell>
                               <TableCell className="font-mono">{row.start_month}</TableCell>
                               <TableCell className="text-center">
-                                <Badge className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                                  {row.status}
-                                </Badge>
+                                <div className="flex items-center justify-center gap-2">
+                                  <Badge className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                    {row.status}
+                                  </Badge>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      const emp = employees.find(e => String(e.employee_number) === String(row.employee_number)) || { full_name: row.employee_name, employee_number: row.employee_number };
+                                      setSelectedAdvForVoucher({
+                                        advance: {
+                                          amount: row.total_amount,
+                                          total_amount: row.total_amount,
+                                          monthly_installment: row.monthly_installment,
+                                          start_month: row.start_month,
+                                          reason: 'سلفة مالية مستحقة ومجدولة'
+                                        },
+                                        employee: emp
+                                      });
+                                    }}
+                                    className="h-7 text-[11px] font-bold rounded-lg border-purple-200 text-purple-700 hover:bg-purple-50 gap-1"
+                                  >
+                                    <Printer className="w-3 h-3" />
+                                    <span>طباعة سند A4</span>
+                                  </Button>
+                                </div>
                               </TableCell>
                             </>
                           )}

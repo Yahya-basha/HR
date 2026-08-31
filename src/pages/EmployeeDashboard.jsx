@@ -18,6 +18,14 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
+const formatPunchTime = (val) => {
+  if (!val || val === '--:--') return '--:--';
+  if (typeof val === 'string' && val.includes('T')) {
+    return val.slice(11, 16);
+  }
+  return val;
+};
+
 const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -157,7 +165,7 @@ export default function EmployeeDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-black font-heading">
-                  مرحباً، {currentEmp?.full_name?.split(' ')[0] || user?.full_name?.split(' ')[0]}
+                  مرحباً، {currentEmp?.full_name || user?.full_name}
                 </h1>
                 <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 text-[10px] font-bold">بوابة الموظف الذكية ✓</Badge>
               </div>
@@ -228,14 +236,14 @@ export default function EmployeeDashboard() {
           <div className="p-3 rounded-2xl bg-slate-100/80 dark:bg-slate-800">
             <span className="text-muted-foreground text-[10px] font-bold">بصمة الدخول:</span>
             <div className="font-mono font-black text-emerald-600 text-sm mt-0.5">
-              {todayLog?.check_in || '--:--'}
+              {formatPunchTime(todayLog?.check_in) || '--:--'}
             </div>
           </div>
 
           <div className="p-3 rounded-2xl bg-slate-100/80 dark:bg-slate-800">
             <span className="text-muted-foreground text-[10px] font-bold">بصمة الخروج:</span>
             <div className="font-mono font-black text-indigo-600 text-sm mt-0.5">
-              {todayLog?.check_out || '--:--'}
+              {formatPunchTime(todayLog?.check_out) || '--:--'}
             </div>
           </div>
 

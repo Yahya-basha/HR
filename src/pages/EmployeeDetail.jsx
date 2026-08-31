@@ -699,10 +699,12 @@ export default function EmployeeDetail() {
                   <User className="w-4 h-4 text-emerald-600" />
                   <span>البيانات الشخصية والرسمية للموظف</span>
                 </h3>
-                <Button size="sm" variant="outline" onClick={() => setEditEmployeeModal(true)} className="rounded-xl text-xs font-bold h-8 gap-1">
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>تعديل البيانات</span>
-                </Button>
+                {canEdit && (
+                  <Button size="sm" variant="outline" onClick={() => setEditEmployeeModal(true)} className="rounded-xl text-xs font-bold h-8 gap-1">
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>تعديل البيانات</span>
+                  </Button>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-xs">
@@ -796,6 +798,7 @@ export default function EmployeeDetail() {
                   </h3>
                   <p className="text-xs text-muted-foreground">التغطية الطبية والاشتراك الرسمي بالتأمينات الاجتماعية</p>
                 </div>
+                {canEdit && (
                 <Button size="sm" onClick={() => {
                   if (employee) {
                     setInsuranceForm({
@@ -817,6 +820,7 @@ export default function EmployeeDetail() {
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>تعديل التأمين</span>
                 </Button>
+                )}
               </div>
 
               {/* Medical Insurance Box */}
