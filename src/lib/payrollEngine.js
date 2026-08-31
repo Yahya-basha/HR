@@ -91,9 +91,39 @@ export function commitMonthlyAdvanceDeductions(monthPrefix, payrollsList) {
   }
 }
 
-export async function deleteAdvance(advanceId) {
+export function getDeletedAdvances() {
+  try {
+    const raw = localStorage.getItem('hr_deleted_advances');
+    if (!raw) return [];
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function deleteAdvance(advanceId, advanceRecord = null) {
   try {
     const cleanId = String(advanceId);
+    const deletedList = getDeletedAdvances();
+    
+    if (!deletedList.includes(cleanId)) {
+      deletedList.push(cleanId);
+    }
+    if (advanceRecord) {
+      const empNum = String(advanceRecord.employee_number || '').trim();
+      const amount = Math.round(Number(advanceRecord.total_amount || advanceRecord.amount || 0));
+      const reason = String(advanceRecord.reason || '').trim().toLowerCase();
+      const startMonth = advanceRecord.start_month || '2026-08';
+      const uniqueKey = `${empNum}_${amount}_${startMonth}_${reason.slice(0, 10)}`;
+      if (!deletedList.includes(uniqueKey)) {
+        deletedList.push(uniqueKey);
+      }
+    }
+
+    localStorage.setItem('hr_deleted_advances', JSON.stringify(deletedList));
+    await cloudSave('hr_deleted_advances', deletedList);
+
     const list1 = JSON.parse(localStorage.getItem('hr_flow_employee_advances') || '[]');
     const list2 = JSON.parse(localStorage.getItem('hr_advances_list') || '[]');
     
@@ -109,6 +139,53 @@ export async function deleteAdvance(advanceId) {
   } catch (e) {
     console.error('Failed to delete advance:', e);
     return false;
+  }
+}
+
+export async function recordAdvanceRepayment({ advanceId, amount, paymentDate, paymentMethod, notes, receiptNumber, recordedBy }) {
+  try {
+    const list = getAdvances();
+    const idx = list.findIndex(a => String(a.id) === String(advanceId));
+    if (idx === -1) {
+      throw new Error('السلفة غير موجودة بالنظام');
+    }
+
+    const adv = list[idx];
+    const payAmt = Math.min(Number(amount), Number(adv.remaining_balance !== undefined ? adv.remaining_balance : adv.total_amount));
+    const newPaidAmount = (Number(adv.paid_amount) || 0) + payAmt;
+    const newRemaining = Math.max(0, (Number(adv.total_amount) || 0) - newPaidAmount);
+
+    const paymentRecord = {
+      id: 'rep_' + Date.now(),
+      amount: payAmt,
+      payment_date: paymentDate || new Date().toISOString().split('T')[0],
+      payment_method: paymentMethod || 'cash',
+      notes: notes || 'سداد دفعة من السلفة',
+      receipt_number: receiptNumber || ('REC-' + Date.now().toString().slice(-6)),
+      recorded_by: recordedBy || 'المحاسب المالي',
+      recorded_at: new Date().toISOString()
+    };
+
+    const updated = {
+      ...adv,
+      paid_amount: newPaidAmount,
+      remaining_balance: newRemaining,
+      status: newRemaining <= 0 ? 'completed' : 'active',
+      history: [...(adv.history || []), paymentRecord],
+      updated_at: new Date().toISOString(),
+      updated_by: recordedBy || 'المحاسب'
+    };
+
+    list[idx] = updated;
+    localStorage.setItem('hr_advances_list', JSON.stringify(list));
+    localStorage.setItem('hr_flow_employee_advances', JSON.stringify(list));
+
+    await cloudSave('hr_advances_list', list);
+    await cloudSave('hr_flow_employee_advances', list);
+    return updated;
+  } catch (e) {
+    console.error('Error recording advance repayment:', e);
+    throw e;
   }
 }
 

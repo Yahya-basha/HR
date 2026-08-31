@@ -45,6 +45,7 @@ import {
   getAdvances,
   saveAdvance,
   recordAdvanceInstallmentPayment,
+  recordAdvanceRepayment,
   getAdjustments,
   saveAdjustment,
   deleteAdjustment,
