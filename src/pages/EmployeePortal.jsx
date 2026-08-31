@@ -1,3 +1,5 @@
+import PayslipPrint from '@/components/PayslipPrint';
+import { computeEmployeePayroll } from '@/lib/payrollEngine';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
@@ -33,6 +35,7 @@ export default function EmployeePortal() {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [attendanceLogs, setAttendanceLogs] = useState([]);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [selectedForPayslip, setSelectedForPayslip] = useState(null);
 
   // New Leave Form
   const [leaveType, setLeaveType] = useState('سنوية');
@@ -139,8 +142,17 @@ export default function EmployeePortal() {
           <Button onClick={() => setRequestModalOpen(true)} className="bg-[#C5A869] hover:bg-[#bfa05d] text-[#1E1035] font-bold rounded-xl shadow-md flex-1 sm:flex-none">
             <CalendarDays className="w-4 h-4 me-2" /> تقديم طلب إجازة
           </Button>
-          <Button onClick={() => window.print()} variant="outline" className="border-white/20 text-white hover:bg-white/10 rounded-xl flex-1 sm:flex-none">
-            <Printer className="w-4 h-4 me-2" /> طباعة مسير راتبي
+          <Button 
+            onClick={() => {
+              if (currentEmp) {
+                const pr = computeEmployeePayroll(currentEmp, attendanceLogs || [], [], { monthPrefix: '2026-08' });
+                setSelectedForPayslip(pr);
+              }
+            }} 
+            variant="outline" 
+            className="border-white/20 text-white hover:bg-white/10 rounded-xl flex-1 sm:flex-none font-bold gap-1.5"
+          >
+            <Printer className="w-4 h-4 text-emerald-400" /> طباعة مسير راتبي A4
           </Button>
         </div>
       </div>
@@ -321,6 +333,14 @@ export default function EmployeePortal() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {selectedForPayslip && (
+        <PayslipPrint
+          payroll={selectedForPayslip}
+          monthLabel="أغسطس 2026"
+          onClose={() => setSelectedForPayslip(null)}
+        />
+      )}
     </div>
   );
 }

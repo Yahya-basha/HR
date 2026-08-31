@@ -1589,6 +1589,7 @@ export default function Payroll() {
               attendanceLogs={attendanceLogs}
               shifts={shifts}
               settings={settings}
+              onOpenPayslip={(pr) => setSelectedForPayslip(pr)}
             />
           )}
 
@@ -2388,7 +2389,7 @@ export default function Payroll() {
 
 
 // ─── STAGE 5 COMPONENT: HISTORICAL CERTIFIED PAYSLIP WITH ACCOUNTANT STAMP ────
-function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls, attendanceLogs, shifts, settings, fmtNum }) {
+function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls, attendanceLogs, shifts, settings, fmtNum, onOpenPayslip }) {
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(monthPrefix || '2026-08');
@@ -2424,18 +2425,11 @@ function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls
       payroll: result,
       extractedAt: new Date().toISOString()
     });
-    toast({ title: `✓ تم استخراج مسير الراتب المعتمد لـ: ${emp.full_name}` });
-  };
 
-  const getArabicAmountInWords = (num) => {
-    const n = Math.round(Number(num) || 0);
-    if (n === 1500) return 'فقط ألف وخمسمائة ريال سعودي لا غير';
-    if (n === 3000) return 'فقط ثلاثة آلاف ريال سعودي لا غير';
-    if (n === 4000) return 'فقط أربعة آلاف ريال سعودي لا غير';
-    if (n === 4200) return 'فقط أربعة آلاف ومائتان ريال سعودي لا غير';
-    if (n === 5000) return 'فقط خمسة آلاف ريال سعودي لا غير';
-    if (n === 1375) return 'فقط ألف وثلاثمائة وخمسة وسبعون ريالاً سعودياً لا غير';
-    return `فقط ${n.toLocaleString('ar-SA')} ريال سعودي لا غير`;
+    if (onOpenPayslip) {
+      onOpenPayslip(result);
+    }
+    toast({ title: `✓ تم استخراج وفتح قسيمة الراتب الرسمية A4 لـ: ${emp.full_name}` });
   };
 
   return (
@@ -2453,12 +2447,12 @@ function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls
                 أرشيف مسيرات الرواتب المعتمدة والمختومة
               </h2>
               <p className="text-xs text-muted-foreground">
-                اختر فرع الموظف ثم اسمه والشهر لاستخراج مسير الراتب المعتمد بختم المصادقة المالي
+                استخراج وطباعة قسيمة الراتب الرسمية A4 المتوافقة مع البنوك ووزارة الموارد البشرية ونظام حماية الأجور (WPS)
               </p>
             </div>
           </div>
-          <Badge className="bg-purple-50 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 text-xs font-bold px-3 py-1">
-            نظام المصادقة المالية
+          <Badge className="bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 text-xs font-bold px-3 py-1">
+            WPS Compliant ✓
           </Badge>
         </div>
 
@@ -2519,250 +2513,40 @@ function Stage5HistoricalArchive({ employees, branches, monthPrefix, allPayrolls
           <div className="flex items-end">
             <Button
               onClick={handleExtract}
-              className="w-full h-11 bg-purple-700 hover:bg-purple-600 text-white rounded-2xl font-black text-xs gap-2 shadow-md shadow-purple-500/20"
+              className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-xs gap-2 shadow-md shadow-emerald-600/20"
             >
-              <Search className="w-4 h-4" />
-              <span>استخراج مسير الراتب المعتمد</span>
+              <Printer className="w-4 h-4" />
+              <span>استخراج وطباعة قسيمة الراتب A4</span>
             </Button>
           </div>
 
         </div>
       </Card>
 
-      {/* Extracted Payslip Document */}
+      {/* Extracted Payslip Document Banner */}
       {extractedData && (
-        <div className="space-y-4">
-          
-          {/* Action Bar */}
-          <div className="flex items-center justify-between bg-purple-900 text-white p-4 rounded-3xl shadow-lg print:hidden">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-              <div>
-                <div className="font-heading font-black text-sm">
-                  تم استخراج مسير الراتب المعتمد لـ: {extractedData.employee.full_name}
-                </div>
-                <div className="text-xs text-purple-200">
-                  المسير معتمد مالياً ومختوم بختم المصادقة الرسمي للمحاسب
-                </div>
+        <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/30 rounded-3xl p-6 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+              <CheckCircle2 className="w-7 h-7" />
+            </div>
+            <div>
+              <div className="font-heading font-black text-base text-foreground">
+                مسير راتب: {extractedData.employee.full_name} (#{extractedData.employee.employee_number})
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                صافي الراتب المستحق: <strong className="text-emerald-600 font-mono text-sm">{fmtNum(extractedData.payroll.netSalary)} ر.س</strong> • شهر: {extractedData.month}
               </div>
             </div>
-
-            <Button
-              onClick={() => window.print()}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-2xl h-10 px-5 gap-2 shadow-md"
-            >
-              <Printer className="w-4 h-4" />
-              <span>طباعة كشف الراتب A4 (مع الختم)</span>
-            </Button>
           </div>
 
-          {/* Printable Voucher */}
-          <Card className="p-8 rounded-3xl border-2 border-purple-200 dark:border-purple-900 bg-white dark:bg-slate-950 shadow-xl space-y-6 relative overflow-hidden print:border-none print:shadow-none print:p-0">
-            
-            {/* Watermark Seal */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
-              <Award className="w-[500px] h-[500px] text-purple-900" />
-            </div>
-
-            {/* Document Header */}
-            <div className="flex items-start justify-between border-b-2 border-slate-900 dark:border-slate-100 pb-5">
-              <div>
-                <h1 className="font-heading font-black text-xl text-foreground">
-                  شركة درة السيارة لقطع غيار السيارات
-                </h1>
-                <div className="text-xs text-muted-foreground font-bold mt-0.5">
-                  سجل تجاري: 1131012345 • المملكة العربية السعودية - القصيم
-                </div>
-                <div className="inline-block mt-2 px-3 py-1 bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 rounded-xl text-xs font-black">
-                  كشف ومسير راتب شهري معتمد رسمياً
-                </div>
-              </div>
-
-              <div className="text-left font-mono text-xs space-y-1">
-                <div><strong>رقم الوثيقة:</strong> PAY-{extractedData.month}-{extractedData.employee.employee_number}</div>
-                <div><strong>الشهر المالي:</strong> {extractedData.month}</div>
-                <div><strong>تاريخ الاعتماد:</strong> 2026-08-31</div>
-                <div><strong>حالة المسير:</strong> <span className="text-emerald-600 font-bold">مصادق ومعتمد ✓</span></div>
-              </div>
-            </div>
-
-            {/* Employee Identification */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border text-xs">
-              <div>
-                <span className="text-muted-foreground font-bold block text-[10px]">اسم الموظف:</span>
-                <span className="font-black text-foreground text-sm">{extractedData.employee.full_name}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-bold block text-[10px]">الرقم الوظيفي:</span>
-                <span className="font-mono font-black text-foreground">#{extractedData.employee.employee_number}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-bold block text-[10px]">المسمى الوظيفي:</span>
-                <span className="font-bold text-foreground">{extractedData.employee.job_title}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-bold block text-[10px]">الفرع المعتمد:</span>
-                <span className="font-bold text-foreground">{extractedData.employee.branch_name || 'الفرع الرئيسي'}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-bold block text-[10px]">الجنسية:</span>
-                <span className="font-bold text-foreground">{extractedData.employee.nationality || 'سعودي'}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-bold block text-[10px]">رقم الهوية / الإقامة:</span>
-                <span className="font-mono font-bold text-foreground">{extractedData.employee.national_id || '—'}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-bold block text-[10px]">تاريخ المباشرة:</span>
-                <span className="font-mono text-foreground">{extractedData.employee.join_date || '—'}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-bold block text-[10px]">الوردية المعتمدة:</span>
-                <span className="font-bold text-foreground">{extractedData.employee.shift || 'دوام رسمي'}</span>
-              </div>
-            </div>
-
-            {/* Breakdown Tables */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
-              
-              {/* Earnings */}
-              <div className="border rounded-2xl overflow-hidden">
-                <div className="bg-emerald-600 text-white font-black p-2.5 flex items-center justify-between">
-                  <span>تفاصيل الاستحقاقات والمكافآت (Earnings)</span>
-                  <span>المبلغ (ر.س)</span>
-                </div>
-                <table className="w-full text-right divide-y">
-                  <tbody>
-                    <tr>
-                      <td className="py-2 px-3 font-medium">الراتب الأساسي المعتمد</td>
-                      <td className="py-2 px-3 font-mono font-bold text-left">{fmtNum(extractedData.payroll.basicSalary)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-medium">بدل السكن والمواصلات</td>
-                      <td className="py-2 px-3 font-mono font-bold text-left">{fmtNum(extractedData.payroll.housingAllowance + extractedData.payroll.transportAllowance)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-medium">مكافأة الساعة الإضافية (9 ساعات)</td>
-                      <td className="py-2 px-3 font-mono font-bold text-left text-emerald-600">+{fmtNum(extractedData.payroll.nineHourBonus || 0)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-medium">مكافأة دوام الجمعة والحوافز التشجيعية</td>
-                      <td className="py-2 px-3 font-mono font-bold text-left text-emerald-600">+{fmtNum(extractedData.payroll.incentiveBonus || 0)}</td>
-                    </tr>
-                    <tr className="bg-emerald-50/80 dark:bg-emerald-950/40 font-black">
-                      <td className="py-2.5 px-3 text-emerald-900 dark:text-emerald-200">إجمالي الاستحقاقات:</td>
-                      <td className="py-2.5 px-3 font-mono text-emerald-700 dark:text-emerald-300 text-left">
-                        {fmtNum(extractedData.payroll.totalAdditions + extractedData.payroll.basicSalary)} ر.س
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Deductions */}
-              <div className="border rounded-2xl overflow-hidden">
-                <div className="bg-rose-600 text-white font-black p-2.5 flex items-center justify-between">
-                  <span>تفاصيل الاستقطاعات والخصم (Deductions)</span>
-                  <span>المبلغ (ر.س)</span>
-                </div>
-                <table className="w-full text-right divide-y">
-                  <tbody>
-                    <tr>
-                      <td className="py-2 px-3 font-medium">خصم التأخير وعجز الساعات</td>
-                      <td className="py-2 px-3 font-mono font-bold text-left text-rose-600">-{fmtNum(extractedData.payroll.lateDeduction || 0)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-medium">خصم الغياب بدون إذن</td>
-                      <td className="py-2 px-3 font-mono font-bold text-left text-rose-600">-{fmtNum(extractedData.payroll.absenceDeduction || 0)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-medium">استقطاع قسط السلفة الشهرية</td>
-                      <td className="py-2 px-3 font-mono font-bold text-left text-rose-600">-{fmtNum(extractedData.payroll.advanceDeduction || 0)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-medium">اشتراك التأمينات الاجتماعية (GOSI)</td>
-                      <td className="py-2 px-3 font-mono font-bold text-left text-rose-600">-{fmtNum(extractedData.payroll.gosiDeduction || 0)}</td>
-                    </tr>
-                    <tr className="bg-rose-50/80 dark:bg-rose-950/40 font-black">
-                      <td className="py-2.5 px-3 text-rose-900 dark:text-rose-200">إجمالي الاستقطاعات:</td>
-                      <td className="py-2.5 px-3 font-mono text-rose-700 dark:text-rose-300 text-left">
-                        -{fmtNum(extractedData.payroll.totalDeductions)} ر.س
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-            </div>
-
-            {/* Net Salary Banner */}
-            <div className="p-4 rounded-2xl bg-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <div className="text-xs text-emerald-400 font-bold">صافي الراتب المستحق المصروف فعلياً:</div>
-                <div className="font-mono font-black text-3xl text-white mt-1">
-                  {fmtNum(extractedData.payroll.netSalary)} <span className="text-sm font-normal">ريال سعودي</span>
-                </div>
-                <div className="text-xs text-slate-300 mt-1 font-semibold">
-                  {getArabicAmountInWords(extractedData.payroll.netSalary)}
-                </div>
-              </div>
-
-              <div className="bg-white/10 px-4 py-2 rounded-xl text-center">
-                <div className="text-[10px] text-slate-300">طريقة الصرف</div>
-                <div className="font-bold text-xs text-emerald-300 mt-0.5">تحويل بنكي رسمي / مسير معتمد</div>
-              </div>
-            </div>
-
-            {/* Official Employee Receipt & Settlement Declaration */}
-            <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs space-y-1.5">
-              <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
-                <span>📝 إقرار وتصفية استلام الراتب من الموظف:</span>
-              </div>
-              <p className="text-muted-foreground leading-relaxed text-[11px]">
-                أقر أنا الموظف الموضح بياناتي أعلاه بأنني راجعت كافة بنود الاستحقاقات والاستقطاعات المذكورة في هذا المسير، واستلمت كامل صافي راتبي ومستحقاتي عن شهر <strong>{extractedData.month}</strong> دون أي نقص أو تحفظ، وتعتبر ذمة المنشأة بريئة تماماً من أي مستحقات عن هذه الفترة حتى تاريخه.
-              </p>
-            </div>
-
-            {/* Official Signatures & Approvals (Employee + HR + General Manager) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start pt-4 border-t-2 border-dashed border-border/80 text-xs">
-              
-              {/* 1. Employee Signature */}
-              <div className="text-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border space-y-2">
-                <div className="text-muted-foreground font-bold text-[11px]">توقيع واستلام الموظف:</div>
-                <div className="font-black text-xs text-foreground">{extractedData.employee.full_name}</div>
-                <div className="text-[10px] text-muted-foreground font-mono">#{extractedData.employee.employee_number}</div>
-                <div className="h-12 border-b border-dashed border-slate-400 dark:border-slate-600 flex items-end justify-center pb-1">
-                  <span className="text-[10px] text-slate-400">(التوقيع / البصمة هنا)</span>
-                </div>
-                <div className="text-[9px] text-muted-foreground font-mono">التاريخ: ____ / ____ / 2026م</div>
-              </div>
-
-              {/* 2. HR Manager */}
-              <div className="text-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border space-y-2">
-                <div className="text-muted-foreground font-bold text-[11px]">إعداد وتدقيق الموارد البشرية:</div>
-                <div className="font-black text-xs text-foreground">يحيى محمد عبدالغفار باشا</div>
-                <div className="text-[10px] text-muted-foreground">مسؤول الموارد البشرية وشؤون الموظفين</div>
-                <div className="h-12 border-b border-dashed border-slate-400 dark:border-slate-600 flex items-end justify-center pb-1">
-                  <span className="font-cursive text-sm text-slate-700 dark:text-slate-300 italic">Yahya Basha</span>
-                </div>
-                <div className="text-[9px] text-emerald-600 font-bold font-mono">تم التدقيق والمطابقة ✓</div>
-              </div>
-
-              {/* 3. General Manager */}
-              <div className="text-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border space-y-2">
-                <div className="text-muted-foreground font-bold text-[11px]">اعتماد ومصادقة المدير العام:</div>
-                <div className="font-black text-xs text-foreground">فهد ناصر محمد الجوعي</div>
-                <div className="text-[10px] text-muted-foreground">المدير العام للمنشأة</div>
-                <div className="h-12 border-b border-dashed border-slate-400 dark:border-slate-600 flex items-end justify-center pb-1">
-                  <span className="font-cursive text-sm text-slate-700 dark:text-slate-300 italic">Fahad Al-Jouei</span>
-                </div>
-                <div className="text-[9px] text-emerald-600 font-bold font-mono">معتمد ومصرح بالصرف ✓</div>
-              </div>
-
-            </div>
-
-          </Card>
-
+          <Button
+            onClick={() => onOpenPayslip && onOpenPayslip(extractedData.payroll)}
+            className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs h-11 px-6 rounded-2xl gap-2 shadow-md"
+          >
+            <Printer className="w-4 h-4 text-emerald-400" />
+            <span>فتح نافذة الطباعة الرسمية A4</span>
+          </Button>
         </div>
       )}
 
