@@ -90,7 +90,7 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
     emp = {}, basicSalary = 0, housing = 0, transport = 0,
     fridayAllowance = 0, fridayNote = '',
     dailyOvertimeAllowance = 0, dailyOvertimeNote = '',
-    proposedShortfallDeduction = 0, approvedShortfallDeduction = 0,
+    proposedShortfallDeduction = 0, approvedShortfallDeduction = 0, proposedAbsenceDeduction = 0, approvedAbsenceDeduction = 0, absentDays = 0,
     shortfallApprovalStatus = '', shortfallApprovalNote = '',
     shortfallHours = 0, hourlyRate = 0,
     approvedBonuses = [], customBonusesTotal = 0,
@@ -453,11 +453,24 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
                     </div>
                   )}
 
-                  {/* Shortfall Deduction */}
+                  {/* Absence Days Deduction */}
+                  {approvedAbsenceDeduction > 0 && (
+                    <div className="flex items-center justify-between p-1.5 bg-slate-50">
+                      <div>
+                        <span className="font-bold text-slate-800">استقطاع أيام الغياب</span>
+                        {absentDays > 0 && (
+                          <span className="text-[9px] text-slate-500 block">غياب {absentDays} يوم</span>
+                        )}
+                      </div>
+                      <span className="font-mono font-bold text-slate-900">-{fmtSAR(approvedAbsenceDeduction)} ر.س</span>
+                    </div>
+                  )}
+
+                  {/* Working Hours Shortfall & Delay Deduction */}
                   {approvedShortfallDeduction > 0 && (
                     <div className="flex items-center justify-between p-1.5 bg-slate-50">
                       <div>
-                        <span className="font-bold text-slate-800">خصم ساعات العجز والغياب</span>
+                        <span className="font-bold text-slate-800">استقطاع عجز ساعات العمل والتأخير</span>
                         {shortfallHours > 0 && (
                           <span className="text-[9px] text-slate-500 block">عجز {formatHours(shortfallHours)}</span>
                         )}
@@ -475,7 +488,7 @@ export default function PayslipPrint({ payroll, monthLabel, onClose }) {
                   ))}
 
                   {/* Empty state filler if no deductions */}
-                  {advanceInstallment === 0 && approvedShortfallDeduction === 0 && approvedPenalties.length === 0 && gosiDeduction === 0 && (
+                  {advanceInstallment === 0 && approvedAbsenceDeduction === 0 && approvedShortfallDeduction === 0 && approvedPenalties.length === 0 && gosiDeduction === 0 && (
                     <div className="p-2.5 text-center text-slate-400 text-[10px]">
                       لا توجد استقطاعات أو جزاءات مسجلة على الموظف ✓
                     </div>
