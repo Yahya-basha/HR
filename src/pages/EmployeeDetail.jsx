@@ -1,3 +1,4 @@
+import EmployeeForm from '@/components/EmployeeForm';
 import { MaskedSalary, PrivacyMaskToggle } from '@/lib/FinancialPrivacyContext';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -1920,6 +1921,24 @@ export default function EmployeeDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      
+      {/* ─── MODAL 8: EDIT EMPLOYEE COMPREHENSIVE MODAL ────────────────── */}
+      {editEmployeeModal && (
+        <EmployeeForm
+          open={editEmployeeModal}
+          onOpenChange={setEditEmployeeModal}
+          employee={employee}
+          onSaved={(updated) => {
+            setEmployee(updated);
+            setEditEmployeeModal(false);
+            toast({
+              title: '✓ تم تحديث بيانات الموظف بنجاح',
+              description: `تم حفظ التعديلات للموظف ${updated?.full_name || employee?.full_name}.`
+            });
+          }}
+        />
+      )}
 
       {/* ─── MODAL 7: A4 ADVANCE DISBURSEMENT VOUCHER PRINT MODAL ─────────── */}
       {selectedAdvanceForVoucher && (
