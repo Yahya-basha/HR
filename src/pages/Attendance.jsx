@@ -46,7 +46,7 @@ export default function Attendance() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
-  const isAdmin = user?.role === 'admin' || true;
+  const isManagerOrAdmin = user?.role === 'owner' || user?.role === 'accountant' || user?.role === 'hr' || user?.role === 'system_admin' || user?.role === 'admin';
 
   // Filter mode: 'today' | 'yesterday' | 'range'
   const [filterMode, setFilterMode] = useState('today');
