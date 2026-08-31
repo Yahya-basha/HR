@@ -1,3 +1,4 @@
+import { initFullCloudSync } from '@/lib/cloudSyncEngine';
 import { MaskedSalary, PrivacyMaskToggle } from '@/lib/FinancialPrivacyContext';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
@@ -283,6 +284,7 @@ export default function Payroll() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      await initFullCloudSync().catch(() => {});
       const [emps, logs, shs] = await Promise.all([
         base44.entities.Employee.list(),
         base44.entities.AttendanceLog.list('-log_date', 2000),

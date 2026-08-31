@@ -1,72 +1,10 @@
 /**
- * Green Arrow HR — Resilient Bidirectional Cloud Sync Engine
- * Non-destructive merging: Local data is NEVER erased by empty cloud queries.
- */
-
-import { base44 } from '@/api/base44Client';
-
-export const SYNC_KEYS = {
-  ADVANCES: 'hr_flow_employee_advances',
-  ADVANCES_ALIAS: 'hr_advances_list',
-  APPROVALS: 'hr_flow_approvals_all',
-  ADJUSTMENTS: 'hr_flow_payroll_adjustments',
-  LOCKED_PAYROLLS_LIST: 'hr_flow_locked_payrolls_list',
-  AUDIT_LOGS: 'hr_audit_logs',
-  REQUESTS: 'hr_flow_requests_all',
-  LEAVES: 'hr_leave_requests',
-  CORRECTIONS: 'hr_correction_requests',
-  PAYROLL_RUNS: 'payroll_runs_v1',
-};
-
-const SUPABASE_SYNC_MAP = {
-  [SYNC_KEYS.ADVANCES]: 'sync_advances_v2',
-  [SYNC_KEYS.ADVANCES_ALIAS]: 'sync_advances_v2',
-  [SYNC_KEYS.LEAVES]: 'sync_leaves_v2',
-  [SYNC_KEYS.CORRECTIONS]: 'sync_corrections_v2',
-  [SYNC_KEYS.APPROVALS]: 'sync_approvals_v2',
-  [SYNC_KEYS.ADJUSTMENTS]: 'sync_adjustments_v2',
-  [SYNC_KEYS.LOCKED_PAYROLLS_LIST]: 'sync_locked_payrolls_v2',
-  [SYNC_KEYS.AUDIT_LOGS]: 'sync_audit_logs_v2',
-  [SYNC_KEYS.REQUESTS]: 'sync_requests_v2',
-  [SYNC_KEYS.PAYROLL_RUNS]: 'sync_payroll_runs_v2',
-};
-
-/**
- * Smart Merge: Merges two arrays of records by their unique .id
- */
-export function mergeRecords(primary = [], secondary = []) {
-  const pList = Array.isArray(primary) ? primary : [];
-  const sList = Array.isArray(secondary) ? secondary : [];
-  const map = new Map();
-
-  // 1. Add secondary items first
-  sList.forEach(item => {
-    if (item && item.id) map.set(String(item.id), item);
-  });
-
-  // 2. Add or override with primary items
-  pList.forEach(item => {
-    if (item && item.id) {
-      const existing = map.get(String(item.id));
-      if (!existing) {
-        map.set(String(item.id), item);
-      } else {
-        // Keep the one with newer action/timestamp or merged fields
-        map.set(String(item.id), { ...existing, ...item });
-      }
-    }
-  });
-
-  return Array.from(map.values());
-}
-
-/**
  * Save data locally AND push to Supabase Cloud
  */
 export async function cloudSave(key, data) {
   try {
     if (!data) return;
-    const serialized = JSON.stringify(data);
+    const serialized = typeof data === 'string' ? data : JSON.stringify(data);
     localStorage.setItem(key, serialized);
 
     if (key === SYNC_KEYS.ADVANCES) {
@@ -75,11 +13,11 @@ export async function cloudSave(key, data) {
       localStorage.setItem(SYNC_KEYS.ADVANCES, serialized);
     }
 
-    const syncId = SUPABASE_SYNC_MAP[key] || (key.startsWith('hr_flow_approval_') ? ('sync_appr_' + key.replace('hr_flow_approval_', '')) : null);
+    const safeSyncId = 'sync_' + key.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 60);
     
-    if (syncId && base44.supabase) {
+    if (base44.supabase) {
       const payload = {
-        id: syncId,
+        id: safeSyncId,
         title: key,
         content: serialized,
         category: 'cloud_sync',
