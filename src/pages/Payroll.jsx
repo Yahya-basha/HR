@@ -728,6 +728,187 @@ export default function Payroll() {
     });
   };
 
+
+  // ─── STAGE 2 DEDUCTIONS & ADVANCE HANDLERS ─────────────────────────
+
+  // 1. Advance Handlers
+  const handlePostponeAdvance = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    saveMonthlyAdvanceOverride(empNum, monthPrefix, {
+      amount: 0,
+      status: 'skipped',
+      note: `تم تأجيل خصم قسط السلفة لشهر ${monthPrefix} بقرار الإدارة`
+    });
+    setIsEditingAdvance(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '⏸️ تم تأجيل خصم قسط السلفة بنجاح',
+      description: `تم إيقاف الخصم للموظف (${emp.full_name}) لشهر ${monthPrefix} (0.00 ر.س).`
+    });
+  };
+
+  const handleResetAdvanceToDefault = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    const key = 'hr_flow_adv_override_' + empNum + '_' + (monthPrefix || 'all');
+    localStorage.removeItem(key);
+    saveMonthlyAdvanceOverride(empNum, monthPrefix, {
+      amount: currentSelectedPayroll?.activeAdvance?.monthly_installment || 500,
+      status: 'confirmed',
+      note: 'قسط مجدول معتمد'
+    });
+    setIsEditingAdvance(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '🔄 تمت استعادة القسط المجدول الأصلي',
+      description: `تمت إعادة الخصم للقيمة التعاقدية الافتراضية لشهر ${monthPrefix}.`
+    });
+  };
+
+  const handleSaveCustomAdvance = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    const num = Number(customAdvanceAmount);
+    if (isNaN(num) || num < 0) {
+      toast({ title: 'يرجى إدخال مبلغ صحيح', variant: 'destructive' });
+      return;
+    }
+    saveMonthlyAdvanceOverride(empNum, monthPrefix, {
+      amount: num,
+      status: 'modified',
+      note: `قسط مخصص (${num} ر.س) لشهر ${monthPrefix}`
+    });
+    setIsEditingAdvance(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '✓ تم تعديل وتطبيق قسط السلفة',
+      description: `المبلغ المعتمد للخصم عن شهر ${monthPrefix} هو (${num.toLocaleString('en-US')} ر.س).`
+    });
+  };
+
+  // 2. Absence Days Deduction Handlers
+  const handleApproveAbsence = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    const proposed = currentSelectedPayroll?.proposedAbsenceDeduction || 0;
+    saveAbsenceApproval(empNum, monthPrefix, {
+      status: 'approved',
+      finalDeduction: proposed,
+      note: 'تم اعتماد خصم أيام الغياب رسمياً'
+    });
+    setIsEditingAbsence(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '✓ تم اعتماد خصم أيام الغياب',
+      description: `تم اعتماد خصم (${fmtNum(proposed)} ر.س) للموظف ${emp.full_name}.`
+    });
+  };
+
+  const handleWaiveAbsence = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    saveAbsenceApproval(empNum, monthPrefix, {
+      status: 'waived',
+      finalDeduction: 0,
+      note: 'تم التجاوز والإعفاء من خصم الغياب بقرار الإدارة'
+    });
+    setIsEditingAbsence(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '🛡️ تم التجاوز والإعفاء من خصم الغياب',
+      description: `تم إعفاء الموظف ${emp.full_name} من خصم الغياب (0.00 ر.س).`
+    });
+  };
+
+  const handleSaveCustomAbsence = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    const num = Number(customAbsenceAmount);
+    if (isNaN(num) || num < 0) {
+      toast({ title: 'يرجى إدخال مبلغ صحيح', variant: 'destructive' });
+      return;
+    }
+    saveAbsenceApproval(empNum, monthPrefix, {
+      status: 'modified',
+      finalDeduction: num,
+      note: `خصم غياب معدل (${num} ر.س)`
+    });
+    setIsEditingAbsence(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '✓ تم تعديل وتطبيق خصم الغياب',
+      description: `تم اعتماد خصم غياب بمبلغ (${fmtNum(num)} ر.س).`
+    });
+  };
+
+  // 3. Shortfall (Delay & Working Hours) Deduction Handlers
+  const handleApproveShortfall = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    const proposed = currentSelectedPayroll?.proposedShortfallDeduction || 0;
+    saveShortfallApproval(empNum, monthPrefix, {
+      status: 'approved',
+      finalDeduction: proposed,
+      note: 'تم اعتماد خصم عجز الساعات والتأخير رسمياً'
+    });
+    setIsEditingShortfall(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '✓ تم اعتماد خصم عجز الساعات',
+      description: `تم اعتماد خصم (${fmtNum(proposed)} ر.س) للموظف ${emp.full_name}.`
+    });
+  };
+
+  const handleWaiveShortfall = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    saveShortfallApproval(empNum, monthPrefix, {
+      status: 'waived',
+      finalDeduction: 0,
+      note: 'تم التجاوز والإعفاء من خصم عجز الساعات والتأخير بقرار الإدارة'
+    });
+    setIsEditingShortfall(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '🛡️ تم التجاوز والإعفاء من خصم عجز الساعات',
+      description: `تم إعفاء الموظف ${emp.full_name} من خصم عجز الساعات (0.00 ر.س).`
+    });
+  };
+
+  const handleSaveCustomShortfall = (emp) => {
+    if (!emp) return;
+    const empNum = String(emp.employee_number || emp.id || '').trim();
+    const num = Number(customShortfallAmount);
+    if (isNaN(num) || num < 0) {
+      toast({ title: 'يرجى إدخال مبلغ صحيح', variant: 'destructive' });
+      return;
+    }
+    saveShortfallApproval(empNum, monthPrefix, {
+      status: 'modified',
+      finalDeduction: num,
+      note: `خصم عجز ساعات معدل (${num} ر.س)`
+    });
+    setIsEditingShortfall(false);
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '✓ تم تعديل وتطبيق خصم عجز الساعات',
+      description: `تم اعتماد خصم عجز ساعات بمبلغ (${fmtNum(num)} ر.س).`
+    });
+  };
+
+  // 4. Delete Penalty / Bonus Adjustment Handler
+  const handleDeleteAdjustment = (adjId) => {
+    if (!adjId) return;
+    deleteAdjustment(adjId);
+    setAdjustmentsList(getAdjustments());
+    setOverrideTrigger(prev => prev + 1);
+    toast({
+      title: '✓ تم حذف الاستقطاع / المكافأة بنجاح',
+      description: 'تم تحديث جدول ومسير الرواتب تلقائياً.'
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-24" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
       <PayrollRunBanner month={(monthPrefix || "2026-08").split("-")[1] || "08"} year={(monthPrefix || "2026-08").split("-")[0] || "2026"} user={user} />
