@@ -1245,15 +1245,15 @@ export default function Payroll() {
                     <table className="w-full text-right text-xs" style={{ direction: 'rtl' }}>
                       <thead>
                         <tr className="bg-slate-100 dark:bg-slate-800/80 font-heading font-bold text-muted-foreground border-b">
-                          <th className="py-3 px-4">التاريخ</th>
-                          <th className="py-3 px-3">اليوم</th>
-                          <th className="py-3 px-3">وقت الدخول</th>
-                          <th className="py-3 px-3">وقت الخروج</th>
-                          <th className="py-3 px-3">الساعات المطلوبة</th>
-                          <th className="py-3 px-3">الساعات الفعلية</th>
-                          <th className="py-3 px-3 text-rose-600">العجز</th>
-                          <th className="py-3 px-3">الحالة</th>
-                          <th className="py-3 px-4 text-center">تعديل (المدير فقط)</th>
+                          <th className="py-3 px-3">التاريخ</th>
+                          <th className="py-3 px-2">اليوم</th>
+                          <th className="py-3 px-3 text-emerald-700 dark:text-emerald-400">الفترة النهارية (دخول ➔ خروج)</th>
+                          <th className="py-3 px-3 text-blue-700 dark:text-blue-400">الفترة المسائية (دخول ➔ خروج)</th>
+                          <th className="py-3 px-2">المطلوب</th>
+                          <th className="py-3 px-2">إجمالي الفعلي</th>
+                          <th className="py-3 px-3">الفارق (عجز / زيادة)</th>
+                          <th className="py-3 px-2">الحالة</th>
+                          <th className="py-3 px-3 text-center">تعديل (المدير فقط)</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/60">
@@ -1284,20 +1284,30 @@ export default function Payroll() {
 
                           return (
                             <tr key={di} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/30">
-                              <td className="py-2.5 px-4 font-mono font-bold">{d.log_date}</td>
-                              <td className="py-2.5 px-3 font-semibold">{d.day_name}</td>
-                              <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
-                                {d.hasAttendance || d.isExempt ? (d.period_1_in || (d.check_in ? (d.check_in.includes('T') ? d.check_in.slice(11, 16) : d.check_in.slice(0, 5)) : '—')) : '—'}
+                              <td className="py-2.5 px-3 font-mono font-bold">{d.log_date}</td>
+                              <td className="py-2.5 px-2 font-semibold">{d.day_name}</td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                {d.hasAttendance || d.isExempt 
+                                  ? (d.period_1_in ? `${d.period_1_in} ➔ ${d.period_1_out || '--:--'}` : (d.check_in ? (d.check_in.includes('T') ? d.check_in.slice(11, 16) : d.check_in.slice(0, 5)) : '—'))
+                                  : '—'}
                               </td>
-                              <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
-                                {d.hasAttendance || d.isExempt ? (d.period_2_out || d.period_1_out || (d.check_out ? (d.check_out.includes('T') ? d.check_out.slice(11, 16) : d.check_out.slice(0, 5)) : '—')) : '—'}
+                              <td className="py-2.5 px-3 font-mono font-bold text-blue-700 dark:text-blue-400">
+                                {d.hasAttendance || d.isExempt 
+                                  ? (d.period_2_in ? `${d.period_2_in} ➔ ${d.period_2_out || '--:--'}` : '—')
+                                  : '—'}
                               </td>
-                              <td className="py-2.5 px-3 font-mono">{d.requiredMinutes ? formatMinutes(d.requiredMinutes) : '—'}</td>
-                              <td className="py-2.5 px-3 font-mono">{d.actualMinutes ? formatMinutes(d.actualMinutes) : '—'}</td>
-                              <td className="py-2.5 px-3 font-mono font-bold text-rose-600">
-                                {d.shortfallMinutes > 0 ? formatMinutes(d.shortfallMinutes) : '—'}
+                              <td className="py-2.5 px-2 font-mono">{d.requiredMinutes ? formatMinutes(d.requiredMinutes) : '—'}</td>
+                              <td className="py-2.5 px-2 font-mono font-bold text-foreground">{d.actualMinutes ? formatMinutes(d.actualMinutes) : '—'}</td>
+                              <td className="py-2.5 px-3 font-mono font-extrabold">
+                                {d.shortfallMinutes > 0 ? (
+                                  <span className="text-rose-600">-${formatMinutes(d.shortfallMinutes)} 🔻</span>
+                                ) : d.surplusMinutes > 0 ? (
+                                  <span className="text-blue-600">+${formatMinutes(d.surplusMinutes)} ⚡</span>
+                                ) : (
+                                  <span className="text-emerald-600">0 د ✓</span>
+                                )}
                               </td>
-                              <td className="py-2.5 px-3">
+                              <td className="py-2.5 px-2">
                                 <Badge className={`${statusBadgeColor} border-0 text-[10px] font-bold`}>
                                   {statusLabel}
                                 </Badge>

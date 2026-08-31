@@ -422,11 +422,13 @@ export default function EmployeePortal() {
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-900 border-b font-heading font-bold text-foreground">
                   <th className="py-3 px-3">التاريخ</th>
-                  <th className="py-3 px-3">اليوم</th>
-                  <th className="py-3 px-3 text-emerald-700">فترة 1 (دخول/خروج)</th>
-                  <th className="py-3 px-3 text-blue-700">فترة 2 (دخول/خروج)</th>
-                  <th className="py-3 px-3 text-purple-700">ساعات العمل</th>
-                  <th className="py-3 px-3 text-center">الحالة</th>
+                  <th className="py-3 px-2">اليوم</th>
+                  <th className="py-3 px-3 text-emerald-700 dark:text-emerald-400">الفترة النهارية (دخول ➔ خروج)</th>
+                  <th className="py-3 px-3 text-blue-700 dark:text-blue-400">الفترة المسائية (دخول ➔ خروج)</th>
+                  <th className="py-3 px-2">المطلوب</th>
+                  <th className="py-3 px-2 text-purple-700">إجمالي الفعلي</th>
+                  <th className="py-3 px-3">الفارق (عجز / زيادة)</th>
+                  <th className="py-3 px-2 text-center">الحالة</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -443,17 +445,27 @@ export default function EmployeePortal() {
                     return (
                       <tr key={log.id || log.log_date} className="hover:bg-slate-50 dark:hover:bg-slate-900/40">
                         <td className="py-3 px-3 font-mono font-bold">{log.log_date}</td>
-                        <td className="py-3 px-3 text-muted-foreground">{dayName}</td>
-                        <td className="py-3 px-3 font-mono text-emerald-700 font-bold">
-                          {log.period_1_in || '--:--'} ➔ {log.period_1_out || '--:--'}
+                        <td className="py-3 px-2 text-muted-foreground font-semibold">{dayName}</td>
+                        <td className="py-3 px-3 font-mono text-emerald-700 dark:text-emerald-400 font-bold">
+                          {log.period_1_in ? `${log.period_1_in} ➔ ${log.period_1_out || '--:--'}` : (log.check_in ? (log.check_in.includes('T') ? log.check_in.slice(11, 16) : log.check_in.slice(0, 5)) : '—')}
                         </td>
-                        <td className="py-3 px-3 font-mono text-blue-700 font-bold">
-                          {log.period_2_in || '--:--'} ➔ {log.period_2_out || '--:--'}
+                        <td className="py-3 px-3 font-mono text-blue-700 dark:text-blue-400 font-bold">
+                          {log.period_2_in ? `${log.period_2_in} ➔ ${log.period_2_out || '--:--'}` : '—'}
                         </td>
-                        <td className="py-3 px-3 font-mono font-black text-purple-700">
+                        <td className="py-3 px-2 font-mono text-muted-foreground">{log.required_hours || 9} س</td>
+                        <td className="py-3 px-2 font-mono font-black text-purple-700">
                           {log.total_hours || 0} س
                         </td>
-                        <td className="py-3 px-3 text-center">
+                        <td className="py-3 px-3 font-mono font-extrabold">
+                          {Number(log.shortfall_hours || 0) > 0 ? (
+                            <span className="text-rose-600">-{log.shortfall_hours} س 🔻</span>
+                          ) : Number(log.overtime_hours || 0) > 0 ? (
+                            <span className="text-blue-600">+{log.overtime_hours} س ⚡</span>
+                          ) : (
+                            <span className="text-emerald-600">0 د ✓</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-2 text-center">
                           <Badge className={
                             log.status === 'present' ? 'bg-emerald-100 text-emerald-800' :
                             log.status === 'weekend' ? 'bg-slate-100 text-slate-700' :

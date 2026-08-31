@@ -1002,13 +1002,21 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
     const hasOT = !isFri && is9HourShift && hasAtt && !exempt && (actualMins >= 510 || (actualMins >= (shiftHours * 60) - 30));
     if (hasOT) overtimeDays++;
 
-    // Format display values
-    const displayCheckIn = (hasAtt || isExecutive) ? (log.check_in || '') : '';
-    const displayCheckOut = (hasAtt || isExecutive) ? (log.check_out || (isExecutive ? '16:00' : '')) : '';
-    const displayP1In = (hasAtt || isExecutive) ? (log.period_1_in || '') : '';
-    const displayP1Out = (hasAtt || isExecutive) ? (log.period_1_out || '') : '';
-    const displayP2In = (hasAtt || isExecutive) ? (log.period_2_in || '') : '';
-    const displayP2Out = (hasAtt || isExecutive) ? (log.period_2_out || '') : '';
+    // Robust Multi-Period Punch Extraction (Morning & Evening Periods)
+    const rawPunches = extractTimes(log.timestamp_raw || log.punches_raw || '');
+    let p1In = log.period_1_in || (rawPunches[0] || (log.check_in ? (log.check_in.includes('T') ? log.check_in.slice(11, 16) : log.check_in.slice(0, 5)) : ''));
+    let p1Out = log.period_1_out || (rawPunches.length >= 4 ? rawPunches[1] : (rawPunches.length === 2 ? rawPunches[1] : (log.check_out ? (log.check_out.includes('T') ? log.check_out.slice(11, 16) : log.check_out.slice(0, 5)) : '')));
+    let p2In = log.period_2_in || (rawPunches.length >= 4 ? rawPunches[2] : '');
+    let p2Out = log.period_2_out || (rawPunches.length >= 4 ? rawPunches[3] : '');
+
+    const displayCheckIn = (hasAtt || isExecutive) ? (p1In || log.check_in || '') : '';
+    const displayCheckOut = (hasAtt || isExecutive) ? (p2Out || p1Out || log.check_out || (isExecutive ? '16:00' : '')) : '';
+    const displayP1In = (hasAtt || isExecutive) ? p1In : '';
+    const displayP1Out = (hasAtt || isExecutive) ? p1Out : '';
+    const displayP2In = (hasAtt || isExecutive) ? p2In : '';
+    const displayP2Out = (hasAtt || isExecutive) ? p2Out : '';
+
+    const surplusMins = (hasAtt && !exempt && !isFri && actualMins > requiredMins) ? (actualMins - requiredMins) : 0;
 
     let rowStatus = 'present';
     if (isFri) {
@@ -1044,6 +1052,7 @@ export function computeEmployeePayroll(emp, allLogs, allShifts, settings = {}) {
       requiredMinutes: requiredMins,
       actualMinutes: hasAtt ? (actualMins || 0) : 0,
       shortfallMinutes: shortfallMins,
+      surplusMinutes: surplusMins,
       overtimeDay: hasOT,
     };
   });

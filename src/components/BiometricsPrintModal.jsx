@@ -136,36 +136,76 @@ export default function BiometricsPrintModal({ open, onOpenChange, employee, dai
               <div style={{ fontWeight: '800', color: '#0f172a', background: '#f1f5f9', padding: '5px 10px', borderRight: '4px solid #475569', fontSize: '11px', marginBottom: '4px' }}>
                 جدول البصمات وساعات الدوام اليومية لشهر {monthLabel}
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', textAlign: 'center' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5px', textAlign: 'center' }}>
                 <thead>
-                  <tr style={{ background: '#334155', color: '#fff' }}>
-                    <th style={{ padding: '4px' }}>التاريخ</th>
-                    <th style={{ padding: '4px' }}>اليوم</th>
-                    <th style={{ padding: '4px' }}>بصمة الدخول</th>
-                    <th style={{ padding: '4px' }}>بصمة الخروج</th>
-                    <th style={{ padding: '4px' }}>المطلوب</th>
-                    <th style={{ padding: '4px' }}>الفعلي</th>
-                    <th style={{ padding: '4px' }}>العجز</th>
-                    <th style={{ padding: '4px' }}>الحالة</th>
+                  <tr style={{ background: '#0F172A', color: '#fff' }}>
+                    <th style={{ padding: '5px 3px' }}>التاريخ</th>
+                    <th style={{ padding: '5px 3px' }}>اليوم</th>
+                    <th style={{ padding: '5px 3px', background: '#065F46' }}>الفترة النهارية (دخول ➔ خروج)</th>
+                    <th style={{ padding: '5px 3px', background: '#1E40AF' }}>الفترة المسائية (دخول ➔ خروج)</th>
+                    <th style={{ padding: '5px 3px' }}>الساعات المطلوبة</th>
+                    <th style={{ padding: '5px 3px' }}>إجمالي الفعلي</th>
+                    <th style={{ padding: '5px 3px' }}>الفارق (عجز / زيادة)</th>
+                    <th style={{ padding: '5px 3px' }}>الحالة</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dailyDetails?.map((d, idx) => {
-                    const statusLabel = d.isFriday ? 'عطلة جمعة' : d.isExempt ? 'معفى' : !d.hasAttendance ? 'غائب' : d.shortfallMinutes > 0 ? 'عجز' : 'حاضر ✓';
-                    const statusColor = d.isFriday ? '#4338ca' : d.isExempt ? '#64748b' : !d.hasAttendance ? '#dc2626' : d.shortfallMinutes > 0 ? '#d97706' : '#16a34a';
+                    const statusLabel = d.isFriday 
+                      ? 'عطلة جمعة' 
+                      : d.isUnpaidLeave 
+                      ? 'إجازة بدون راتب' 
+                      : d.isExempt 
+                      ? 'معفى / إجازة' 
+                      : !d.hasAttendance 
+                      ? 'غائب' 
+                      : d.shortfallMinutes > 0 
+                      ? 'عجز دوام' 
+                      : 'حاضر ✓';
+
+                    const statusColor = d.isFriday 
+                      ? '#4338ca' 
+                      : d.isExempt 
+                      ? '#64748b' 
+                      : !d.hasAttendance 
+                      ? '#dc2626' 
+                      : d.shortfallMinutes > 0 
+                      ? '#d97706' 
+                      : '#16a34a';
+
+                    // Morning Period formatting
+                    const p1Text = d.hasAttendance 
+                      ? (d.period_1_in ? `${d.period_1_in} ➔ ${d.period_1_out || '--:--'}` : (d.check_in ? formatTimeDisplay(d.check_in) : '—'))
+                      : '—';
+
+                    // Evening Period formatting
+                    const p2Text = d.hasAttendance 
+                      ? (d.period_2_in ? `${d.period_2_in} ➔ ${d.period_2_out || '--:--'}` : '—')
+                      : '—';
+
+                    // Shortfall vs Surplus
+                    let diffText = '0 د ✓';
+                    let diffColor = '#16a34a';
+                    if (d.shortfallMinutes > 0) {
+                      diffText = `-${formatMinutes(d.shortfallMinutes)} 🔻`;
+                      diffColor = '#dc2626';
+                    } else if (d.surplusMinutes > 0) {
+                      diffText = `+${formatMinutes(d.surplusMinutes)} ⚡`;
+                      diffColor = '#2563eb';
+                    }
 
                     return (
                       <tr key={d.log_date || idx} style={{ background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '4px', fontFamily: 'monospace', fontWeight: '700' }}>{d.log_date}</td>
-                        <td style={{ padding: '4px', fontWeight: '600' }}>{d.day_name}</td>
-                        <td style={{ padding: '4px', fontFamily: 'monospace' }}>{d.check_in ? formatTimeDisplay(d.check_in) : '—'}</td>
-                        <td style={{ padding: '4px', fontFamily: 'monospace' }}>{d.check_out ? formatTimeDisplay(d.check_out) : '—'}</td>
-                        <td style={{ padding: '4px', fontFamily: 'monospace' }}>{d.requiredMinutes ? formatMinutes(d.requiredMinutes) : '—'}</td>
-                        <td style={{ padding: '4px', fontFamily: 'monospace' }}>{d.actualMinutes ? formatMinutes(d.actualMinutes) : '—'}</td>
-                        <td style={{ padding: '4px', fontFamily: 'monospace', fontWeight: '700', color: d.shortfallMinutes > 0 ? '#dc2626' : '#16a34a' }}>
-                          {d.shortfallMinutes > 0 ? formatMinutes(d.shortfallMinutes) : '0 د'}
+                        <td style={{ padding: '4px 2px', fontFamily: 'monospace', fontWeight: '700' }}>{d.log_date}</td>
+                        <td style={{ padding: '4px 2px', fontWeight: '600' }}>{d.day_name}</td>
+                        <td style={{ padding: '4px 2px', fontFamily: 'monospace', fontWeight: '700', color: '#065F46' }}>{p1Text}</td>
+                        <td style={{ padding: '4px 2px', fontFamily: 'monospace', fontWeight: '700', color: '#1E40AF' }}>{p2Text}</td>
+                        <td style={{ padding: '4px 2px', fontFamily: 'monospace' }}>{d.requiredMinutes ? formatMinutes(d.requiredMinutes) : '—'}</td>
+                        <td style={{ padding: '4px 2px', fontFamily: 'monospace', fontWeight: '700' }}>{d.actualMinutes ? formatMinutes(d.actualMinutes) : '—'}</td>
+                        <td style={{ padding: '4px 2px', fontFamily: 'monospace', fontWeight: '800', color: diffColor }}>
+                          {diffText}
                         </td>
-                        <td style={{ padding: '4px', fontWeight: '700', color: statusColor }}>{statusLabel}</td>
+                        <td style={{ padding: '4px 2px', fontWeight: '700', color: statusColor }}>{statusLabel}</td>
                       </tr>
                     );
                   })}
